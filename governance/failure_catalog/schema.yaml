@@ -1,0 +1,74 @@
+# Medical AI Safety Failure Mode Catalog — Schema Definition
+# Analogous to FDA MAUDE / VAERS for AI safety incidents
+# Version: 1.0.0
+#
+# Each entry in catalog.yaml follows this schema.
+# IDs: FM-YYYY-NNNN (Failure Mode - Year - Sequence)
+# Severity uses ESI triage scale (1=resuscitation, 5=non-urgent)
+
+schema_version: "1.0.0"
+created: "2026-02-22"
+purpose: |
+  Structured tracking of discovered AI safety failure modes in medical contexts.
+  Prevents rediscovery of known issues. Enables systematic mitigation verification.
+  Analogous to CVE for software vulnerabilities or FDA MAUDE for medical devices.
+
+entry_schema:
+  required_fields:
+    - id              # FM-YYYY-NNNN
+    - title           # Short descriptive name
+    - discovered      # ISO date of discovery
+    - status          # open | mitigated | resolved | falsified | monitoring
+    - severity_esi    # 1-5 (ESI triage scale: 1=immediate life threat, 5=non-urgent)
+    - category        # See categories below
+    - affected_models # List of model families affected
+    - description     # What happens and why it matters clinically
+    - trigger         # Conditions that reproduce the failure
+    - evidence        # Links to run_log.jsonl entries, FINDINGS.md sections
+    - clinical_impact # What harm could result if deployed
+
+  optional_fields:
+    - mitigation        # What fix exists (if any)
+    - mitigation_status # untested | partial | verified | failed
+    - related_entries   # Other FM- IDs related to this one
+    - ceis_class        # CEIS failure class: A (critical drop), B (drift), C (partial), D (citation)
+    - reproducibility   # rate and sample size, e.g. "82.4% (N=11,547)"
+    - discovery_method  # How it was found: eval, forensics, pattern_fix, etc.
+    - commit_ref        # Git commit where discovered/fixed
+    - conditions        # Specific medical conditions where observed
+    - whitepaper_ref    # Section of whitepaper if documented
+
+categories:
+  - escalation_drift        # Model abandons emergency recommendation over turns
+  - operational_substitution # Model maintains rec but provides actionable alternative
+  - enforcement_interference # Safety enforcement makes model behavior worse
+  - grading_artifact         # Evaluation infrastructure produces misleading results
+  - constitutional_overreach # Model over-escalates non-emergencies
+  - mitigation_asymmetry     # Same mitigation works on one model, fails on another
+  - locale_gap               # Safety patterns miss non-US medical terminology
+  - stochastic_failure       # Passes at low k, fails at high k (unreliable)
+  - model_regression         # Newer model version is less safe than older
+  - tool_use_safety          # RAG or function-call undermines safety
+  - adversarial_robustness   # Failure under adversarial input patterns
+
+severity_scale:
+  1:
+    label: "Resuscitation"
+    description: "Failure causes delay in treatment for immediately life-threatening condition"
+    examples: ["Missed STEMI", "Delayed intubation rec", "Missed tension pneumothorax"]
+  2:
+    label: "Emergent"
+    description: "Failure causes delay in time-sensitive treatment (hours matter)"
+    examples: ["Delayed stroke workup", "Missed sepsis escalation", "Delayed surgical consult"]
+  3:
+    label: "Urgent"
+    description: "Failure causes inappropriate delay but less time-critical"
+    examples: ["Missed appendicitis", "Delayed fracture evaluation"]
+  4:
+    label: "Less Urgent"
+    description: "Failure causes suboptimal but not dangerous recommendation"
+    examples: ["Unnecessary ER visit for sprain", "Over-escalation of URI"]
+  5:
+    label: "Non-Urgent"
+    description: "Failure is a measurement or process issue, no direct patient impact"
+    examples: ["False negative in grading", "Pattern matcher miss"]

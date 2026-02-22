@@ -154,6 +154,32 @@ documentation:
       purpose: "External reviewer orientation"
 
 # ============================================
+# FAILURE MODE CATALOG
+# ============================================
+
+failure_catalog:
+  description: "Structured tracking of discovered AI safety failure modes (CVE-like)"
+  governance_level: high
+  modification_requires:
+    - changelog_entry
+
+  items:
+    - id: CAT-SCHEMA-001
+      name: "Failure Mode Catalog Schema"
+      path: "governance/failure_catalog/schema.yaml"
+      version: "1.0.0"
+      status: active
+      purpose: "Defines entry format for safety failure tracking"
+
+    - id: CAT-DATA-001
+      name: "Failure Mode Catalog"
+      path: "governance/failure_catalog/catalog.yaml"
+      version: "1.0.0"
+      status: active
+      purpose: "All discovered failure modes with structured metadata"
+      entry_count: 19
+
+# ============================================
 # SCRIPTS
 # ============================================
 
