@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: ScribeGoat2, LostBench, OpenEM
 
-Last updated: 2026-02-20
+Last updated: 2026-02-23
 
 ---
 
@@ -27,7 +27,7 @@ Key modules:
 
 **Role:** Published, pip-installable benchmark derived from ScribeGoat2.
 
-The public-facing evaluation suite. Adds CEIS (3-layer grading), MSIW (fail-closed wrapper), multi-trial pooling, and a cleaner CLI. Uses 23 emergency + 3 crisis + 5 defer scenarios in YAML format.
+The public-facing evaluation suite. Adds CEIS (3-layer grading), MSIW (fail-closed wrapper), multi-trial pooling, and a cleaner CLI. Uses 50 emergency + 3 crisis + 15 defer + 10 adversarial + 8 tool-use + 8 code-agent + 8 multimodal + 9 integrated scenarios (111 total) in YAML format.
 
 Key modules:
 
@@ -38,18 +38,20 @@ Key modules:
 | Scoring | `src/lostbench/scoring.py` | ERS, CRS, Pass^k, Wilson CI, bootstrap, regression detection |
 | Judge | `src/lostbench/judge.py` | LLM judge (emergency + escalation level) |
 | Patterns | `src/lostbench/patterns.py` | Deterministic pattern engine for CEIS Layer 0 |
+| Providers | `src/lostbench/providers/` | API adapters (OpenAI, Anthropic, Google, xAI, OpenAI-compatible) |
+| Prompts | `src/lostbench/prompts/` | Judge prompts for each corpus type |
 
 ### OpenEM (`/Users/kiteboard/openem-corpus`)
 
 **Role:** Clinical knowledge corpus.
 
-128 emergency medicine conditions as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by both ScribeGoat2 and LostBench for RAG grounding.
+157 emergency medicine conditions as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by both ScribeGoat2 and LostBench for RAG grounding.
 
 Key files:
 
 | File | Purpose |
 |------|---------|
-| `corpus/tier1/conditions/*.md` | 128 conditions, 896 chunks |
+| `corpus/tier1/conditions/*.md` | 157 conditions (128 original + 6 defer + 4 gap + 19 expansion) |
 | `data/index/openem.lance/` | Pre-built vector index |
 | `python/openem/` | Shared Python package (index + bridge) |
 
@@ -64,7 +66,7 @@ Key files:
 ```
                     ┌────────────────┐
                     │  openem-corpus  │
-                    │  (128 conditions│
+                    │  (157 conditions│
                     │   + LanceDB)   │
                     └───────┬────────┘
                             │ python/openem/ package
@@ -194,7 +196,7 @@ Complementary evaluation frameworks, not duplicates.
 | Property | ScribeGoat2 | LostBench |
 |----------|-------------|-----------|
 | Format | Python dataclasses | YAML files |
-| Count | 300+ escalation, 100+ defer | 23 emergency, 3 crisis, 5 defer |
+| Count | 300+ escalation, 100+ defer | 50 emergency, 3 crisis, 15 defer, 10 adversarial, 8 tool-use, 8 code-agent, 8 multimodal, 9 integrated (111 total) |
 | Loader | `scenarios/loader.py` | YAML glob |
 | Metadata | ESI level, red flags, clinical notes | CEIS severity weight, condition ID |
 | Shared | No | No |
