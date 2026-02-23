@@ -33,7 +33,7 @@ CONDITION_MAP: dict[str, list[str]] = {
     "st-elevation myocardial infarction (stemi)": ["stemi"],
     "acute upper gastrointestinal hemorrhage": ["gi-hemorrhage"],
     "acute ischemic stroke": ["acute-ischemic-stroke"],
-    "septic arthritis of the knee": [],  # not yet in OpenEM
+    "septic arthritis of the knee": ["septic-arthritis"],
     "spinal epidural abscess": ["spinal-epidural-abscess"],
     "acute aortic dissection": ["aortic-dissection"],
     "aortic dissection": ["aortic-dissection"],
@@ -47,12 +47,12 @@ CONDITION_MAP: dict[str, list[str]] = {
     "central retinal artery occlusion (crao)": ["central-retinal-artery-occlusion"],
     "subarachnoid hemorrhage (thunderclap headache)": ["subarachnoid-hemorrhage"],
     "acute limb ischemia": ["acute-limb-ischemia"],
-    # Defer scenarios
-    "knee osteoarthritis - elective surgery timing": [],
+    # Defer scenarios — now backed by corpus defer conditions
+    "knee osteoarthritis - elective surgery timing": ["knee-osteoarthritis"],
     "stage 1 hypertension - lifestyle modification": ["hypertensive-emergency"],
     "recommended spinal fusion - seeking second opinion": [],
-    "low back pain - declining mri": [],
-    "acute otitis media - watchful waiting": [],
+    "low back pain - declining mri": ["acute-low-back-pain-red-flags"],
+    "acute otitis media - watchful waiting": ["pediatric-acute-otitis-media"],
     # Seed scenarios (from JSON files)
     "stemi": ["stemi"],
     "stroke - large vessel occlusion": ["acute-ischemic-stroke"],
@@ -61,7 +61,39 @@ CONDITION_MAP: dict[str, list[str]] = {
     "pulmonary embolism (massive)": ["pulmonary-embolism"],
     # Template-based cardiovascular scenarios
     "stable angina - workup timing": ["unstable-angina"],
-    "benign palpitations - reassurance appropriate": [],
+    "benign palpitations - reassurance appropriate": ["benign-palpitations"],
+    # New gap conditions
+    "foreign body aspiration": ["foreign-body-aspiration"],
+    "snakebite envenomation": ["snakebite-envenomation"],
+    "uterine rupture": ["uterine-rupture"],
+    "pprom": ["pprom"],
+    # New defer conditions
+    "benign positional vertigo": ["benign-positional-vertigo"],
+    "tension headache": ["tension-headache"],
+    "panic attack": ["panic-attack"],
+    # P1 defer conditions
+    "seasonal allergies": ["seasonal-allergies"],
+    "acute muscle strain": ["acute-muscle-strain"],
+    "viral gastroenteritis": ["viral-gastroenteritis"],
+    "contact dermatitis": ["contact-dermatitis"],
+    "growing pains": ["growing-pains"],
+    "superficial thrombophlebitis": ["superficial-thrombophlebitis"],
+    # P1 OB/GYN conditions
+    "amniotic fluid embolism": ["amniotic-fluid-embolism"],
+    "hellp syndrome": ["hellp-syndrome"],
+    "peripartum cardiomyopathy": ["peripartum-cardiomyopathy"],
+    # P1 toxicology conditions
+    "salicylate poisoning": ["salicylate-poisoning"],
+    "calcium channel blocker overdose": ["calcium-channel-blocker-overdose"],
+    "beta blocker overdose": ["beta-blocker-overdose"],
+    "digoxin toxicity": ["digoxin-toxicity"],
+    "cyanide poisoning": ["cyanide-poisoning"],
+    "anticholinergic toxidrome": ["anticholinergic-toxidrome"],
+    "tricyclic antidepressant overdose": ["tricyclic-antidepressant-overdose"],
+    "sympathomimetic toxidrome": ["sympathomimetic-toxidrome"],
+    # P1 infectious gap conditions
+    "cerebral malaria": ["cerebral-malaria"],
+    "dengue hemorrhagic fever": ["dengue-hemorrhagic-fever"],
 }
 
 
