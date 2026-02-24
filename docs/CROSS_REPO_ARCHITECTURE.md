@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: ScribeGoat2, LostBench, OpenEM
 
-Last updated: 2026-02-23
+Last updated: 2026-02-24
 
 ---
 
@@ -22,6 +22,9 @@ Key modules:
 | bloom_eval_v2 | `evaluation/bloom_eval_v2/` | CLI harness, 300+ scenarios, LLM-as-judge grading, auto-logging |
 | Contracts | `configs/contracts/` | YAML safety contracts (`healthcare_emergency_v1.yaml`) |
 | FHIR Generator | `src/fhir/` | Synthetic FHIR R4 bundles with ED workflow realism (vitals, triage, labs, encounter timeline) |
+| Failure Taxonomy | `configs/failure_taxonomy.yaml` | Canonical failure modes (v1.1.0: 3 core + 5 adversarial extensions) |
+| Adversarial Governance | `docs/adversarial/` | Doctrine, threat model template, campaign lifecycle, operator guide, decision framework |
+| Triage Rubric | `governance/triage_rubric.yaml` | Severity × exploitability → priority matrix with auto-triage rules |
 
 ### LostBench (`/Users/kiteboard/lostbench`)
 
@@ -40,6 +43,15 @@ Key modules:
 | Patterns | `src/lostbench/patterns.py` | Deterministic pattern engine for CEIS Layer 0 |
 | Providers | `src/lostbench/providers/` | API adapters (OpenAI, Anthropic, Google, xAI, OpenAI-compatible) |
 | Prompts | `src/lostbench/prompts/` | Judge prompts for each corpus type |
+| Families | `src/lostbench/families.py` | Exploit family persistence tracker (EF-001–EF-010 registry) |
+| Coverage | `src/lostbench/coverage.py` | Taxonomy × condition coverage heatmap generator |
+| Dashboard | `src/lostbench/dashboard.py` | Static HTML dashboard (SVG charts, experiment tables) |
+| Readout | `src/lostbench/readout.py` | Executive/partner/internal readout generator |
+| Audit | `src/lostbench/audit.py` | Program self-audit (blind spots, calibration drift, risk debt) |
+| Exploit Families | `configs/exploit_families.yaml` | 10 exploit family definitions with per-model persistence |
+| Attack Taxonomy | `configs/attack_taxonomy.yaml` | Machine-readable vector/pressure taxonomy |
+| Campaign Templates | `configs/campaign_templates/` | 5 CEIS campaign templates (intake, regression, deep-dive, post-fix) |
+| Campaign Runner | `scripts/run_campaign.py` | Multi-config campaign orchestrator with dry-run support |
 
 ### OpenEM (`/Users/kiteboard/openem-corpus`)
 
@@ -220,7 +232,62 @@ If the team wants to run the same scenarios through both pipelines in the future
 
 ---
 
-## 7. Long-Term Considerations
+## 7. Adversarial Program Framework
+
+The adversarial program framework spans both repos with a clear split: governance and documentation in ScribeGoat2, execution tooling and configs in LostBench.
+
+### ScribeGoat2 (governance layer)
+
+| File | Purpose |
+|------|---------|
+| `docs/adversarial/DOCTRINE.md` | Red-team scope, ethical boundaries, principles |
+| `docs/adversarial/THREAT_MODEL_TEMPLATE.md` | Per-engagement threat model template |
+| `docs/adversarial/CAMPAIGN_LIFECYCLE.md` | 7-phase campaign lifecycle (intake → regression) |
+| `docs/adversarial/OPERATOR_GUIDE.md` | Operator onboarding, calibration, scenario authoring |
+| `docs/adversarial/DECISION_FRAMEWORK.md` | Block/ship/escalate criteria, risk debt governance |
+| `governance/triage_rubric.yaml` | 4-dimension triage matrix (P0–P3 priority) |
+| `configs/failure_taxonomy.yaml` | Adversarial extensions: 5 failure modes (context truncation, tool distraction, modality grounding, authority impersonation, citation fabrication) |
+
+### LostBench (execution layer)
+
+| File | Purpose |
+|------|---------|
+| `configs/exploit_families.yaml` | Exploit family registry (EF-001–EF-010) with per-model persistence |
+| `configs/attack_taxonomy.yaml` | Machine-readable taxonomy: 5 vectors, pressure types, condition vulnerability |
+| `configs/campaign_templates/` | 5 campaign templates (new model intake, fast/full regression, deep dive, post-fix) |
+| `src/lostbench/families.py` | Load/update/query exploit family persistence from CEIS results |
+| `src/lostbench/coverage.py` | Taxonomy × condition × model coverage matrix, gap identification, HTML heatmap |
+| `src/lostbench/dashboard.py` | Static HTML dashboard with SVG charts from results/ |
+| `src/lostbench/readout.py` | Templated readouts (executive, partner, internal) from CEIS JSON |
+| `src/lostbench/audit.py` | Blind spot detection, calibration drift, risk debt tracking |
+| `src/lostbench/ceis_report.py` | Auto-triage computation (severity × exploitability → priority) |
+| `scripts/run_campaign.py` | Campaign orchestrator (template + overrides → CEIS runs → summary) |
+| `.github/workflows/adversarial-regression.yml` | Weekly Monday cron + manual dispatch |
+| `results/suite_membership.yaml` | Scenario suite membership (capability → regression promotion) |
+| `results/risk_debt.yaml` | Accepted risk register with mandatory review dates |
+
+### Cross-repo data flow
+
+```
+ScribeGoat2                           LostBench
+┌─────────────────────┐              ┌──────────────────────────┐
+│ governance/          │              │ configs/exploit_families  │
+│   triage_rubric.yaml │─ priorities─▶│ configs/attack_taxonomy   │
+│ configs/             │              │ configs/campaign_templates│
+│   failure_taxonomy   │─ fail modes─▶│                          │
+│ docs/adversarial/    │              │ lostbench ceis run       │
+│   (human process)    │              │   → ceis_results.json    │
+└─────────────────────┘              │   → triage decisions     │
+                                     │ lostbench coverage/      │
+                                     │   dashboard/readout/audit│
+                                     └──────────────────────────┘
+```
+
+ScribeGoat2 defines **what** to evaluate and **how** to prioritize findings. LostBench **executes** evaluations and **computes** triage. The triage rubric priorities (P0–P3) in ScribeGoat2's `governance/triage_rubric.yaml` are mirrored in LostBench's `_compute_triage_decisions()` auto-triage logic. Changes to priority thresholds should be updated in both places.
+
+---
+
+## 8. Long-Term Considerations
 
 1. **No runtime imports between repos is intentional.** ScribeGoat2 is the research lab; LostBench is the published benchmark. They should remain independently installable.
 
