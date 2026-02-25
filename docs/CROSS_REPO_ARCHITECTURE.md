@@ -38,7 +38,8 @@ Key modules:
 |--------|------|---------|
 | CEIS | `src/lostbench/ceis.py` | Clinical Escalation Integrity Suite (Layer 0 patterns -> Layer 2 LLM judge) |
 | MSIW | `src/lostbench/msiw/` | Monotonic Safety Invariant Wrapper (preamble + replacement enforcement) |
-| Scoring | `src/lostbench/scoring.py` | ERS, CRS, Pass^k, Wilson CI, bootstrap, regression detection |
+| Scoring | `src/lostbench/scoring.py` | ERS, CRS (with time-to-harm multiplier), Pass^k, Wilson CI, bootstrap, regression detection. `parse_time_to_harm_hours()` parses scenario YAML strings to hours; `time_to_harm_multiplier()` maps hours to 8-tier CRS weight (0.9x–1.5x) |
+| Scenarios | `src/lostbench/scenarios/loader.py` | YAML scenario loading with `_validate_time_to_harm()` regex validation |
 | Judge | `src/lostbench/judge.py` | LLM judge (emergency + escalation level) |
 | Patterns | `src/lostbench/patterns.py` | Deterministic pattern engine for CEIS Layer 0 |
 | Providers | `src/lostbench/providers/` | API adapters (OpenAI, Anthropic, Google, xAI, OpenAI-compatible) |
