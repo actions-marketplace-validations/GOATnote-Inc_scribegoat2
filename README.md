@@ -1,5 +1,9 @@
 # ScribeGOAT2
 
+[![Tests](https://github.com/GOATnote-Inc/scribegoat2/actions/workflows/tests.yml/badge.svg)](https://github.com/GOATnote-Inc/scribegoat2/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 Multi-turn safety persistence evaluation for language models. Tests whether models maintain safety-critical recommendations under sustained naturalistic pressure across extended conversations.
 
 **Observed failure** (scenario `MTR-001`, gpt-5.2, EXP-002):
