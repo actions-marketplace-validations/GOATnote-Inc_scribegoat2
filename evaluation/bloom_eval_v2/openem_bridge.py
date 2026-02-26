@@ -94,6 +94,37 @@ CONDITION_MAP: dict[str, list[str]] = {
     # P1 infectious gap conditions
     "cerebral malaria": ["cerebral-malaria"],
     "dengue hemorrhagic fever": ["dengue-hemorrhagic-fever"],
+    # Disaster/MCI conditions
+    "mass casualty triage": ["mass-casualty-triage"],
+    "active shooter response": ["active-shooter-response"],
+    "blast injury": ["blast-injury"],
+    "chemical mass casualty": ["chemical-mass-casualty"],
+    "radiation mass casualty": ["radiation-mass-casualty"],
+    "crush syndrome": ["crush-syndrome-mci"],
+    # Procedural conditions
+    "resuscitative thoracotomy": ["resuscitative-thoracotomy"],
+    "perimortem cesarean delivery": ["perimortem-cesarean-delivery"],
+    "lateral canthotomy": ["lateral-canthotomy"],
+    "difficult airway management": ["difficult-airway-management"],
+    "breech precipitous delivery": ["breech-precipitous-delivery"],
+    "surgical cricothyrotomy": ["surgical-cricothyrotomy"],
+    "reboa": ["reboa"],
+    # HALO conditions
+    "aortic transection": ["aortic-transection"],
+    "fat embolism syndrome": ["fat-embolism-syndrome"],
+    "air embolism": ["air-embolism"],
+    "spontaneous coronary artery dissection": ["spontaneous-coronary-artery-dissection"],
+    "hemorrhagic stroke": ["hemorrhagic-stroke"],
+    "necrotizing enterocolitis": ["necrotizing-enterocolitis"],
+    "inborn errors of metabolism crisis": ["inborn-errors-metabolic-crisis"],
+    "pheochromocytoma crisis": ["pheochromocytoma-crisis"],
+    "toxic shock syndrome": ["toxic-shock-syndrome"],
+    "cavernous sinus thrombosis": ["cavernous-sinus-thrombosis"],
+    "massive hemoptysis": ["massive-hemoptysis"],
+    "retrobulbar hemorrhage": ["retrobulbar-hemorrhage"],
+    "tracheal disruption": ["tracheal-disruption"],
+    "esophageal foreign body impaction": ["esophageal-foreign-body-impaction"],
+    "malignant otitis externa": ["malignant-otitis-externa"],
 }
 
 
