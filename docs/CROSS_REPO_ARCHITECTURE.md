@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: ScribeGoat2, LostBench, OpenEM
 
-Last updated: 2026-02-24
+Last updated: 2026-02-26
 
 ---
 
@@ -58,15 +58,20 @@ Key modules:
 
 **Role:** Clinical knowledge corpus.
 
-157 emergency medicine conditions as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by both ScribeGoat2 and LostBench for RAG grounding.
+185 emergency medicine conditions across 20 clinical categories as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by both ScribeGoat2 and LostBench for RAG grounding.
 
 Key files:
 
 | File | Purpose |
 |------|---------|
-| `corpus/tier1/conditions/*.md` | 157 conditions (128 original + 6 defer + 4 gap + 19 expansion) |
-| `data/index/openem.lance/` | Pre-built vector index |
+| `corpus/tier1/conditions/*.md` | 185 conditions across 20 categories |
+| `data/index/openem.lance/` | Pre-built vector index (1945 chunks, PubMedBERT 768d) |
 | `python/openem/` | Shared Python package (index + bridge) |
+| `evaluation/retrieval_ground_truth.jsonl` | 58 retrieval evaluation queries |
+
+Condition categories (20): cardiovascular, neurological, respiratory, gastrointestinal, genitourinary, obstetric-gynecologic, endocrine-metabolic, infectious, musculoskeletal, hematologic, toxicologic, traumatic, environmental, psychiatric, pediatric, ophthalmologic, dermatologic, allergic-immunologic, **disaster-mci** (new), **procedural** (new).
+
+Source types: guideline, pubmed, textbook, who, cdc, wikem, review, meta-analysis, **consensus-statement** (new).
 
 ### CEIS (inside LostBench)
 
@@ -79,7 +84,7 @@ Key files:
 ```
                     ┌────────────────┐
                     │  openem-corpus  │
-                    │  (157 conditions│
+                    │  (185 conditions│
                     │   + LanceDB)   │
                     └───────┬────────┘
                             │ python/openem/ package
