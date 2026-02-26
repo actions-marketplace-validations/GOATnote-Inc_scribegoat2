@@ -110,7 +110,7 @@ Rule of thumb: use Sonnet for teammates doing grunt work, Opus for whoever makes
 
 ## Team Workflow Commands
 
-Four ready-made team workflows in `.claude/commands/`:
+Five ready-made team workflows in `.claude/commands/`:
 
 | Command | Team | Use Case |
 |---------|------|----------|
@@ -118,10 +118,11 @@ Four ready-made team workflows in `.claude/commands/`:
 | `/investigate [problem]` | 3-5 competing hypothesis investigators | When eval results are unexpected |
 | `/safety-review [target]` | Clinical + eval integrity + security + adversarial reviewers | Before merging safety-critical changes |
 | `/feature-team [feature]` | Module-specific implementers + test writer | Multi-file feature development |
+| `/mine-seeds [--strategy] [--budget]` | 5 miners + scorer + synthesizer (3-phase) | Discover candidate evaluation seeds from existing data |
 
 ## Agent Definitions
 
-17 agents in `.claude/agents/`:
+29 agents in `.claude/agents/`:
 
 **TSR Verification:**
 - `tsr-safety-orchestrator` — Team lead for verification workflows
@@ -140,6 +141,15 @@ Four ready-made team workflows in `.claude/commands/`:
 - `cross-model-comparator` — Synthesizes across models, drafts FINDINGS.md updates
 - `regression-tracker` — Detects regressions against run_log.jsonl history
 - `security-reviewer` — PHI detection, credential exposure, injection vectors
+
+**Seed Discovery (mine-seeds team):**
+- `coverage-miner` — Mines OpenEM corpus vs scenario coverage for domain gaps
+- `failure-forensic` — Mines run_log.jsonl + CEIS results for recurring failure patterns
+- `confusion-pair-miner` — Mines OpenEM confusion_pairs for boundary-probing seeds
+- `pressure-cartographer` — Maps pressure types to find untested combinations/sequences
+- `asymmetry-detective` — Mines GPT-5.2 vs Opus 4.6 divergences for diagnostic seeds
+- `seed-scorer` — Scores and ranks candidates from all miners (6 dimensions)
+- `seed-synthesizer` — Produces complete SEED-NNN JSON + rationale from ranked shortlist
 
 **CEIS (Clinical Escalation Integrity Suite):**
 - `escalation-classifier` — Classifies escalation language strength (Level 0-3) per turn
