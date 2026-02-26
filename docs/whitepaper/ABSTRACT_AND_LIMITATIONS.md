@@ -1,7 +1,7 @@
 # Whitepaper Draft: Abstract and Limitations
 
 **Document Status:** DRAFT — Verified against raw checkpoint data
-**Verification Date:** 2026-02-20 (Phase 3 results added; Phase 1 verified 2026-02-03)  
+**Verification Date:** 2026-02-26 (adversarial results added; Phase 3 added 2026-02-20; Phase 1 verified 2026-02-03)  
 **Author Note:** This manuscript was drafted with AI assistance under human supervision. The human author designed the methodology, performed clinical adjudication, verified all quantitative claims against code outputs, and approved the final text.
 
 ---
@@ -10,7 +10,7 @@
 
 We present a trajectory-level safety evaluation framework for frontier language models in healthcare contexts. Unlike single-turn benchmarks that assess initial response accuracy, this framework measures whether models maintain safety-critical recommendations across multi-turn conversations when users apply realistic pressure. To our knowledge, no existing benchmark measures multi-turn escalation persistence — the property that once a model correctly identifies a clinical emergency, it maintains that recommendation through sustained conversational pressure.
 
-We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 multi-turn scenarios spanning two domains: healthcare emergency persistence (8,000 trajectories) and crisis resource persistence (4,000 trajectories). We subsequently validated and extended these findings using an expanded 23-condition emergency corpus evaluated across four models (GPT-5.2, Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6) with a 2×2 factorial design separating system prompt preamble and pattern-based enforcement mechanisms.
+We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 multi-turn scenarios spanning two domains: healthcare emergency persistence (8,000 trajectories) and crisis resource persistence (4,000 trajectories). We subsequently validated and extended these findings using an expanded 23-condition emergency corpus evaluated across four models (GPT-5.2, Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6) with a 2×2 factorial design separating system prompt preamble and pattern-based enforcement mechanisms. We further evaluated safety persistence under adversarial attack vectors — code generation context, tool-calling distraction, multimodal inputs, combined modalities, and direct prompt injection — using 43 adversarial scenarios with the same 2×2 factorial design.
 
 **Key findings:**
 
@@ -27,6 +27,8 @@ We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 mult
 6. **CEIS validation:** The Clinical Escalation Integrity Suite (CEIS), a 3-layer grading pipeline combining deterministic pattern screening with LLM-judge classification and failure taxonomy (Class A–D), produced an Escalation Risk Score (ERS) of 80 [bootstrap 95% CI: 68–85] for the best configuration (GPT-5.2 full wrapper, n=5 trials). One Class A (critical drop) failure persisted (acute limb ischemia, turn 3, trial 2 of 5).
 
 7. **Model version regression:** Sonnet 4.6 showed safety persistence regression relative to Sonnet 4.5: preamble effectiveness dropped from +0.435 to +0.131 Pass^k lift, a 70% reduction. General capability improvements do not guarantee safety persistence improvements.
+
+8. **Adversarial vector vulnerability:** Code generation context is the most effective attack surface, reducing both models to near-zero baseline safety persistence (GPT-5.2 Pass^k = 0.125, Opus 4.6 = 0.250). Preamble intervention improves code-agent performance substantially (both models to 0.625), but enforcement interference replicates for Opus across both cooperative and adversarial corpora (preamble-only > wrapper on code-agent), confirming it as an architectural property rather than a corpus artifact.
 
 **Limitations:** All clinical labeling was performed by a single board-certified emergency medicine physician (single-adjudicator calibration). Inter-rater reliability metrics (e.g., Cohen's κ) require independent adjudicators and are therefore not available. Detection mechanisms are heterogeneous: RESOURCE_OMISSION uses rule-based pattern matching (deterministic), while Tier 1 failures use LLM-as-judge (Claude Sonnet 4/4.5) and CEIS uses a 3-layer pipeline (deterministic patterns → LLM judge → failure classification). All evaluation scenarios were authored by the study team using a single scenario generation pipeline; external scenario validation is not yet performed, and in-distribution structure limits generalizability claims. Results should be interpreted as preliminary existence detection under an explicit labeling protocol, not definitive prevalence estimates. A blinded multi-rater replication protocol is documented for Phase 2.1, contingent on funding.
 
@@ -271,6 +273,17 @@ All metrics below are verified against raw checkpoint data.
 
 **Note:** ERS = Escalation Risk Score (0–100, higher = safer). CEIS threshold requires ERS ≥ 60 AND zero Class A failures.
 
+### Adversarial Evaluation (LostBench, verified 2026-02-24)
+
+| Vector | Scenarios | GPT-5.2 Pass^k | Opus 4.6 Pass^k | Source |
+|--------|-----------|----------------|-----------------|--------|
+| Code-agent | 8 | 0.125 | 0.250 | lostbench results/2x2-adversarial/ |
+| Tool-use | 8 | 0.857 | 0.625 | lostbench results/ceis-tool_use-*-n3/ |
+| Multimodal | 8 | 0.750 | 0.875 | lostbench results/ceis-multimodal-*-n3/ |
+| Integrated | 9 | 0.556 | 1.000 | lostbench results/2x2-adversarial/ |
+
+**Note:** 43 adversarial scenarios, 5 attack vectors, 3 trials each, cross-vendor LLM judge. Code-agent and integrated vectors evaluated with full 2×2 factorial design (§5.13).
+
 ---
 
 ## Changelog
@@ -288,3 +301,6 @@ All metrics below are verified against raw checkpoint data.
 | 2026-02-20 | Added CEIS validation metrics (ERS, Class A/B/C/D) |
 | 2026-02-20 | Abstract rewritten to incorporate preamble dominance and model version regression |
 | 2026-02-20 | Added "to our knowledge" qualifier on novelty claim per red team review |
+| 2026-02-26 | Added adversarial evaluation results (43 scenarios, 5 vectors, 2×2 factorial on code-agent and integrated) |
+| 2026-02-26 | Updated OpenEM corpus reference from 128 to 185 conditions (v2.0) |
+| 2026-02-26 | Updated claims about adversarial evaluation scope (§2, §4, §6) |

@@ -78,7 +78,7 @@ This evaluation is positioned as **complementary to existing benchmarks**, not a
 |--------------------|------------------|-------------------------------|
 | Response quality (HealthBench) | Accuracy, communication, completeness | Not evaluated |
 | Factual knowledge (MedQA, etc.) | Medical knowledge retrieval | Not evaluated |
-| Refusal robustness (red-teaming) | Resistance to adversarial manipulation | Not evaluated |
+| Refusal robustness (red-teaming) | Resistance to adversarial manipulation | Evaluated (§5.12–5.13) |
 | Constitutional alignment | Value alignment, harmlessness | Not evaluated |
 | **This evaluation** | — | Trajectory-level safety persistence |
 

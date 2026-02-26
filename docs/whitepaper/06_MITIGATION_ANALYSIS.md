@@ -1,7 +1,7 @@
 # Section 6: Mitigation Analysis
 
 **Document Status:** DRAFT — Part of verified whitepaper
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-26
 **Scope:** Structural description of mitigation; context-bounded efficacy; no generalization claims
 
 ---
@@ -151,7 +151,7 @@ The evaluated mitigation does not address:
 
 1. **Tier 1 failures** (URGENCY_MINIMIZED, DELAY_VALIDATED, PATIENT_ABANDONED) — not evaluated
 
-2. **Adversarial circumvention** — not evaluated
+2. **Adversarial circumvention** — evaluated in §5.12–5.13 (5 vectors, 43 scenarios)
 
 3. **Multi-domain safety** — only crisis resource persistence evaluated
 
@@ -265,7 +265,7 @@ Sections 6.8–6.13 evaluate behavioral interventions (system prompt preamble, p
 
 ### 6.14.1 Method
 
-Per-scenario clinical context was retrieved from the OpenEM corpus (128 emergency medicine conditions, Apache 2.0) and injected as a system prompt prefix. Retrieval used hybrid search (vector + full-text, RRF fusion) with section priority ordering (Critical Actions > Treatment > Recognition > Disposition > Pitfalls), truncated to 3,000 characters per scenario.
+Per-scenario clinical context was retrieved from the OpenEM corpus (185 emergency medicine conditions, Apache 2.0) and injected as a system prompt prefix. Retrieval used hybrid search (vector + full-text, RRF fusion) with section priority ordering (Critical Actions > Treatment > Recognition > Disposition > Pitfalls), truncated to 3,000 characters per scenario.
 
 ### 6.14.2 Results (Opus 4.6, 23-Scenario Corpus)
 
@@ -288,7 +288,24 @@ RAG grounding primarily reduces urgency_minimized failures — cases where the m
 
 RAG grounding is complementary to the MSIW preamble (different mechanisms: factual grounding vs behavioral constraint). A single evaluation of RAG + MSIW wrapper on Opus 4.6 yielded Pass^k = 0.478, consistent with additive rather than synergistic interaction.
 
-**Source:** LostBench RAG evaluation (2026-02-19), 23 scenarios × 3 trials, LLM judge, OpenEM corpus v1.0.
+**Source:** LostBench RAG evaluation (2026-02-19), 23 scenarios × 3 trials, LLM judge, OpenEM corpus v2.0 (185 conditions).
+
+---
+
+## 6.15 Cross-Corpus Mitigation Consistency
+
+The preamble dominance finding (§6.8–6.13) was validated on adversarial vectors (§5.13). Results:
+
+**Preamble as dominant mechanism:**
+- On code-agent, preamble is the largest single contributor for both models: GPT-5.2 gains +0.500 (0.125→0.625), Opus gains +0.375 (0.250→0.625)
+- This replicates the cooperative corpus finding where preamble-only matched or exceeded the full wrapper for 3 of 4 models
+
+**Enforcement interference replicates cross-corpus:**
+- Opus preamble-only (0.625) outperforms the full wrapper (0.500) on code-agent adversarial scenarios
+- This mirrors the cooperative emergency corpus pattern (preamble 0.478 > wrapper 0.391)
+- Two independent corpora with different scenario structures and pressure types produce the same directional effect
+
+**Implication:** Enforcement interference appears to be an architectural property of constitutional AI models rather than a corpus-specific artifact. Deployment recommendation for Anthropic models: preamble-only mitigation (omit pattern enforcement layer).
 
 ---
 

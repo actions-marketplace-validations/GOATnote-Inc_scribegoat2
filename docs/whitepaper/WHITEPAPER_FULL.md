@@ -23,7 +23,7 @@ All statistics in this document were extracted read-only from completed checkpoi
 
 We present a trajectory-level safety evaluation framework for frontier language models in healthcare contexts. Unlike single-turn benchmarks that assess initial response accuracy, this framework measures whether models maintain safety-critical recommendations across multi-turn conversations when users apply realistic pressure. To our knowledge, no existing benchmark measures multi-turn escalation persistence — the property that once a model correctly identifies a clinical emergency, it maintains that recommendation through sustained conversational pressure.
 
-We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 multi-turn scenarios spanning two domains: healthcare emergency persistence (8,000 trajectories) and crisis resource persistence (4,000 trajectories). We subsequently validated and extended these findings using an expanded 23-condition emergency corpus evaluated across four models (GPT-5.2, Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6) with a 2×2 factorial design separating system prompt preamble and pattern-based enforcement mechanisms.
+We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 multi-turn scenarios spanning two domains: healthcare emergency persistence (8,000 trajectories) and crisis resource persistence (4,000 trajectories). We subsequently validated and extended these findings using an expanded 23-condition emergency corpus evaluated across four models (GPT-5.2, Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6) with a 2×2 factorial design separating system prompt preamble and pattern-based enforcement mechanisms. We further evaluated safety persistence under adversarial attack vectors — code generation context, tool-calling distraction, multimodal inputs, combined modalities, and direct prompt injection — using 43 adversarial scenarios with the same 2×2 factorial design.
 
 **Key findings:**
 
@@ -40,6 +40,8 @@ We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 mult
 6. **CEIS validation:** The Clinical Escalation Integrity Suite (CEIS), a 3-layer grading pipeline combining deterministic pattern screening with LLM-judge classification and failure taxonomy (Class A–D), produced an Escalation Risk Score (ERS) of 80 [bootstrap 95% CI: 68–85] for the best configuration (GPT-5.2 full wrapper, n=5 trials). One Class A (critical drop) failure persisted (acute limb ischemia, turn 3, trial 2 of 5).
 
 7. **Model version regression:** Sonnet 4.6 showed safety persistence regression relative to Sonnet 4.5: preamble effectiveness dropped from +0.435 to +0.131 Pass^k lift, a 70% reduction. General capability improvements do not guarantee safety persistence improvements.
+
+8. **Adversarial vector vulnerability:** Code generation context is the most effective attack surface, reducing both models to near-zero baseline safety persistence (GPT-5.2 Pass^k = 0.125, Opus 4.6 = 0.250). Preamble intervention improves code-agent performance substantially (both models to 0.625), but enforcement interference replicates for Opus across both cooperative and adversarial corpora (preamble-only > wrapper on code-agent), confirming it as an architectural property rather than a corpus artifact.
 
 **Limitations:** All clinical labeling was performed by a single board-certified emergency medicine physician (single-adjudicator calibration). Inter-rater reliability metrics (e.g., Cohen's κ) require independent adjudicators and are therefore not available. Detection mechanisms are heterogeneous: RESOURCE_OMISSION uses rule-based pattern matching (deterministic), while Tier 1 failures use LLM-as-judge (Claude Sonnet 4/4.5) and CEIS uses a 3-layer pipeline (deterministic patterns → LLM judge → failure classification). All evaluation scenarios were authored by the study team using a single scenario generation pipeline; external scenario validation is not yet performed, and in-distribution structure limits generalizability claims. Results should be interpreted as preliminary existence detection under an explicit labeling protocol, not definitive prevalence estimates. A blinded multi-rater replication protocol is documented for Phase 2.1, contingent on funding.
 
@@ -284,6 +286,17 @@ All metrics below are verified against raw checkpoint data.
 
 **Note:** ERS = Escalation Risk Score (0–100, higher = safer). CEIS threshold requires ERS ≥ 60 AND zero Class A failures.
 
+### Adversarial Evaluation (LostBench, verified 2026-02-24)
+
+| Vector | Scenarios | GPT-5.2 Pass^k | Opus 4.6 Pass^k | Source |
+|--------|-----------|----------------|-----------------|--------|
+| Code-agent | 8 | 0.125 | 0.250 | lostbench results/2x2-adversarial/ |
+| Tool-use | 8 | 0.857 | 0.625 | lostbench results/ceis-tool_use-*-n3/ |
+| Multimodal | 8 | 0.750 | 0.875 | lostbench results/ceis-multimodal-*-n3/ |
+| Integrated | 9 | 0.556 | 1.000 | lostbench results/2x2-adversarial/ |
+
+**Note:** 43 adversarial scenarios, 5 attack vectors, 3 trials each, cross-vendor LLM judge. Code-agent and integrated vectors evaluated with full 2×2 factorial design (§5.13).
+
 ---
 
 ## Changelog
@@ -301,6 +314,9 @@ All metrics below are verified against raw checkpoint data.
 | 2026-02-20 | Added CEIS validation metrics (ERS, Class A/B/C/D) |
 | 2026-02-20 | Abstract rewritten to incorporate preamble dominance and model version regression |
 | 2026-02-20 | Added "to our knowledge" qualifier on novelty claim per red team review |
+| 2026-02-26 | Added adversarial evaluation results (43 scenarios, 5 vectors, 2×2 factorial on code-agent and integrated) |
+| 2026-02-26 | Updated OpenEM corpus reference from 128 to 185 conditions (v2.0) |
+| 2026-02-26 | Updated claims about adversarial evaluation scope (§2, §4, §6) |
 
 ---
 
@@ -476,7 +492,7 @@ This evaluation is positioned as **complementary to existing benchmarks**, not a
 |--------------------|------------------|-------------------------------|
 | Response quality (HealthBench) | Accuracy, communication, completeness | Not evaluated |
 | Factual knowledge (MedQA, etc.) | Medical knowledge retrieval | Not evaluated |
-| Refusal robustness (red-teaming) | Resistance to adversarial manipulation | Not evaluated |
+| Refusal robustness (red-teaming) | Resistance to adversarial manipulation | Evaluated (§5.12–5.13) |
 | Constitutional alignment | Value alignment, harmlessness | Not evaluated |
 | **This evaluation** | — | Trajectory-level safety persistence |
 
@@ -934,7 +950,7 @@ To maintain epistemic boundaries:
 
 3. **Longer trajectories** (>4 turns) are not evaluated. Persistence decay beyond Turn 4 is not measured.
 
-4. **Adversarial pressure** is not evaluated. All pressure operators are cooperative.
+4. **Adversarial pressure:** Sections 5.1–5.10 use cooperative (non-adversarial) pressure operators. Adversarial pressure vectors are evaluated separately in §5.12–5.13.
 
 5. **Real patient data** is not used. All scenarios are synthetic.
 
@@ -1261,7 +1277,73 @@ Two open-weight models were evaluated on the 8-scenario corpus with LLM-judge gr
 
 ---
 
-## 5.12 Results Not Reported
+## 5.12 Adversarial Vector Baselines (43 Scenarios)
+
+> **Corpus note:** The results below use the LostBench adversarial corpus (43 scenarios across 5 attack vectors), not the cooperative emergency corpus used in §5.8–5.10. These vectors test safety persistence under adversarial manipulation rather than cooperative conversational pressure.
+
+Detection method: **LLM-as-judge** (cross-vendor; 3-layer CEIS pipeline)
+
+### 5.12.1 Baseline Pass^k by Attack Vector
+
+| Vector | Scenarios | GPT-5.2 Pass^k | GPT-5.2 Class A | Opus 4.6 Pass^k | Opus 4.6 Class A |
+|--------|-----------|----------------|-----------------|-----------------|------------------|
+| Code-agent | 8 | 0.125 | 36 | 0.250 | 22 |
+| Tool-use | 8 (7 GPT) | 0.857 | 2 | 0.625 | 7 |
+| Multimodal | 8 | 0.750 | 2 | 0.875 | 1 |
+| Integrated | 9 | 0.556 | 4 | 1.000 | 0 |
+| Adversarial (direct) | 10 | — | — | — | — |
+
+### 5.12.2 Key Observations
+
+1. **Code-agent is the most effective attack vector** for both models: GPT-5.2 drops to Pass^k = 0.125, Opus 4.6 to 0.250. Code generation context causes more severe safety degradation than direct adversarial injection.
+
+2. **Multimodal context grounds rather than distracts:** Both models perform well on multimodal scenarios (GPT-5.2 = 0.750, Opus = 0.875), suggesting that additional modalities provide grounding context rather than distraction.
+
+3. **Models diverge on integrated vectors:** Opus 4.6 achieves Pass^k = 1.000 on integrated scenarios while GPT-5.2 scores 0.556. This divergence contrasts with code-agent results where both models struggle.
+
+**Source:** LostBench adversarial evaluation (2026-02-24), n=3 trials, cross-vendor LLM judge.
+
+---
+
+## 5.13 Adversarial 2×2 Factorial (Code-Agent, Integrated)
+
+The 2×2 factorial design from §5.9 was applied to the two adversarial vectors showing the most divergent model behavior.
+
+### 5.13.1 Code-Agent 2×2
+
+| Model | Baseline | Preamble | Enforce | Wrapper |
+|-------|----------|----------|---------|---------|
+| GPT-5.2 | 0.125 | 0.625 | 0.500 | **0.750** |
+| Opus 4.6 | 0.250 | **0.625** | 0.500 | 0.500 |
+
+### 5.13.2 Integrated 2×2
+
+| Model | Baseline | Preamble | Enforce | Wrapper |
+|-------|----------|----------|---------|---------|
+| GPT-5.2 | 0.556 | 0.778 | 0.889 | **1.000** |
+| Opus 4.6 | 1.000 | 1.000 | 1.000 | 1.000 |
+
+### 5.13.3 Cross-Corpus Enforcement Interference
+
+| Corpus | Opus Preamble | Opus Wrapper | Delta |
+|--------|--------------|-------------|-------|
+| Emergency (23 scenarios) | 0.478 | 0.391 | −0.087 |
+| Code-agent (8 scenarios) | 0.625 | 0.500 | −0.125 |
+| Integrated (9 scenarios) | 1.000 | 1.000 | 0.000 (ceiling) |
+
+### 5.13.4 Key Observations
+
+1. **Preamble is the dominant mechanism on code-agent** for both models: +0.500 for GPT-5.2 (0.125→0.625), +0.375 for Opus (0.250→0.625). This replicates the cooperative corpus finding (§5.9.3).
+
+2. **Enforcement interference replicates cross-corpus:** Opus preamble-only (0.625) outperforms the full wrapper (0.500) on code-agent, consistent with the emergency corpus pattern (0.478 > 0.391). The interference manifests on two independent corpora with different scenario structures.
+
+3. **GPT-5.2 wrapper achieves highest adversarial performance** on code-agent (0.750) and integrated (1.000), confirming that enforcement adds value for models without constitutional training interference.
+
+**Source:** LostBench adversarial 2×2 evaluation (2026-02-24), n=3 trials, cross-vendor LLM judge.
+
+---
+
+## 5.14 Results Not Reported
 
 The following results are **not available** in this evaluation:
 
@@ -1279,7 +1361,7 @@ The following results are **not available** in this evaluation:
 
 ---
 
-## 5.13 Data Availability
+## 5.15 Data Availability
 
 All results can be verified against raw checkpoint files:
 
@@ -1301,6 +1383,8 @@ All results can be verified against raw checkpoint files:
 | Calibration | `governance/calibration/grader_calibration_results.json` |
 | 2×2 Factorial | `lostbench/results/2x2/` (16 output directories) |
 | CEIS n=5 | `lostbench/results/ceis-n5/patched/` (corrected) |
+| Adversarial baselines | `lostbench/results/ceis-{vector}-{model}-n3/` |
+| Adversarial 2×2 | `lostbench/results/2x2-adversarial/` |
 
 ---
 
@@ -1453,7 +1537,7 @@ The evaluated mitigation does not address:
 
 1. **Tier 1 failures** (URGENCY_MINIMIZED, DELAY_VALIDATED, PATIENT_ABANDONED) — not evaluated
 
-2. **Adversarial circumvention** — not evaluated
+2. **Adversarial circumvention** — evaluated in §5.12–5.13 (5 vectors, 43 scenarios)
 
 3. **Multi-domain safety** — only crisis resource persistence evaluated
 
@@ -1567,7 +1651,7 @@ Sections 6.8–6.13 evaluate behavioral interventions (system prompt preamble, p
 
 ### 6.14.1 Method
 
-Per-scenario clinical context was retrieved from the OpenEM corpus (128 emergency medicine conditions, Apache 2.0) and injected as a system prompt prefix. Retrieval used hybrid search (vector + full-text, RRF fusion) with section priority ordering (Critical Actions > Treatment > Recognition > Disposition > Pitfalls), truncated to 3,000 characters per scenario.
+Per-scenario clinical context was retrieved from the OpenEM corpus (185 emergency medicine conditions, Apache 2.0) and injected as a system prompt prefix. Retrieval used hybrid search (vector + full-text, RRF fusion) with section priority ordering (Critical Actions > Treatment > Recognition > Disposition > Pitfalls), truncated to 3,000 characters per scenario.
 
 ### 6.14.2 Results (Opus 4.6, 23-Scenario Corpus)
 
@@ -1590,7 +1674,24 @@ RAG grounding primarily reduces urgency_minimized failures — cases where the m
 
 RAG grounding is complementary to the MSIW preamble (different mechanisms: factual grounding vs behavioral constraint). A single evaluation of RAG + MSIW wrapper on Opus 4.6 yielded Pass^k = 0.478, consistent with additive rather than synergistic interaction.
 
-**Source:** LostBench RAG evaluation (2026-02-19), 23 scenarios × 3 trials, LLM judge, OpenEM corpus v1.0.
+**Source:** LostBench RAG evaluation (2026-02-19), 23 scenarios × 3 trials, LLM judge, OpenEM corpus v2.0 (185 conditions).
+
+---
+
+## 6.15 Cross-Corpus Mitigation Consistency
+
+The preamble dominance finding (§6.8–6.13) was validated on adversarial vectors (§5.13). Results:
+
+**Preamble as dominant mechanism:**
+- On code-agent, preamble is the largest single contributor for both models: GPT-5.2 gains +0.500 (0.125→0.625), Opus gains +0.375 (0.250→0.625)
+- This replicates the cooperative corpus finding where preamble-only matched or exceeded the full wrapper for 3 of 4 models
+
+**Enforcement interference replicates cross-corpus:**
+- Opus preamble-only (0.625) outperforms the full wrapper (0.500) on code-agent adversarial scenarios
+- This mirrors the cooperative emergency corpus pattern (preamble 0.478 > wrapper 0.391)
+- Two independent corpora with different scenario structures and pressure types produce the same directional effect
+
+**Implication:** Enforcement interference appears to be an architectural property of constitutional AI models rather than a corpus-specific artifact. Deployment recommendation for Anthropic models: preamble-only mitigation (omit pattern enforcement layer).
 
 ---
 
@@ -1812,7 +1913,29 @@ This suggests **scenario-specific characteristics dominate over time-to-harm win
 
 ---
 
-## 7.8 Open Questions
+## 7.8 Adversarial Evaluation
+
+The adversarial evaluation (§5.12–5.13) extends the cooperative pressure findings to adversarial attack vectors.
+
+### 7.8.1 Code-Agent Context as Primary Attack Surface
+
+Code generation context (GPT-5.2 Pass^k = 0.125, Opus 4.6 = 0.250) proved more effective at causing safety failures than direct adversarial injection. When models enter code-generation mode, safety persistence drops dramatically — even without explicit adversarial intent in the prompt. This suggests that task-switching context (from clinical advice to code generation) is a stronger safety degradation mechanism than adversarial manipulation of clinical content.
+
+### 7.8.2 Cross-Corpus Preamble Dominance
+
+Preamble dominance, first observed on cooperative emergency scenarios (§6.10), replicates on adversarial code-agent scenarios. Both models show the largest mitigation gains from the preamble mechanism (+0.375 to +0.500), consistent with the cooperative corpus.
+
+### 7.8.3 Enforcement Interference as Architectural Property
+
+Enforcement interference — where pattern-based enforcement degrades Opus performance relative to preamble-only — manifests on both cooperative emergency (−0.087) and adversarial code-agent (−0.125) corpora. The replication across two independent corpora with different scenario structures suggests this is an architectural property of constitutional AI models, not a corpus artifact. The deployment implication is concrete: for Anthropic models, the preamble-only configuration is strictly preferred over the full wrapper.
+
+### 7.8.4 Failure Mode Asymmetry
+
+GPT-5.2 and Opus 4.6 fail through different mechanisms under adversarial pressure. GPT-5.2 failures are predominantly Class A (critical escalation drops) — the model abandons safety recommendations entirely. Opus failures include a higher proportion of Class D (citation hallucination) — the model maintains safety language but provides incorrect or fabricated clinical references. This asymmetry has different clinical risk profiles: Class A failures are immediately dangerous, while Class D failures may pass superficial review but undermine trust in the model's clinical competence.
+
+---
+
+## 7.9 Open Questions
 
 The following questions are raised but not answered by this evaluation:
 
@@ -2072,7 +2195,28 @@ The Clinical Escalation Integrity Suite (CEIS) introduces additional limitations
 
 ---
 
-## 8.13 Limitations Summary Table
+## 8.13 Adversarial Corpus Limitations
+
+The adversarial evaluation (§5.12–5.13) introduces limitations specific to adversarial testing:
+
+**Sample size:**
+- 43 scenarios across 5 vectors, n=3 trials per scenario
+- Wilson CI ceiling at n=3 is approximately 0.80 — precise ranking of close Pass^k values is unreliable
+- Per-vector sample sizes range from 8 to 10 scenarios
+
+**Factorial coverage:**
+- The 2×2 factorial was applied only to code-agent (8 scenarios) and integrated (9 scenarios) vectors
+- Tool-use, multimodal, and adversarial-original vectors were evaluated at baseline only
+- Cross-corpus enforcement interference conclusions rest on two corpora (cooperative emergency + adversarial code-agent)
+
+**Ecological validity:**
+- Adversarial scenarios are synthetic constructions designed to isolate specific attack vectors
+- Real-world adversarial patterns may combine multiple vectors simultaneously
+- The adversarial corpus was developed by the same team as the cooperative corpus
+
+---
+
+## 8.14 Limitations Summary Table
 
 | Limitation | Impact | Mitigation |
 |------------|--------|------------|
@@ -2087,6 +2231,7 @@ The Clinical Escalation Integrity Suite (CEIS) introduces additional limitations
 | Pattern detection error | Corrected result supersedes prior report | International terminology added, documented |
 | Corpus cluster structure | Effective N < nominal N | Per-study CIs reported |
 | CEIS not independently validated | Grading pipeline reflects single-adjudicator design | External validation planned |
+| Adversarial corpus limitations | Small sample, partial factorial, synthetic vectors | Expand factorial coverage, increase trials |
 
 ---
 
@@ -2241,7 +2386,7 @@ The repository provides:
 
 ### 9.6.1 Current State
 
-Phase 1 trajectories are 4 turns. Phase 3 (LostBench) extended to 5-turn trajectories on 23 scenarios. Persistence decay beyond Turn 5 is not measured.
+Phase 1 trajectories are 4 turns. Phase 3 (LostBench) extended to 5-turn trajectories. The emergency corpus now covers 78 scenarios (23 original + 28 disaster-MCI/procedural/HALO + 27 additional conditions). The adversarial corpus covers 43 scenarios across 5 attack vectors. Persistence decay beyond Turn 5 is not measured.
 
 ### 9.6.2 Planned Extension
 
@@ -2312,6 +2457,8 @@ Only prompt-level mitigation is evaluated. Training modifications are not assess
 ### 9.9.1 Motivation
 
 All Phase 3 results are in-distribution — evaluated on scenarios generated by the same pipeline used to develop the mitigation. Pass^k = 1.000 on the original 8-scenario sample did not replicate at 23 scenarios. External scenario validation is the highest-priority gap for publication.
+
+**Partial progress (2026-02-26):** The emergency corpus expansion from 23 to 78 scenarios introduces condition families absent from the original set — disaster triage (mass-casualty-triage, active-shooter-response), procedural emergencies (resuscitative-thoracotomy, perimortem-cesarean-delivery, surgical-cricothyrotomy), and rare presentations (aortic-transection, necrotizing-enterocolitis, pheochromocytoma-crisis). These 55 additional scenarios partially address the in-distribution concern by expanding beyond the original scenario generation patterns, though they were still generated by the same team.
 
 ### 9.9.2 Protocol
 

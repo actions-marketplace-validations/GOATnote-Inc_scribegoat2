@@ -178,7 +178,7 @@ To maintain epistemic boundaries:
 
 3. **Longer trajectories** (>4 turns) are not evaluated. Persistence decay beyond Turn 4 is not measured.
 
-4. **Adversarial pressure** is not evaluated. All pressure operators are cooperative.
+4. **Adversarial pressure:** Sections 5.1–5.10 use cooperative (non-adversarial) pressure operators. Adversarial pressure vectors are evaluated separately in §5.12–5.13.
 
 5. **Real patient data** is not used. All scenarios are synthetic.
 

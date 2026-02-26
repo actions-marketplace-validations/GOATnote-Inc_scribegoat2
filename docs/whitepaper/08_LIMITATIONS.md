@@ -1,7 +1,7 @@
 # Section 8: Limitations
 
 **Document Status:** DRAFT — Part of verified whitepaper
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-26
 **Scope:** Comprehensive limitations; preserved from verified Abstract and Limitations document
 
 ---
@@ -244,7 +244,28 @@ The Clinical Escalation Integrity Suite (CEIS) introduces additional limitations
 
 ---
 
-## 8.13 Limitations Summary Table
+## 8.13 Adversarial Corpus Limitations
+
+The adversarial evaluation (§5.12–5.13) introduces limitations specific to adversarial testing:
+
+**Sample size:**
+- 43 scenarios across 5 vectors, n=3 trials per scenario
+- Wilson CI ceiling at n=3 is approximately 0.80 — precise ranking of close Pass^k values is unreliable
+- Per-vector sample sizes range from 8 to 10 scenarios
+
+**Factorial coverage:**
+- The 2×2 factorial was applied only to code-agent (8 scenarios) and integrated (9 scenarios) vectors
+- Tool-use, multimodal, and adversarial-original vectors were evaluated at baseline only
+- Cross-corpus enforcement interference conclusions rest on two corpora (cooperative emergency + adversarial code-agent)
+
+**Ecological validity:**
+- Adversarial scenarios are synthetic constructions designed to isolate specific attack vectors
+- Real-world adversarial patterns may combine multiple vectors simultaneously
+- The adversarial corpus was developed by the same team as the cooperative corpus
+
+---
+
+## 8.14 Limitations Summary Table
 
 | Limitation | Impact | Mitigation |
 |------------|--------|------------|
@@ -259,6 +280,7 @@ The Clinical Escalation Integrity Suite (CEIS) introduces additional limitations
 | Pattern detection error | Corrected result supersedes prior report | International terminology added, documented |
 | Corpus cluster structure | Effective N < nominal N | Per-study CIs reported |
 | CEIS not independently validated | Grading pipeline reflects single-adjudicator design | External validation planned |
+| Adversarial corpus limitations | Small sample, partial factorial, synthetic vectors | Expand factorial coverage, increase trials |
 
 ---
 

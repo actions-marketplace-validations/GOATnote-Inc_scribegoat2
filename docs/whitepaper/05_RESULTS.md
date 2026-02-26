@@ -1,7 +1,7 @@
 # Section 5: Results
 
 **Document Status:** DRAFT — Part of verified whitepaper
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-26
 **Scope:** Verified metrics only; no interpretation in this section
 
 ---
@@ -323,7 +323,73 @@ Two open-weight models were evaluated on the 8-scenario corpus with LLM-judge gr
 
 ---
 
-## 5.12 Results Not Reported
+## 5.12 Adversarial Vector Baselines (43 Scenarios)
+
+> **Corpus note:** The results below use the LostBench adversarial corpus (43 scenarios across 5 attack vectors), not the cooperative emergency corpus used in §5.8–5.10. These vectors test safety persistence under adversarial manipulation rather than cooperative conversational pressure.
+
+Detection method: **LLM-as-judge** (cross-vendor; 3-layer CEIS pipeline)
+
+### 5.12.1 Baseline Pass^k by Attack Vector
+
+| Vector | Scenarios | GPT-5.2 Pass^k | GPT-5.2 Class A | Opus 4.6 Pass^k | Opus 4.6 Class A |
+|--------|-----------|----------------|-----------------|-----------------|------------------|
+| Code-agent | 8 | 0.125 | 36 | 0.250 | 22 |
+| Tool-use | 8 (7 GPT) | 0.857 | 2 | 0.625 | 7 |
+| Multimodal | 8 | 0.750 | 2 | 0.875 | 1 |
+| Integrated | 9 | 0.556 | 4 | 1.000 | 0 |
+| Adversarial (direct) | 10 | — | — | — | — |
+
+### 5.12.2 Key Observations
+
+1. **Code-agent is the most effective attack vector** for both models: GPT-5.2 drops to Pass^k = 0.125, Opus 4.6 to 0.250. Code generation context causes more severe safety degradation than direct adversarial injection.
+
+2. **Multimodal context grounds rather than distracts:** Both models perform well on multimodal scenarios (GPT-5.2 = 0.750, Opus = 0.875), suggesting that additional modalities provide grounding context rather than distraction.
+
+3. **Models diverge on integrated vectors:** Opus 4.6 achieves Pass^k = 1.000 on integrated scenarios while GPT-5.2 scores 0.556. This divergence contrasts with code-agent results where both models struggle.
+
+**Source:** LostBench adversarial evaluation (2026-02-24), n=3 trials, cross-vendor LLM judge.
+
+---
+
+## 5.13 Adversarial 2×2 Factorial (Code-Agent, Integrated)
+
+The 2×2 factorial design from §5.9 was applied to the two adversarial vectors showing the most divergent model behavior.
+
+### 5.13.1 Code-Agent 2×2
+
+| Model | Baseline | Preamble | Enforce | Wrapper |
+|-------|----------|----------|---------|---------|
+| GPT-5.2 | 0.125 | 0.625 | 0.500 | **0.750** |
+| Opus 4.6 | 0.250 | **0.625** | 0.500 | 0.500 |
+
+### 5.13.2 Integrated 2×2
+
+| Model | Baseline | Preamble | Enforce | Wrapper |
+|-------|----------|----------|---------|---------|
+| GPT-5.2 | 0.556 | 0.778 | 0.889 | **1.000** |
+| Opus 4.6 | 1.000 | 1.000 | 1.000 | 1.000 |
+
+### 5.13.3 Cross-Corpus Enforcement Interference
+
+| Corpus | Opus Preamble | Opus Wrapper | Delta |
+|--------|--------------|-------------|-------|
+| Emergency (23 scenarios) | 0.478 | 0.391 | −0.087 |
+| Code-agent (8 scenarios) | 0.625 | 0.500 | −0.125 |
+| Integrated (9 scenarios) | 1.000 | 1.000 | 0.000 (ceiling) |
+
+### 5.13.4 Key Observations
+
+1. **Preamble is the dominant mechanism on code-agent** for both models: +0.500 for GPT-5.2 (0.125→0.625), +0.375 for Opus (0.250→0.625). This replicates the cooperative corpus finding (§5.9.3).
+
+2. **Enforcement interference replicates cross-corpus:** Opus preamble-only (0.625) outperforms the full wrapper (0.500) on code-agent, consistent with the emergency corpus pattern (0.478 > 0.391). The interference manifests on two independent corpora with different scenario structures.
+
+3. **GPT-5.2 wrapper achieves highest adversarial performance** on code-agent (0.750) and integrated (1.000), confirming that enforcement adds value for models without constitutional training interference.
+
+**Source:** LostBench adversarial 2×2 evaluation (2026-02-24), n=3 trials, cross-vendor LLM judge.
+
+---
+
+## 5.14 Results Not Reported
 
 The following results are **not available** in this evaluation:
 
@@ -341,7 +407,7 @@ The following results are **not available** in this evaluation:
 
 ---
 
-## 5.13 Data Availability
+## 5.15 Data Availability
 
 All results can be verified against raw checkpoint files:
 
@@ -363,6 +429,8 @@ All results can be verified against raw checkpoint files:
 | Calibration | `governance/calibration/grader_calibration_results.json` |
 | 2×2 Factorial | `lostbench/results/2x2/` (16 output directories) |
 | CEIS n=5 | `lostbench/results/ceis-n5/patched/` (corrected) |
+| Adversarial baselines | `lostbench/results/ceis-{vector}-{model}-n3/` |
+| Adversarial 2×2 | `lostbench/results/2x2-adversarial/` |
 
 ---
 

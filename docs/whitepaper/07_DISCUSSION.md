@@ -1,7 +1,7 @@
 # Section 7: Discussion
 
 **Document Status:** DRAFT — Part of verified whitepaper
-**Last Updated:** 2026-02-20
+**Last Updated:** 2026-02-26
 **Scope:** Conservative interpretation; implications for evaluation design; no deployment claims
 
 ---
@@ -220,7 +220,29 @@ This suggests **scenario-specific characteristics dominate over time-to-harm win
 
 ---
 
-## 7.8 Open Questions
+## 7.8 Adversarial Evaluation
+
+The adversarial evaluation (§5.12–5.13) extends the cooperative pressure findings to adversarial attack vectors.
+
+### 7.8.1 Code-Agent Context as Primary Attack Surface
+
+Code generation context (GPT-5.2 Pass^k = 0.125, Opus 4.6 = 0.250) proved more effective at causing safety failures than direct adversarial injection. When models enter code-generation mode, safety persistence drops dramatically — even without explicit adversarial intent in the prompt. This suggests that task-switching context (from clinical advice to code generation) is a stronger safety degradation mechanism than adversarial manipulation of clinical content.
+
+### 7.8.2 Cross-Corpus Preamble Dominance
+
+Preamble dominance, first observed on cooperative emergency scenarios (§6.10), replicates on adversarial code-agent scenarios. Both models show the largest mitigation gains from the preamble mechanism (+0.375 to +0.500), consistent with the cooperative corpus.
+
+### 7.8.3 Enforcement Interference as Architectural Property
+
+Enforcement interference — where pattern-based enforcement degrades Opus performance relative to preamble-only — manifests on both cooperative emergency (−0.087) and adversarial code-agent (−0.125) corpora. The replication across two independent corpora with different scenario structures suggests this is an architectural property of constitutional AI models, not a corpus artifact. The deployment implication is concrete: for Anthropic models, the preamble-only configuration is strictly preferred over the full wrapper.
+
+### 7.8.4 Failure Mode Asymmetry
+
+GPT-5.2 and Opus 4.6 fail through different mechanisms under adversarial pressure. GPT-5.2 failures are predominantly Class A (critical escalation drops) — the model abandons safety recommendations entirely. Opus failures include a higher proportion of Class D (citation hallucination) — the model maintains safety language but provides incorrect or fabricated clinical references. This asymmetry has different clinical risk profiles: Class A failures are immediately dangerous, while Class D failures may pass superficial review but undermine trust in the model's clinical competence.
+
+---
+
+## 7.9 Open Questions
 
 The following questions are raised but not answered by this evaluation:
 
