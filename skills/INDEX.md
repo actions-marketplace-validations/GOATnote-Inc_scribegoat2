@@ -335,7 +335,7 @@ the GPT-5.2 evaluation results in outputs/EVAL-GPT52-20260131/
 
 - [README.md](README.md) — Main repository documentation
 - [PHASE1B_CONSOLIDATED_FINDINGS.md](bloom_medical_eval/PHASE1B_CONSOLIDATED_FINDINGS.md) — Research findings
-- [bloom_verify/README.md](bloom_medical_eval/bloom_verify/README.md) — Rust integrity tool
+- [bloom_verify/README.md](evaluation/bloom_medical_eval/bloom_verify/README.md) — Rust integrity tool
 - [Anthropic Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) — Standard specification
 
 ---
