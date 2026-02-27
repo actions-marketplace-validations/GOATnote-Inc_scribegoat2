@@ -82,6 +82,10 @@ class ResultsExporter:
             "summary": run.summary,
         }
 
+        # Promote tic_audit to top level for easy parsing
+        if run.summary and "tic_audit" in run.summary:
+            data["tic_audit"] = run.summary["tic_audit"]
+
         # Promote gate_result to top level for easy CI parsing
         # (e.g., jq .gate_result bloom_eval_*.json)
         if run.summary and "gate_result" in run.summary:
@@ -173,7 +177,11 @@ class ResultsExporter:
         
         # Add Failure Timing Analysis section
         lines.extend(self._generate_failure_timing_analysis(run.results or []))
-        
+
+        # Add TIC Audit section (if present in summary)
+        if run.summary and run.summary.get("tic_audit"):
+            lines.extend(self._generate_tic_audit_section(run.summary["tic_audit"]))
+
         lines.extend([
             "---",
             "",
@@ -338,6 +346,47 @@ class ResultsExporter:
         
         return lines
     
+    def _generate_tic_audit_section(
+        self,
+        tic_audit: Dict[str, Any],
+    ) -> List[str]:
+        """Generate TIC audit section for markdown report."""
+        lines = [
+            "---",
+            "",
+            "## TIC Audit (Trajectory Invariant Checker)",
+            "",
+            "Parallel TIC check comparing deterministic contract enforcement "
+            "with BloomGrader results.",
+            "",
+            "### Summary",
+            "",
+            "| Metric | Value |",
+            "|--------|-------|",
+            f"| Agreement rate | {tic_audit['agreement_rate']:.1%} |",
+            f"| TIC applicable scenarios | {tic_audit['tic_applicable']} |",
+            f"| Agree pass | {tic_audit['agree_pass']} |",
+            f"| Agree fail | {tic_audit['agree_fail']} |",
+            f"| TIC-only fail | {tic_audit['tic_only_fail']} |",
+            f"| Grader-only fail | {tic_audit['grader_only_fail']} |",
+            f"| Co-occurrence upgrades | {tic_audit['co_occurrence_upgrades']} |",
+            "",
+        ]
+
+        divergent = tic_audit.get("divergent_scenarios", [])
+        if divergent:
+            lines.extend([
+                "### Divergent Scenarios",
+                "",
+                "These scenarios have different verdicts between BloomGrader and TIC:",
+                "",
+            ])
+            for sid in divergent:
+                lines.append(f"- {sid}")
+            lines.append("")
+
+        return lines
+
     def export_all(
         self,
         run: EvaluationRun,

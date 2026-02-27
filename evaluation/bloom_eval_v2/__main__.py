@@ -206,6 +206,12 @@ Examples:
         ),
     )
 
+    parser.add_argument(
+        "--tic-audit",
+        action="store_true",
+        help="Run TIC checker in parallel and report divergence from BloomGrader",
+    )
+
     return parser.parse_args()
 
 
@@ -488,6 +494,14 @@ def main():
     if holdback_scenarios:
         print(f"  - Holdback: {len(holdback_scenarios)} (for contamination detection)")
     
+    # Initialize TIC auditor (opt-in)
+    tic_auditor = None
+    tic_divergences = []
+    if args.tic_audit:
+        from evaluation.bloom_eval_v2.tic_audit import TICAuditor
+        tic_auditor = TICAuditor()
+        print(f"   TIC audit: ENABLED (contract: {tic_auditor.contract.contract_id} v{tic_auditor.contract.version})")
+
     if args.dry_run:
         print("\n[DRY RUN] Would evaluate:")
         for model_id in args.model:
@@ -495,8 +509,10 @@ def main():
             print(f"  - {model_id} ({provider})")
         for scenario in scenarios:
             print(f"  - {scenario.id}: {scenario.condition}")
+        if tic_auditor:
+            print("  - TIC audit: enabled")
         return
-    
+
     # Initialize clients
     openai_client = None
     anthropic_client = None
@@ -754,7 +770,18 @@ def main():
 
                     # Checkpoint immediately after each result
                     _checkpoint_result(result, model_id, trial)
-                    
+
+                    # TIC audit (deterministic, no API calls)
+                    if tic_auditor is not None:
+                        try:
+                            div = tic_auditor.audit_scenario(scenario, result, model_id)
+                            tic_divergences.append(div)
+                            if args.verbose and div.agreement not in ("agree_pass", "tic_n_a"):
+                                print(f"     TIC: {div.agreement}")
+                        except Exception as e:
+                            if args.verbose:
+                                print(f"     [TIC audit error: {e}]")
+
                     # Add to pass^k reporter
                     pass_k_reporter.add_scenario_result(
                         model_id=model_id,
@@ -840,6 +867,20 @@ def main():
                 "pass_power_k": model_summary.get("overall_pass_power_k", 0),
             }
     
+    # TIC audit summary
+    if tic_auditor and tic_divergences:
+        tic_report = tic_auditor.compute_divergence_report(tic_divergences)
+        summary["tic_audit"] = {
+            "agreement_rate": tic_report.agreement_rate,
+            "tic_applicable": tic_report.tic_applicable,
+            "agree_pass": tic_report.agree_pass,
+            "agree_fail": tic_report.agree_fail,
+            "tic_only_fail": tic_report.tic_only_fail,
+            "grader_only_fail": tic_report.grader_only_fail,
+            "co_occurrence_upgrades": tic_report.co_occurrence_upgrade_count,
+            "divergent_scenarios": [d.scenario_id for d in tic_report.divergent_scenarios],
+        }
+
     # Compute CI gate result
     if args.fail_threshold is not None:
         overall_total = summary["overall"]["total_scenarios"]
@@ -1019,6 +1060,18 @@ def main():
         print("| " + " | ".join(["---"] * len(headers)) + " |")
         for row in comparison:
             print("| " + " | ".join(str(row[h]) for h in headers) + " |")
+
+    # TIC audit summary
+    if summary.get("tic_audit"):
+        ta = summary["tic_audit"]
+        print("\n## TIC Audit")
+        print(f"  - Agreement rate: {ta['agreement_rate']:.1%}")
+        print(f"  - TIC applicable: {ta['tic_applicable']}")
+        print(f"  - Agree pass: {ta['agree_pass']} | Agree fail: {ta['agree_fail']}")
+        print(f"  - TIC-only fail: {ta['tic_only_fail']} | Grader-only fail: {ta['grader_only_fail']}")
+        print(f"  - Co-occurrence upgrades: {ta['co_occurrence_upgrades']}")
+        if ta["divergent_scenarios"]:
+            print(f"  - Divergent: {', '.join(ta['divergent_scenarios'])}")
 
     # GitHub Actions output formatting
     if args.output_format == "github":
