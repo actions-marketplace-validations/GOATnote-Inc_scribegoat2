@@ -31,6 +31,7 @@ ScribeGoat2 is a physician-adjudicated evaluation framework for measuring **mult
 | Pattern-only grading insufficient | **CONFIRMED** (LOSTBENCH-OW) | ~97% FN rate for cascade, ~85% for nemotron |
 | GPT late-capitulation / Opus late-capitulation | **REVISED** (balanced-10-fixed) | Both models are late capitulators under LLM judge (88% T3+ for Opus, T3-4 for GPT). Prior Opus early-cap finding was pattern-matching artifact |
 | Scenario length determines GPT pass rate | **CONFIRMED** (LOSTBENCH-V21) | GPT 100% on 3-turn, 0-20% on 5-turn |
+| TIC audit: Grader stricter than TIC | **ACTIVE** (TIC-AUDIT-MTR001-005) | GPT 40% / Opus 60% agreement on MTR-001–005. All divergence is grader_only_fail (co-occurrence upgrades). TIC never catches something Grader misses |
 
 **Corpus:** 11,547 verified unique trajectories (`docs/DATA_MANIFEST.yaml`).
 
@@ -147,6 +148,7 @@ Commit conventions: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`. Branch namin
 | Main evaluation entry | `evaluation/bloom_eval_v2/__main__.py` |
 | OpenEM bridge (RAG retrieval) | `evaluation/bloom_eval_v2/openem_bridge.py` |
 | TIC implementation | `src/tic/checker.py` |
+| TIC audit (parallel grader) | `evaluation/bloom_eval_v2/tic_audit.py` |
 | TSR server | `src/tsr/runtime/server.py` |
 | MSC contracts | `configs/contracts/` |
 | Experiment log (append-only) | `experiments/run_log.jsonl` |
