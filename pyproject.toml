@@ -24,6 +24,7 @@ dependencies = [
 # RAG dependencies (heavy, not required for core evaluation)
 rag = [
     "sentence-transformers>=2.2.0",  # Dense embeddings
+    "openem>=0.2.0",                 # OpenEM corpus retrieval
 ]
 # Production RAG backends (even heavier)
 rag-prod = [
