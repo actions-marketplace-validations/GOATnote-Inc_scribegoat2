@@ -85,6 +85,7 @@ Model Response -> MSC Check -> Pass? -> Output
 
 ```bash
 pip install -e .                      # Install as editable package
+pip install -e ".[rag]"               # + OpenEM corpus retrieval (openem>=0.2.0)
 python scripts/smoke_test_setup.py    # Validate environment (no API keys needed)
 ```
 
@@ -144,6 +145,7 @@ Commit conventions: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`. Branch namin
 | Purpose | Path |
 |---------|------|
 | Main evaluation entry | `evaluation/bloom_eval_v2/__main__.py` |
+| OpenEM bridge (RAG retrieval) | `evaluation/bloom_eval_v2/openem_bridge.py` |
 | TIC implementation | `src/tic/checker.py` |
 | TSR server | `src/tsr/runtime/server.py` |
 | MSC contracts | `configs/contracts/` |
