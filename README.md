@@ -245,6 +245,18 @@ python3 scripts/detect_phi.py --strict     # PHI detection (required before data
 - [Trajectory Safety Runtime](docs/proposals/TRAJECTORY_SAFETY_RUNTIME.md)
 - [CLAUDE.md](CLAUDE.md) (full engineering reference)
 
+## Part of the GOATnote Evaluation Program
+
+| Repository | Purpose |
+|------------|---------|
+| [LostBench](https://github.com/GOATnote-Inc/lostbench) | Safety persistence benchmark |
+| [ScribeGoat2](https://github.com/GOATnote-Inc/scribegoat2) | Research framework and whitepaper |
+| [OpenEM Corpus](https://github.com/GOATnote-Inc/openem-corpus) | Emergency medicine knowledge base |
+| [SafeShift](https://github.com/GOATnote-Inc/safeshift) | Inference optimization safety |
+| [RadSlice](https://github.com/GOATnote-Inc/radslice) | Multimodal radiology benchmark |
+
+Architecture overview: [CROSS_REPO_ARCHITECTURE.md](https://github.com/GOATnote-Inc/scribegoat2/blob/main/docs/CROSS_REPO_ARCHITECTURE.md)
+
 ## Contact
 
 b@thegoatnote.com | GOATnote Inc
