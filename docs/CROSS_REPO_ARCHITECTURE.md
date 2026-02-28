@@ -1,6 +1,6 @@
-# Cross-Repo Architecture: ScribeGoat2, LostBench, OpenEM
+# Cross-Repo Architecture: GOATnote Platform (5 repos)
 
-Last updated: 2026-02-26
+Last updated: 2026-02-28
 
 ---
 
@@ -73,6 +73,51 @@ Condition categories (20): cardiovascular, neurological, respiratory, gastrointe
 
 Source types: guideline, pubmed, textbook, who, cdc, wikem, review, meta-analysis, **consensus-statement** (new).
 
+### SafeShift (`/Users/kiteboard/safeshift`)
+
+**Role:** Safety degradation benchmark under inference optimization.
+
+Tests whether inference optimizations (quantization, batching, speculative decoding) degrade safety behavior. Core question: "Does making the model faster make it less safe?" Public repo, Apache 2.0.
+
+Key modules:
+
+| Module | Path | Purpose |
+|--------|------|---------|
+| Scenarios | `configs/scenarios/{clinical,robotic}/` | 23 scenarios (15 clinical, 8 robotic) in YAML |
+| Executor | `src/safeshift/executor.py` | Mock/vLLM/API execution with optimization configs |
+| Grader | `src/safeshift/grading/rubric.py` | 3-layer rubric grader (pattern → heuristic → LLM judge) |
+| Patterns | `src/safeshift/grading/patterns.py` | Deterministic pattern checks |
+| Analysis | `src/safeshift/analysis/` | Pareto frontier, cliff-edge detection, regression |
+| OpenEM | `src/safeshift/integration/openem.py` | Optional context enrichment via OpenEM |
+| Optimizations | `configs/optimizations/` | Quantization (fp32→int4), batching, speculative, attention, composite |
+
+Grading dimensions: Safety (0.40), Accuracy (0.25), Completeness (0.15), Timeliness (0.10), Specificity (0.10). Failure classes A–E.
+
+### RadSlice (`/Users/kiteboard/radslice`)
+
+**Role:** Multimodal radiology image interpretation benchmark, grounded in the GOATnote clinical corpus.
+
+Evaluates frontier vision-language models on radiological image interpretation across four modalities (X-ray, CT, MRI, Ultrasound). Unlike standalone radiology benchmarks, each RadSlice task is linked to an OpenEM condition via `condition_id`, with the clinical vignette derived from the real case rather than invented. This ties imaging interpretation directly to the same conditions evaluated by LostBench and ScribeGoat2 for safety persistence.
+
+**Corpus scope:** 131 of 185 OpenEM conditions are imaging-relevant. 68 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
+
+Key modules:
+
+| Module | Path | Purpose |
+|--------|------|---------|
+| Tasks | `configs/tasks/{xray,ct,mri,ultrasound}/` | Task YAMLs, each with `condition_id` → OpenEM |
+| Providers | `src/radslice/providers/` | OpenAI, Anthropic, Google, disk-cached wrapper |
+| Executor | `src/radslice/executor.py` | Async NxM matrix executor (tasks × models × trials) |
+| Patterns | `src/radslice/grading/patterns.py` | Layer 0 deterministic regex checks |
+| Judge | `src/radslice/grading/judge.py` | Layer 2 LLM radiologist judge |
+| Scoring | `src/radslice/scoring.py` | pass@k, pass^k, Wilson CI, bootstrap CI, z-test regression |
+| Analysis | `src/radslice/analysis.py` | Per-modality, per-anatomy breakdowns |
+| Corpus | `corpus/` | Manifest, download script with checksums, annotations |
+
+Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatomic precision (0.15), Clinical relevance (0.15), False positive control (0.10).
+
+**Modality coverage across conditions:** CT (107), Ultrasound (89), X-ray (72), MRI (52). Many conditions have multiple applicable modalities.
+
 ### CEIS (inside LostBench)
 
 **Not a separate project.** The Clinical Escalation Integrity Suite is a module within LostBench: `ceis.py` + `scoring.py` + `patterns.py`. It implements 3-layer grading: deterministic patterns (Layer 0) -> LLM judge (Layer 2) -> failure classification (Class A/B/C/D) -> per-condition EPS with Wilson CI -> corpus-level ERS.
@@ -82,24 +127,32 @@ Source types: guideline, pubmed, textbook, who, cdc, wikem, review, meta-analysi
 ## 2. Dependency Graph
 
 ```
-                    ┌────────────────┐
-                    │  openem-corpus  │
-                    │  (185 conditions│
-                    │   + LanceDB)   │
-                    └───────┬────────┘
-                            │ python/openem/ package
-                   ┌────────┴────────┐
-                   ▼                 ▼
-          ┌─────────────┐    ┌────────────┐
-          │ scribegoat2  │    │  lostbench  │
-          │  (research   │───▶│  (published │
-          │   lab)       │    │  benchmark) │
-          └─────────────┘    └────────────┘
-              derived from ──────┘
-              (conceptual, not code import)
+                         ┌────────────────┐
+                         │  openem-corpus  │
+                         │  (185 conditions│
+                         │   + LanceDB)   │
+                         └───────┬────────┘
+                                 │ python/openem/ package
+                  ┌──────────────┼──────────────┬──────────────┐
+                  ▼              ▼              ▼              ▼
+         ┌─────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
+         │ scribegoat2  │ │  lostbench  │ │  safeshift  │ │  radslice   │
+         │  (research   │─│  (published │ │  (optim     │ │  (radiology │
+         │   lab)       │ │  benchmark) │ │  safety)    │ │  benchmark) │
+         └─────────────┘ └────────────┘ └────────────┘ └────────────┘
+             derived from ──┘              optional         condition_id
+             (conceptual)                  [openem]         links to
+                                                            131/185
+                                                            conditions
 ```
 
-**Critical fact:** There are NO runtime imports between ScribeGoat2 and LostBench. LostBench was derived conceptually from ScribeGoat2 but is a standalone codebase. OpenEM is consumed via a shared `python/openem/` package (index access + bridge logic).
+**Critical facts:**
+
+- There are NO runtime imports between ScribeGoat2, LostBench, SafeShift, or RadSlice. Each is independently installable.
+- LostBench was derived conceptually from ScribeGoat2 but is a standalone codebase.
+- OpenEM is consumed via a shared `python/openem/` package (index access + bridge logic) by ScribeGoat2, LostBench, and SafeShift (optional `[openem]` extra).
+- RadSlice tasks reference OpenEM conditions via `condition_id` (131 imaging-relevant conditions). LostBench scenario IDs (MTR/DEF) are optional cross-references where they exist (68 conditions).
+- SafeShift's OpenEM integration is optional (`pip install safeshift[openem]`).
 
 ---
 
@@ -124,6 +177,17 @@ Three places with different meanings:
 | `src/lostbench/ceis.py` | LostBench | 3-layer pipeline (patterns -> judge -> failure class) |
 | `src/lostbench/judge.py` | LostBench | Judge interface for CEIS Layer 2 |
 
+### "Where does radiology imaging evaluation happen?"
+
+One place only:
+
+| File | Repo | What it does |
+|------|------|-------------|
+| `src/radslice/grading/patterns.py` | RadSlice | Layer 0 deterministic checks (finding regex, laterality, diagnosis) |
+| `src/radslice/grading/judge.py` | RadSlice | Layer 2 LLM radiologist judge (5-dimension rubric) |
+
+RadSlice is the only repo that evaluates multimodal image interpretation. The other repos evaluate text-based safety persistence.
+
 ### "Which patterns are canonical?"
 
 Depends on use case:
@@ -146,6 +210,8 @@ Both repos import `openem.bridge.OpenEMBridge` from the shared `python/openem/` 
 | `src/lostbench/openem.py` | LostBench | Thin wrapper: condition map + condition-string interface |
 | `python/openem/bridge.py` | OpenEM | Shared retrieval logic (dedup, priority, char budget) |
 | `python/openem/index.py` | OpenEM | Index access (LanceDB hybrid search) |
+| `src/safeshift/integration/openem.py` | SafeShift | Thin wrapper: auto-discovers index dir from openem package |
+| Task YAMLs (`condition_id` field) | RadSlice | Links each task to an OpenEM condition (no bridge import — reference only) |
 
 ### "I want to add a new scenario"
 
@@ -170,12 +236,15 @@ The retrieval logic (dedup, section priority, context building within char budge
 |------|------|-------|-------|
 | `src/metrics/confidence_intervals.py` | ScribeGoat2 | 421 | Rich `IntervalResult` dataclass, scipy/numpy optional |
 | `src/lostbench/scoring.py` | LostBench | 272 | Simple tuple returns, stdlib-only, CEIS-specific metrics on top |
+| `src/radslice/scoring.py` | RadSlice | ~200 | pass@k, pass^k, Wilson CI, bootstrap, z-test for radiology tasks |
+| `src/safeshift/analysis/regression.py` | SafeShift | ~150 | Wilson CI + z-test for degradation analysis |
 
-The Wilson score formula is 5 lines of math — the same in both repos. But the surrounding APIs are different:
+The Wilson score formula is 5 lines of math — the same in all repos. But the surrounding APIs are different:
 - ScribeGoat2 returns `IntervalResult` dataclasses with warnings, methods, numpy bootstrap
 - LostBench returns `(lower, upper)` tuples with `random.Random` bootstrap
+- RadSlice and SafeShift each have domain-specific scoring on top (radiology dimensions, optimization-axis breakdowns)
 
-LostBench also adds CEIS-specific scoring (ERS, CRS, harm-weighted pass rate, z-test regression detection) that ScribeGoat2 doesn't need. Forcing a shared dependency for 5 lines of duplicated math would add unnecessary complexity.
+Forcing a shared dependency for 5 lines of duplicated math would add unnecessary complexity across 4 independently installable repos.
 
 ### Intentionally different: Pattern matching
 
@@ -202,24 +271,27 @@ Different philosophies by design. One explores what interventions work; the othe
 
 | Pipeline | Repo | Classes | Purpose |
 |----------|------|---------|---------|
-| BloomGrader | ScribeGoat2 | 2-class (persistence/capitulation) | Broad research |
-| CEIS | LostBench | 4-level escalation, 4-class failure (A/B/C/D) | Focused benchmark |
+| BloomGrader | ScribeGoat2 | 2-class (persistence/capitulation) | Broad safety research |
+| CEIS | LostBench | 4-level escalation, 4-class failure (A/B/C/D) | Clinical escalation benchmark |
+| RubricGrader | SafeShift | 5-dimension, failure classes A–E | Optimization safety degradation |
+| RadSlice Grader | RadSlice | 5-dimension radiology rubric | Image interpretation accuracy |
 
-Complementary evaluation frameworks, not duplicates.
+Four complementary evaluation frameworks measuring different aspects of model behavior. None are duplicates — they test different modalities (text vs image), different failure modes (safety capitulation vs diagnostic error), and different optimization conditions.
 
 ---
 
 ## 5. Scenario Formats
 
-| Property | ScribeGoat2 | LostBench |
-|----------|-------------|-----------|
-| Format | Python dataclasses | YAML files |
-| Count | 300+ escalation, 100+ defer | 50 emergency, 3 crisis, 15 defer, 10 adversarial, 8 tool-use, 8 code-agent, 8 multimodal, 9 integrated (111 total) |
-| Loader | `scenarios/loader.py` | YAML glob |
-| Metadata | ESI level, red flags, clinical notes | CEIS severity weight, condition ID |
-| Shared | No | No |
+| Property | ScribeGoat2 | LostBench | SafeShift | RadSlice |
+|----------|-------------|-----------|-----------|----------|
+| Format | Python dataclasses | YAML files | YAML files | YAML files |
+| Count | 300+ escalation, 100+ defer | 111 total (50 emergency, 15 defer, 43 adversarial) | 23 (15 clinical, 8 robotic) | ~131 imaging tasks across 4 modalities |
+| Loader | `scenarios/loader.py` | YAML glob | `scenario.py` | `task.py` |
+| Metadata | ESI level, red flags, clinical notes | CEIS severity weight, condition ID | Optimization config, safety dimension weights | `condition_id` → OpenEM, modality, anatomy, ground truth, confusion pairs |
+| OpenEM link | Condition map wrapper | Condition map wrapper | Optional `[openem]` extra | `condition_id` field (reference, not import) |
+| Shared | No | No | No | No |
 
-If the team wants to run the same scenarios through both pipelines in the future, standardizing on YAML (LostBench's format) and writing a ScribeGoat2 YAML loader would be the path. This is high effort / moderate benefit and only worth doing if there's a concrete need.
+All four downstream repos use independent scenario/task formats. The common thread is `condition_id` — OpenEM condition identifiers that enable cross-repo analysis.
 
 ---
 
@@ -229,12 +301,16 @@ If the team wants to run the same scenarios through both pipelines in the future
 |--------|---------------|-------|
 | pass^k | `src/metrics/confidence_intervals.py` | ScribeGoat2 |
 | pass^k (scenario-level AND) | `src/lostbench/scoring.py` | LostBench |
-| Wilson CI | Both `confidence_intervals.py` and `scoring.py` | Both |
+| pass@k / pass^k (per-task) | `src/radslice/scoring.py` | RadSlice |
+| Wilson CI | `confidence_intervals.py`, `scoring.py` | SG2, LB, RS, SS |
 | ERS (Escalation Risk Score) | `src/lostbench/scoring.py` | LostBench only |
 | CRS (Condition Risk Score) | `src/lostbench/scoring.py` | LostBench only |
 | Harm-weighted pass rate | `src/lostbench/scoring.py` | LostBench only |
-| Bootstrap CI | Both repos (numpy in SG2, stdlib in LB) | Both |
-| Regression z-test | `src/lostbench/scoring.py` | LostBench only |
+| Bootstrap CI | numpy (SG2), stdlib (LB, RS) | SG2, LB, RS |
+| Regression z-test | `scoring.py` | LB, RS, SS |
+| Pareto frontier | `src/safeshift/analysis/pareto.py` | SafeShift only |
+| Cliff-edge detection | `src/safeshift/analysis/degradation.py` | SafeShift only |
+| Per-modality/anatomy breakdown | `src/radslice/analysis.py` | RadSlice only |
 
 ---
 
@@ -295,10 +371,14 @@ ScribeGoat2 defines **what** to evaluate and **how** to prioritize findings. Los
 
 ## 8. Long-Term Considerations
 
-1. **No runtime imports between repos is intentional.** ScribeGoat2 is the research lab; LostBench is the published benchmark. They should remain independently installable.
+1. **No runtime imports between repos is intentional.** ScribeGoat2 is the research lab; LostBench is the published benchmark; SafeShift tests optimization safety; RadSlice tests imaging interpretation. All five repos should remain independently installable.
 
 2. **CEIS is not its own project.** Engineers looking for a "CEIS repo" won't find one. It's `lostbench/src/lostbench/ceis.py` + `scoring.py` + `patterns.py`.
 
-3. **OpenEM bridge is the one true shared dependency.** The `python/openem/` package in `openem-corpus` is the only code shared between repos at import time.
+3. **OpenEM is the shared clinical knowledge layer.** The `python/openem/` package in `openem-corpus` is the only code shared between repos at import time (ScribeGoat2, LostBench, SafeShift). RadSlice references OpenEM conditions by ID but does not import the package at runtime.
 
-4. **Monorepo vs independent repos:** Current approach (independent repos + shared OpenEM package) works well. A monorepo would only be justified if the team needs tight cross-repo CI or shared scenario formats.
+4. **RadSlice condition_id is the cross-repo join key.** Each RadSlice imaging task links to an OpenEM condition, and 68 of those conditions also have LostBench scenario IDs. This enables cross-cutting analysis: "for condition X, how does the model perform on safety persistence (LostBench) vs imaging interpretation (RadSlice)?"
+
+5. **Monorepo vs independent repos:** Current approach (5 independent repos + shared OpenEM package) works well. A monorepo would only be justified if the team needs tight cross-repo CI or shared scenario formats.
+
+6. **Imaging coverage gaps.** 63 imaging-relevant OpenEM conditions have no LostBench scenario. These represent conditions where RadSlice can evaluate imaging but there is no corresponding safety persistence evaluation.
