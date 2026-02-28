@@ -164,6 +164,15 @@ Commit conventions: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`. Branch namin
 | FHIR profile validators | `src/fhir/profiles.py` |
 | FHIR ED realism tests | `tests/test_fhir_ed_realism.py` |
 
+### Sibling Repos (5 GOATnote repos total)
+
+| Repo | Role | Link to ScribeGoat2 |
+|------|------|---------------------|
+| [LostBench](https://github.com/GOATnote-Inc/lostbench) | Published safety benchmark (CEIS grading) | Derived conceptually; 111 scenarios |
+| [OpenEM](https://github.com/GOATnote-Inc/openem-corpus) | Clinical knowledge corpus (185 conditions) | Shared `python/openem/` package for RAG |
+| [SafeShift](https://github.com/GOATnote-Inc/safeshift) | Safety degradation under inference optimization | Optional OpenEM integration |
+| [RadSlice](https://github.com/GOATnote-Inc/radslice) | Multimodal radiology benchmark (320 tasks) | 133 OpenEM conditions, 65 LostBench cross-refs |
+
 Cross-repo architecture: see [`docs/CROSS_REPO_ARCHITECTURE.md`](docs/CROSS_REPO_ARCHITECTURE.md)
 
 ---
