@@ -113,6 +113,7 @@ Key modules:
 | Module | Path | Purpose |
 |--------|------|---------|
 | Tasks | `configs/tasks/{xray,ct,mri,ultrasound}/` | Task YAMLs, each with `condition_id` → OpenEM |
+| DICOM | `src/radslice/dicom.py` | DICOM loading, windowing, metadata extraction; `pip install radslice[dicom-codecs]` for JPEG Lossless/2000 |
 | Providers | `src/radslice/providers/` | OpenAI, Anthropic, Google, disk-cached wrapper |
 | Executor | `src/radslice/executor.py` | Async NxM matrix executor (tasks × models × trials) |
 | Patterns | `src/radslice/grading/patterns.py` | Layer 0 deterministic regex checks |
@@ -195,6 +196,7 @@ Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatom
 - OpenEM is consumed via a shared `python/openem/` package (index access + bridge logic) by ScribeGoat2, LostBench, and SafeShift (optional `[openem]` extra).
 - RadSlice tasks reference OpenEM conditions via `condition_id` (131 imaging-relevant conditions). LostBench scenario IDs (MTR/DEF) are optional cross-references where they exist (68 conditions).
 - SafeShift's OpenEM integration is optional (`pip install safeshift[openem]`).
+- RadSlice's compressed DICOM codec support is optional (`pip install radslice[dicom-codecs]` — JPEG Lossless, JPEG 2000). Uncompressed DICOMs work with the base install.
 - **Bidirectional knowledge flow (v0.3.0):** `scripts/scan_repos.py` scans downstream repos for condition-level insights (pressure vulnerability, escalation boundaries, imaging modalities) and proposes enrichments to OpenEM condition records. Data flows DOWN (RAG grounding) and UP (clinical insights). The upward flow is report-only — never auto-writes to corpus files.
 
 ---
