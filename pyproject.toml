@@ -85,6 +85,7 @@ markers = [
     "integration: tests that require external API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY)",
 ]
 addopts = "-v --tb=short"
+timeout = 300
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
