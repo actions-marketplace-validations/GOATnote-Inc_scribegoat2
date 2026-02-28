@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: GOATnote Platform (5 repos)
 
-Last updated: 2026-02-28
+Last updated: 2026-02-28 (v2 — OpenEM 0.3.0 FHIR + knowledge flow)
 
 ---
 
@@ -56,9 +56,9 @@ Key modules:
 
 ### OpenEM (`/Users/kiteboard/openem-corpus`)
 
-**Role:** Clinical knowledge corpus.
+**Role:** Clinical knowledge corpus + FHIR export + cross-repo knowledge aggregation.
 
-185 emergency medicine conditions across 20 clinical categories as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by both ScribeGoat2 and LostBench for RAG grounding.
+185 emergency medicine conditions across 20 clinical categories as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by ScribeGoat2, LostBench, and SafeShift for RAG grounding. As of v0.3.0, also generates synthetic FHIR R4 Bundles from condition presentation profiles and scans downstream repos for condition-level clinical insights.
 
 Key files:
 
@@ -66,7 +66,12 @@ Key files:
 |------|---------|
 | `corpus/tier1/conditions/*.md` | 185 conditions across 20 categories |
 | `data/index/openem.lance/` | Pre-built vector index (1945 chunks, PubMedBERT 768d) |
-| `python/openem/` | Shared Python package (index + bridge) |
+| `python/openem/` | Shared Python package (index + bridge + fhir + insights) |
+| `python/openem/fhir.py` | FHIR R4 Bundle generator from presentation profiles |
+| `python/openem/insights.py` | Bidirectional knowledge flow (condition insights aggregation) |
+| `fhir/presentations/*.yaml` | 8 YAML presentation profiles (vitals, labs, ICD-10, LOINC) |
+| `scripts/generate_fhir.py` | CLI: generate FHIR bundles (`--all`, `--validate`, `--condition`) |
+| `scripts/scan_repos.py` | CLI: scan downstream repos for condition enrichment proposals |
 | `evaluation/retrieval_ground_truth.jsonl` | 58 retrieval evaluation queries |
 
 Condition categories (20): cardiovascular, neurological, respiratory, gastrointestinal, genitourinary, obstetric-gynecologic, endocrine-metabolic, infectious, musculoskeletal, hematologic, toxicologic, traumatic, environmental, psychiatric, pediatric, ophthalmologic, dermatologic, allergic-immunologic, **disaster-mci** (new), **procedural** (new).
@@ -130,7 +135,9 @@ Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatom
                          ┌────────────────┐
                          │  openem-corpus  │
                          │  (185 conditions│
-                         │   + LanceDB)   │
+                         │   + LanceDB    │
+                         │   + FHIR export│
+                         │   + insights)  │
                          └───────┬────────┘
                                  │ python/openem/ package
                   ┌──────────────┼──────────────┬──────────────┐
@@ -144,6 +151,14 @@ Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatom
              (conceptual)                  [openem]         links to
                                                             131/185
                                                             conditions
+                  ▲              ▲              ▲              ▲
+                  └──────────────┴──────────────┴──────────────┘
+                                 │ scan_repos.py (knowledge flow UP)
+                         ┌───────┴────────┐
+                         │  openem-corpus  │
+                         │  (insights      │
+                         │   aggregation)  │
+                         └────────────────┘
 ```
 
 **Critical facts:**
@@ -153,6 +168,7 @@ Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatom
 - OpenEM is consumed via a shared `python/openem/` package (index access + bridge logic) by ScribeGoat2, LostBench, and SafeShift (optional `[openem]` extra).
 - RadSlice tasks reference OpenEM conditions via `condition_id` (131 imaging-relevant conditions). LostBench scenario IDs (MTR/DEF) are optional cross-references where they exist (68 conditions).
 - SafeShift's OpenEM integration is optional (`pip install safeshift[openem]`).
+- **Bidirectional knowledge flow (v0.3.0):** `scripts/scan_repos.py` scans downstream repos for condition-level insights (pressure vulnerability, escalation boundaries, imaging modalities) and proposes enrichments to OpenEM condition records. Data flows DOWN (RAG grounding) and UP (clinical insights). The upward flow is report-only — never auto-writes to corpus files.
 
 ---
 
@@ -210,8 +226,37 @@ Both repos import `openem.bridge.OpenEMBridge` from the shared `python/openem/` 
 | `src/lostbench/openem.py` | LostBench | Thin wrapper: condition map + condition-string interface |
 | `python/openem/bridge.py` | OpenEM | Shared retrieval logic (dedup, priority, char budget) |
 | `python/openem/index.py` | OpenEM | Index access (LanceDB hybrid search) |
+| `python/openem/fhir.py` | OpenEM | FHIR R4 Bundle generation from presentation profiles |
+| `python/openem/insights.py` | OpenEM | Cross-repo condition insight aggregation |
 | `src/safeshift/integration/openem.py` | SafeShift | Thin wrapper: auto-discovers index dir from openem package |
 | Task YAMLs (`condition_id` field) | RadSlice | Links each task to an OpenEM condition (no bridge import — reference only) |
+
+### "How does the FHIR export work?"
+
+OpenEM v0.3.0 generates synthetic FHIR R4 Bundles from YAML presentation profiles. Each profile defines clinically appropriate vitals, labs, and conditions for one OpenEM condition. The generator produces deterministic (seeded) JSON bundles suitable for evaluating system-facing AI (prior auth, CDS Hooks, EHR copilot, triage routing).
+
+| File | Repo | Role |
+|------|------|------|
+| `fhir/presentations/*.yaml` | OpenEM | 8 presentation profiles (vitals, labs, ICD-10-CM, LOINC) |
+| `python/openem/fhir.py` | OpenEM | Generator: `load_presentation()` → `generate_bundle()` |
+| `scripts/generate_fhir.py` | OpenEM | CLI: `--condition`, `--all`, `--validate`, `--seed` |
+| `schemas/presentation.schema.yaml` | OpenEM | JSON Schema for presentation profiles |
+| `fhir/bundles/` | OpenEM | Generated output (gitignored) |
+
+POC covers 8 MSTS conditions: anaphylaxis, neonatal-emergencies, testicular-torsion, diabetic-ketoacidosis, bacterial-meningitis, subarachnoid-hemorrhage, stemi, acute-limb-ischemia.
+
+### "How does the knowledge flow work?"
+
+`scripts/scan_repos.py` scans downstream repos for condition-level clinical insights and proposes enrichments to OpenEM condition records. It produces a report — never auto-writes to corpus files.
+
+| Source Repo | What's Extracted | Parser |
+|-------------|-----------------|--------|
+| LostBench | Pressure vulnerability, escalation boundaries, mitigation effectiveness, code-agent surface | Seeds persistence findings + scenario YAMLs |
+| RadSlice | Imaging modalities, confusion pairs per condition | Task YAML `condition_id` → modality mapping |
+| SafeShift | (Stub — no condition_ids in scenarios yet) | — |
+| ScribeGoat2 | (Stub — FINDINGS.md format unstable) | — |
+
+Proposed enrichments use the optional `evaluation_properties` schema extension added to `schemas/condition.schema.yaml`. All fields are optional; no existing condition files need to change.
 
 ### "I want to add a new scenario"
 
@@ -382,3 +427,7 @@ ScribeGoat2 defines **what** to evaluate and **how** to prioritize findings. Los
 5. **Monorepo vs independent repos:** Current approach (5 independent repos + shared OpenEM package) works well. A monorepo would only be justified if the team needs tight cross-repo CI or shared scenario formats.
 
 6. **Imaging coverage gaps.** 63 imaging-relevant OpenEM conditions have no LostBench scenario. These represent conditions where RadSlice can evaluate imaging but there is no corresponding safety persistence evaluation.
+
+7. **FHIR export is additive.** Presentation profiles are authored independently of condition Markdown files. Vitals/labs live in `fhir/presentations/`, not in structured YAML frontmatter. This avoids migrating 185 condition files. The 8-condition POC covers the MSTS core scenarios; extending to all 185 conditions is deferred.
+
+8. **Knowledge flow is read-only.** `scan_repos.py` produces enrichment proposals for human review. It never auto-writes to condition files. The `evaluation_properties` schema extension is optional — existing conditions validate without it. Repos can also export a standardized `condition_insights.yaml` as structured input (preferred over markdown parsing).
