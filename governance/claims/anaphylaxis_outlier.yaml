@@ -1,0 +1,138 @@
+# Claim: Anaphylaxis Outlier
+
+id: "CLM-2026-0014"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Anaphylaxis (biphasic post-EpiPen) causes anomalously high failure rates
+  for Opus models — 11.78% compared to <1% for all other conditions. This
+  single condition accounts for 78% of Claude's total failures (63/81) in
+  the MSTS corpus (N=8,000). The failure mode involves the model providing
+  post-EpiPen monitoring guidance that constitutes operational substitution,
+  likely because the biphasic risk framing creates ambiguity about whether
+  the immediate emergency has resolved.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0014-A"
+    assertion: "Opus anaphylaxis failure rate is 11.78% (vs <1% for all other conditions)"
+    evidence:
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "opus.per_condition.anaphylaxis_biphasic.failure_rate"
+        value: 0.1178
+        access_date: "2026-02-28"
+
+  - id: "CLM-2026-0014-B"
+    assertion: "78% of Claude's total MSTS failures (63/81) are on the anaphylaxis condition"
+    evidence:
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "opus.failure_concentration.anaphylaxis_biphasic"
+        value: 0.78
+        access_date: "2026-02-28"
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "opus.failure_count.anaphylaxis_biphasic"
+        value: 63
+        access_date: "2026-02-28"
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "opus.failure_count.total"
+        value: 81
+        access_date: "2026-02-28"
+    interpretation: |
+      Removing anaphylaxis from the corpus would reduce Opus failure rate
+      from ~1.01% to ~0.22%. This extreme concentration suggests a
+      condition-specific vulnerability rather than a general safety weakness.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Scenario redesign (removing dosing question component) reduces anaphylaxis failure rate to <2%"
+    interpretation: "Failure is driven by scenario framing (dosing question), not the condition itself"
+    status: "Not triggered"
+
+  - id: "FALS-002"
+    condition: "Failure rate does not replicate with a different judge (e.g., physician panel or alternative LLM judge)"
+    interpretation: "11.78% rate is a judging artifact — the responses are actually safe"
+    status: "Not triggered"
+
+  - id: "FALS-003"
+    condition: "Other conditions show comparable failure rates (>5%) when tested at equivalent scale"
+    interpretation: "Anaphylaxis is not an outlier; it was just tested more thoroughly"
+    status: "Not triggered — N=8,000 corpus covers multiple conditions at scale"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim models cannot correctly identify anaphylaxis as an emergency"
+    explanation: "Initial recognition is typically correct; failure is in post-EpiPen persistence"
+
+  - statement: "We do not claim this is unique to Opus"
+    explanation: "GPT also shows anaphylaxis sensitivity, though at lower rates"
+
+  - statement: "We do not claim the 11.78% rate is precise across all evaluation methodologies"
+    explanation: "Rate is under cross-vendor LLM judging; physician adjudication may differ"
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/msts-crossvendor-v2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "MSTS corpus N=8,000, cross-vendor LLM judge, per-condition breakdown"
+
+  supporting:
+    - source: "experiments/run_log.jsonl"
+      type: "quantitative"
+      weight: "supporting"
+      description: "Run log entries showing anaphylaxis failure concentration"
+
+    - source: "lostbench/PHASE3_FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Narrative analysis of anaphylaxis outlier behavior"
+
+  calibration:
+    - source: "lostbench/results/msts-crossvendor-v2/"
+      type: "methodological"
+      weight: "supporting"
+      description: "Cross-vendor judging controls for vendor-specific judge bias"
+
+## Limitations
+
+limitations:
+  - limitation: "Single corpus (MSTS) at primary evidence scale"
+    impact: "Rate may differ on differently-framed anaphylaxis scenarios"
+    mitigation: "LostBench adversarial corpus includes additional anaphylaxis variants"
+
+  - limitation: "Biphasic framing may be specifically tricky"
+    impact: "Other anaphylaxis framings (e.g., initial presentation) may not show this rate"
+    mitigation: "Test multiple anaphylaxis presentation types"
+
+  - limitation: "Cross-vendor judge, not physician gold standard"
+    impact: "Some 'failures' may be judging disagreements about post-EpiPen guidance"
+    mitigation: "Physician review of anaphylaxis failure cases prioritized"
+
+  - limitation: "Concentration metric (78%) depends on overall low Opus failure count"
+    impact: "If total failures were higher, concentration would be lower even at same absolute rate"
+    mitigation: "Report both absolute rate (11.78%) and concentration (78%) for context"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on MSTS cross-vendor regrade and per-condition failure analysis"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

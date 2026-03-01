@@ -1,0 +1,134 @@
+# Claim: 82.4% Aggregate Violation Rate
+
+id: "CLM-2026-0002"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Models exhibit an 82.4% aggregate violation rate (N=11,547) across trajectory-level
+  safety evaluations. This represents the proportion of trajectories where the model
+  capitulated on emergency escalation recommendations under sustained naturalistic
+  pressure, measured across both GPT-5.2 and Opus 4.5/4.6 model families.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0002-A"
+    assertion: "Aggregate violation rate is 82.4% across 11,547 unique trajectories"
+    evidence:
+      - artifact: "experiments/run_log.jsonl"
+        field: "aggregate_violation_rate"
+        value: 0.824
+        ci_95: [0.801, 0.845]
+        access_date: "2026-02-27"
+      - artifact: "docs/DATA_MANIFEST.yaml"
+        field: "trajectory_count"
+        value: 11547
+        access_date: "2026-02-27"
+    interpretation: |
+      Computed across MSTS-1000 (N=1,000 SUI + N=180 PED pilot) and February
+      large-scale evaluations. Wilson 95% CI [80.1%, 84.5%]. Neither model family
+      meets pass^5 >= 95% deployment threshold.
+
+  - id: "CLM-2026-0002-B"
+    assertion: "Neither model family meets pass^5 >= 0.95 deployment gate"
+    evidence:
+      - artifact: "experiments/FINDINGS.md"
+        field: "deployment_readiness"
+        value: "no_model_qualifies"
+        access_date: "2026-02-27"
+    interpretation: |
+      pass^k = success_rate^k. With violation rate 82.4%, even the best
+      configuration's success rate (17.6%) yields pass^5 near zero.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Aggregate violation rate drops below 50% on an independent scenario set of ≥100 scenarios"
+    interpretation: "Core finding would not hold — violation is the exception, not the norm"
+    status: "Not triggered"
+
+  - id: "FALS-002"
+    condition: "Counting methodology shown to double-count trajectories (inflating N or rate)"
+    interpretation: "Statistical artifact rather than genuine violation prevalence"
+    test: |
+      Verify uniqueness of trajectory IDs in docs/DATA_MANIFEST.yaml.
+      Check for duplicate scenario × model × seed × trial combinations.
+    status: "Not triggered — 11,547 verified unique via DATA_MANIFEST.yaml dedup"
+
+  - id: "FALS-003"
+    condition: "LLM judge grading shown to have >20% false positive rate on physician-reviewed subset"
+    interpretation: "Violation rate inflated by over-strict judge"
+    status: "Not triggered — TIC audit shows grader is stricter than TIC, but all divergences are grader_only_fail (not grader_only_pass)"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim all models fail at the same rate"
+    explanation: "Per-model rates vary (GPT-5.2 lower baseline than Opus 4.5). 82.4% is the aggregate."
+
+  - statement: "We do not claim this rate is fixed across time"
+    explanation: "Model updates may change violation rates. Claim reflects Feb 2026 snapshot."
+
+  - statement: "We do not claim all violation types are equally severe"
+    explanation: "Violations range from full capitulation to co-occurrence (emergency + monitoring). Severity stratification in CEIS failure classes (A-D)."
+
+  - statement: "We do not claim the rate generalizes beyond emergency medicine scenarios"
+    explanation: "Corpus covers emergency escalation and defer scenarios only."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "experiments/run_log.jsonl"
+      type: "quantitative"
+      weight: "primary"
+      description: "98 logged experiments with aggregate violation metrics"
+    - source: "docs/DATA_MANIFEST.yaml"
+      type: "quantitative"
+      weight: "primary"
+      description: "11,547 verified unique trajectory manifest"
+
+  supporting:
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Narrative synthesis of all evaluation campaigns"
+    - source: "evaluation/bloom_eval_v2/METHODOLOGY.md"
+      type: "methodological"
+      weight: "supporting"
+      description: "Evaluation methodology including judge calibration"
+
+## Limitations
+
+limitations:
+  - limitation: "Emergency medicine domain only"
+    impact: "Rate may differ for other clinical specialties or non-medical safety domains"
+    mitigation: "Explicit scope boundary. Cross-domain extension planned via SafeShift/RadSlice"
+
+  - limitation: "Two model families dominate the corpus"
+    impact: "Aggregate skewed by GPT-5.2 and Opus 4.5/4.6 representation"
+    mitigation: "Open-weight models (Nemotron, Cascade) evaluated separately in LostBench"
+
+  - limitation: "Synthetic scenario pressure"
+    impact: "Real-world pressure patterns may differ from scenario scripts"
+    mitigation: "Scenarios validated by practicing emergency physicians"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on accumulated evidence from 98 experiments (N=11,547)"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

@@ -1,0 +1,127 @@
+# Claim: RAG Grounding Lifts Pass^k
+
+id: "CLM-2026-0009"
+status: "provisional"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  RAG grounding via OpenEM corpus lifts Opus 4.6 Pass^k from 0.217 to 0.391
+  (+0.174 absolute), primarily by reducing urgency_minimized failures. The
+  OpenEM retrieval layer provides condition-specific clinical context that
+  anchors the model's safety persistence, cutting urgency_minimized failures
+  by approximately 65%.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0009-A"
+    assertion: "Opus 4.6 Pass^k increases from 0.217 (baseline) to 0.391 (RAG-augmented)"
+    evidence:
+      - artifact: "evaluation/bloom_eval_v2/results/rag_v2_opus46_openem/"
+        field: "metrics.pass_k"
+        value: 0.391
+        access_date: "2026-02-27"
+      - artifact: "evaluation/bloom_eval_v2/results/rag_v2_opus46_openem/"
+        field: "metrics.pass_k_baseline"
+        value: 0.217
+        access_date: "2026-02-27"
+
+  - id: "CLM-2026-0009-B"
+    assertion: "urgency_minimized failure class reduced by ~65% under RAG grounding"
+    evidence:
+      - artifact: "evaluation/bloom_eval_v2/results/rag_v2_opus46_openem/"
+        field: "metrics.failure_classes.urgency_minimized"
+        value: -0.65
+        access_date: "2026-02-27"
+    interpretation: |
+      OpenEM retrieval provides condition-specific escalation triggers and
+      time-to-harm data that directly counter urgency_minimized failures.
+      The model anchors on retrieved evidence rather than capitulating to
+      patient pressure to downgrade urgency.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Effect fails to replicate on a second model (e.g., GPT-5.2)"
+    interpretation: "RAG grounding benefit is Opus-specific, not generalizable"
+    status: "Not triggered — only tested on Opus 4.6 so far"
+
+  - id: "FALS-002"
+    condition: "urgency_minimized reduction disappears on independent scenarios not in the original 23"
+    interpretation: "Benefit is scenario-specific, not a general mechanism"
+    status: "Not triggered — tested on 23 LostBench scenarios only"
+
+  - id: "FALS-003"
+    condition: "Pass^k improvement disappears when using a non-OpenEM knowledge source of equivalent size"
+    interpretation: "Any retrieval helps equally; the effect is not OpenEM-specific"
+    status: "Not triggered"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim RAG grounding alone achieves deployment-ready Pass^k (0.391 < 0.95 gate)"
+    explanation: "RAG is complementary to preamble and enforcement, not a standalone mitigation"
+
+  - statement: "We do not claim all failure classes benefit equally from RAG grounding"
+    explanation: "urgency_minimized shows dominant improvement; other classes may not respond"
+
+  - statement: "We do not claim the effect is independent of retrieval quality or corpus coverage"
+    explanation: "OpenEM coverage gaps (e.g., missing conditions) could limit benefit"
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "evaluation/bloom_eval_v2/results/rag_v2_opus46_openem/"
+      type: "quantitative"
+      weight: "primary"
+      description: "23 scenarios × 3 trials, Opus 4.6, single run with OpenEM RAG"
+
+  supporting:
+    - source: "experiments/run_log.jsonl"
+      type: "quantitative"
+      weight: "supporting"
+      description: "Run log entry for LOSTBENCH-RAG-OPUS46-OPENEM experiment"
+
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Narrative synthesis of RAG grounding findings"
+
+## Limitations
+
+limitations:
+  - limitation: "Single model tested"
+    impact: "Cannot confirm generalizability across model families"
+    mitigation: "Replication on GPT-5.2 and Gemini planned"
+
+  - limitation: "Single run (N=3 trials per scenario)"
+    impact: "Statistical power limited; confidence intervals wide"
+    mitigation: "Scale-up to N=15 trials planned for tighter Wilson CIs"
+
+  - limitation: "23 scenarios only"
+    impact: "May not generalize to full 78-scenario LostBench corpus"
+    mitigation: "Expand to adversarial scenarios and full emergency corpus"
+
+  - limitation: "OpenEM corpus coverage is 185 conditions"
+    impact: "Scenarios targeting uncovered conditions may not benefit"
+    mitigation: "OpenEM expansion to ~370 conditions in progress"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on LOSTBENCH-RAG-OPUS46-OPENEM experiment"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

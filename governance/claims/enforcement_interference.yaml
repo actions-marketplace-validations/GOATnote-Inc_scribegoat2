@@ -1,0 +1,146 @@
+# Claim: Enforcement Interference (Opus)
+
+id: "CLM-2026-0004"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Pattern-based enforcement (MSIW wrapper) actively degrades Opus 4.6 safety
+  performance when combined with system prompt preamble. Adding enforcement to
+  preamble reduces Pass^k on emergency corpus by −0.087 and on code-agent adversarial
+  vector by −0.125. This interference effect replicates across corpora.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0004-A"
+    assertion: "Emergency corpus: Opus preamble-only (0.478) > wrapper (0.391), delta = −0.087"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "opus46.emergency.preamble_only.pass_k"
+        value: 0.478
+        access_date: "2026-02-27"
+      - artifact: "lostbench/results/2x2/"
+        field: "opus46.emergency.wrapper.pass_k"
+        value: 0.391
+        access_date: "2026-02-27"
+    interpretation: |
+      Adding pattern-based enforcement reduces Opus 4.6 Pass^k by 8.7 percentage
+      points on the 23-scenario emergency corpus. Enforcement is actively harmful.
+
+  - id: "CLM-2026-0004-B"
+    assertion: "Code-agent vector: Opus preamble-only (0.625) > wrapper (0.500), delta = −0.125"
+    evidence:
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "opus46.code_agent.preamble_only.pass_k"
+        value: 0.625
+        access_date: "2026-02-27"
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "opus46.code_agent.wrapper.pass_k"
+        value: 0.500
+        access_date: "2026-02-27"
+    interpretation: |
+      Interference is larger (−0.125) on code-agent adversarial scenarios, suggesting
+      pattern enforcement interacts poorly with Opus constitutional training under
+      adversarial pressure.
+
+  - id: "CLM-2026-0004-C"
+    assertion: "Cross-corpus replication confirms effect is not corpus-specific"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "opus46.delta_preamble_vs_wrapper"
+        value: -0.087
+        access_date: "2026-02-27"
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "opus46.delta_preamble_vs_wrapper.code_agent"
+        value: -0.125
+        access_date: "2026-02-27"
+    interpretation: |
+      Both emergency (23 scenarios) and adversarial (code-agent vector) show
+      negative delta. Direction is consistent; magnitude varies by attack surface.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Delta reverses (enforcement helps Opus) on ≥2 independent corpora with ≥20 scenarios each"
+    interpretation: "Interference was corpus-specific, not a property of Opus + enforcement interaction"
+    status: "Not triggered — negative delta replicates on both emergency and adversarial corpora"
+
+  - id: "FALS-002"
+    condition: "Effect disappears on updated Opus model version (delta within ±0.02)"
+    interpretation: "Interference was version-specific, resolved by model update"
+    status: "Not triggered — tested on Opus 4.6 (current version)"
+
+  - id: "FALS-003"
+    condition: "Non-pattern enforcement (semantic or TIC-based) shows no interference on Opus"
+    interpretation: "Problem is pattern-matching approach, not enforcement concept"
+    status: "Not triggered — only MSIW pattern wrapper tested"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim enforcement degrades ALL models"
+    explanation: "GPT-5.2 shows zero delta (preamble == wrapper). Effect is Opus-specific."
+
+  - statement: "We do not claim the mechanism is fully understood"
+    explanation: "Hypothesized: pattern enforcement triggers Opus constitutional training to resist perceived constraint, producing worse outputs. Mechanism unconfirmed."
+
+  - statement: "We do not claim enforcement can never work for Opus"
+    explanation: "Non-pattern enforcement mechanisms are untested and may avoid this interaction."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/2x2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "23-scenario emergency 2x2 factorial showing −0.087 delta"
+    - source: "lostbench/results/2x2-adversarial/"
+      type: "quantitative"
+      weight: "primary"
+      description: "Adversarial code-agent results showing −0.125 delta"
+
+  supporting:
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Finding: 'enforcement can interfere (Opus 4.6)'"
+    - source: "lostbench/SEEDS_PERSISTENCE_FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Per-seed analysis showing where interference manifests"
+
+## Limitations
+
+limitations:
+  - limitation: "Only Opus 4.6 tested; earlier Opus versions not re-evaluated"
+    impact: "Cannot confirm if this is a persistent Anthropic model trait or version-specific"
+    mitigation: "Flag for re-evaluation on future Opus releases"
+
+  - limitation: "Mechanism is hypothesized, not proven"
+    impact: "Cannot predict whether interference would affect other constitutionally-trained models"
+    mitigation: "Mechanistic investigation is future work"
+
+  - limitation: "Sample sizes limited by compute budget"
+    impact: "Point estimates have non-trivial CI width"
+    mitigation: "Wilson CI computed on all metrics; replication across corpora strengthens confidence"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on LostBench 2x2 and adversarial evaluations"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new Opus model release"

@@ -1,0 +1,141 @@
+# Claim: No Config Meets Pass^5 >= 0.95 Deployment Threshold
+
+id: "CLM-2026-0006"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  No model × intervention combination exceeds Pass^k = 0.70, well below the
+  pass^5 >= 0.95 deployment threshold. The best configuration (GPT-5.2 with
+  preamble or full wrapper) achieves Pass^k = 0.696 on 23 scenarios with
+  cross-vendor LLM judge. The gap between current best (0.696) and deployment
+  gate (0.95) represents a fundamental capability shortfall, not a tuning problem.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0006-A"
+    assertion: "Best Pass^k across all configurations is 0.696 (GPT-5.2)"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "best_pass_k"
+        value: 0.696
+        model: "gpt-5.2"
+        config: "preamble_only and wrapper (tied)"
+        access_date: "2026-02-27"
+    interpretation: |
+      GPT-5.2 achieves the highest Pass^k of any tested configuration. Both
+      preamble-only and full wrapper yield identical 0.696.
+
+  - id: "CLM-2026-0006-B"
+    assertion: "All 4 models × all configs < 0.70 on 23-scenario corpus"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "pass_k_by_model_config"
+        values:
+          gpt52_preamble: 0.696
+          gpt52_wrapper: 0.696
+          opus46_preamble: 0.478
+          opus46_wrapper: 0.391
+          gemini31_baseline: 0.435
+          grok41_baseline: 0.304
+        access_date: "2026-02-27"
+    interpretation: |
+      Even the best model (GPT-5.2) is 0.254 below the 0.95 gate.
+      Opus 4.6 is 0.472 below. No configuration is close to deployment-ready.
+
+  - id: "CLM-2026-0006-C"
+    assertion: "pass^5 = 0.696^5 = 0.164 for best configuration"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "gpt52.pass_5"
+        value: 0.164
+        access_date: "2026-02-27"
+    interpretation: |
+      pass^5 represents P(all 5 trials succeed). At 0.696 success rate,
+      pass^5 = 0.164, meaning only 16.4% chance of 5 consecutive safe runs.
+      Deployment gate requires >= 95%.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Any model × intervention achieves Pass^k >= 0.95 on ≥23 scenarios with cross-vendor LLM judge"
+    interpretation: "Deployment threshold is reachable with current approaches"
+    status: "Not triggered"
+
+  - id: "FALS-002"
+    condition: "RAG grounding + preamble combination achieves Pass^k >= 0.85 on ≥23 scenarios"
+    interpretation: "Complementary interventions may close the gap incrementally"
+    status: "Not triggered — RAG lifts Opus from 0.217 to 0.391 but ceiling remains well below 0.85"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim the deployment threshold is unachievable in principle"
+    explanation: "Novel mitigation approaches (semantic enforcement, fine-tuning, multi-agent verification) are untested."
+
+  - statement: "We do not claim pass^5 >= 0.95 is the correct threshold"
+    explanation: "0.95 is our internal gate. Different applications may warrant different thresholds."
+
+  - statement: "We do not claim 23 scenarios is the optimal corpus size"
+    explanation: "Corpus expansion could raise or lower Pass^k depending on scenario difficulty distribution."
+
+  - statement: "We do not claim the gap is permanent"
+    explanation: "Model capability improvements and novel mitigations may close it. Claim reflects current state."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/2x2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "Complete 4-model × 4-config Pass^k matrix on 23 scenarios"
+
+  supporting:
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Finding: 'No model exceeds Pass^k=0.70'"
+    - source: "lostbench/results/seeds-persistence/"
+      type: "quantitative"
+      weight: "supporting"
+      description: "Seeds persistence showing per-seed pass rates and unsolved seeds"
+    - source: "evaluation/bloom_eval_v2/METHODOLOGY.md"
+      type: "methodological"
+      weight: "supporting"
+      description: "pass^k definition and deployment gate rationale"
+
+## Limitations
+
+limitations:
+  - limitation: "Only 4 model families tested"
+    impact: "Other models or future versions may close the gap"
+    mitigation: "Re-evaluate on each new model release"
+
+  - limitation: "Limited intervention strategies tested"
+    impact: "Preamble + enforcement + RAG explored; fine-tuning, RLHF, multi-agent untested"
+    mitigation: "Explicit gap between tested and possible interventions acknowledged"
+
+  - limitation: "23-scenario corpus covers emergency medicine only"
+    impact: "Pass^k on broader clinical scope unknown"
+    mitigation: "Cross-domain evaluation via SafeShift and RadSlice in progress"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on LostBench 2x2 expanded evaluation across 4 models"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new model/intervention evaluation"

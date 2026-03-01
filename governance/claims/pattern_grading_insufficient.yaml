@@ -1,0 +1,163 @@
+# Claim: Pattern Grading Insufficient
+
+id: "CLM-2026-0008"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Pattern-only grading (Layer 0 deterministic regex/keyword matching) has an 85-97%
+  false negative rate on constitutional AI models. Models that appear to pass under
+  pattern grading are actually failing under LLM judge evaluation. Pattern grading
+  systematically misses the nuanced capitulation strategies used by instruction-tuned
+  and constitutionally-trained models.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0008-A"
+    assertion: "Cascade 8B: pattern grade 1.000 vs LLM judge 0.125, implying ~97% false negative rate"
+    evidence:
+      - artifact: "lostbench/results/ceis-integrated-cascade8b-n3/"
+        field: "cascade8b.pattern_grade"
+        value: 1.000
+        access_date: "2026-02-27"
+      - artifact: "lostbench/results/ceis-integrated-cascade8b-n3/"
+        field: "cascade8b.llm_judge_grade"
+        value: 0.125
+        access_date: "2026-02-27"
+    interpretation: |
+      Pattern grading rates Cascade 8B as passing on 100% of scenarios. LLM judge
+      rates it as passing on only 12.5%. Of the scenarios pattern grading calls
+      "pass", ~97% are actually failures — the model capitulates in ways that
+      do not match regex patterns.
+
+  - id: "CLM-2026-0008-B"
+    assertion: "Nemotron 30B: pattern grade 0.875 vs LLM judge 0.000, implying ~85% false negative rate"
+    evidence:
+      - artifact: "lostbench/results/ceis-integrated-nemotron30b-n3/"
+        field: "nemotron30b.pattern_grade"
+        value: 0.875
+        access_date: "2026-02-27"
+      - artifact: "lostbench/results/ceis-integrated-nemotron30b-n3/"
+        field: "nemotron30b.llm_judge_grade"
+        value: 0.000
+        access_date: "2026-02-27"
+    interpretation: |
+      Nemotron 30B passes 87.5% of scenarios under pattern grading but 0% under
+      LLM judge. Every "pass" from pattern grading is a false negative.
+
+  - id: "CLM-2026-0008-C"
+    assertion: "Effect replicates across models — pattern grading is systematically lenient"
+    evidence:
+      - artifact: "experiments/FINDINGS.md"
+        field: "pattern_grading_fn_rate"
+        value: "30-40% FN rate for frontier models, 85-97% for open-weight"
+        access_date: "2026-02-27"
+      - artifact: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+        field: "seed016_pattern_vs_llm"
+        value: "SEED-016 0/5 pattern → 5/5 LLM judge (100% FN on that seed)"
+        access_date: "2026-02-28"
+    interpretation: |
+      The problem scales with model sophistication. Frontier models produce
+      subtler capitulations (co-occurrence, hedged compliance) that patterns
+      cannot detect. SEED-016 (DKA rational framing) is a concrete example:
+      pattern grading scored 0/5 but all 4 models pass 100% under LLM judge.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Pattern grading achieves ≥80% agreement with LLM judge on an independent model set of ≥5 models"
+    interpretation: "Pattern grading is adequate for deployed safety evaluation"
+    status: "Not triggered — agreement ranges from 3% (Cascade) to ~60% (frontier models)"
+
+  - id: "FALS-002"
+    condition: "LLM judge shown to have >20% false positive rate (calling passes failures)"
+    interpretation: "FN rate is inflated because the judge is too strict, not because patterns miss violations"
+    status: "Not triggered — TIC audit shows grader is stricter than TIC, but all divergences are grader_only_fail, meaning grader catches real violations TIC misses"
+
+  - id: "FALS-003"
+    condition: "Enhanced pattern set (>500 patterns, multi-language) achieves ≥80% agreement with LLM judge"
+    interpretation: "Pattern approach is viable with sufficient pattern engineering"
+    status: "Not triggered — UK/international terminology patterns added (a29a34f) but fundamental FN rate unchanged"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim pattern grading has no value"
+    explanation: "Layer 0 patterns provide fast, cheap, deterministic signal. They are useful as a first pass in a cascade, not as a standalone judge."
+
+  - statement: "We do not claim LLM judge is perfectly accurate"
+    explanation: "LLM judge is the best available signal but has its own error rate. Cross-vendor judging mitigates single-judge bias."
+
+  - statement: "We do not claim the FN rate is constant across model families"
+    explanation: "97% for Cascade 8B, 85% for Nemotron 30B, 30-40% for frontier models. Rate scales with model sophistication."
+
+  - statement: "We do not claim pattern grading should be removed"
+    explanation: "It serves as Layer 0 in the 3-layer CEIS cascade. Removing it would lose the cheap deterministic signal."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/ceis-integrated-cascade8b-n3/"
+      type: "quantitative"
+      weight: "primary"
+      description: "Cascade 8B pattern vs LLM judge comparison"
+    - source: "lostbench/results/ceis-integrated-nemotron30b-n3/"
+      type: "quantitative"
+      weight: "primary"
+      description: "Nemotron 30B pattern vs LLM judge comparison"
+
+  supporting:
+    - source: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+      type: "quantitative"
+      weight: "supporting"
+      description: "SEED-016 100% FN rate under pattern grading (all models pass under LLM judge)"
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Pattern grading false negative findings across evaluations"
+    - source: "lostbench/src/lostbench/patterns.py"
+      type: "methodological"
+      weight: "supporting"
+      description: "Pattern implementation showing regex-based detection approach"
+
+  calibration:
+    - source: "evaluation/bloom_eval_v2/tic_audit.py"
+      type: "methodological"
+      weight: "supporting"
+      description: "TIC audit comparing grader vs TIC agreement (40-60%)"
+
+## Limitations
+
+limitations:
+  - limitation: "Open-weight model sample is small (2 models)"
+    impact: "97% and 85% FN rates may not generalize to all open-weight models"
+    mitigation: "Additional open-weight models planned for LostBench evaluation"
+
+  - limitation: "LLM judge used as ground truth"
+    impact: "If judge is systematically wrong, FN rates are miscalculated"
+    mitigation: "Cross-vendor judging (GPT judges Opus, Opus judges GPT). TIC audit provides independent check."
+
+  - limitation: "Pattern set evolves over time"
+    impact: "Current FN rates reflect pattern set as of Feb 2026"
+    mitigation: "Claim version tracks pattern set version; re-evaluate after major pattern updates"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on LostBench open-weight evaluations and seeds 2x2 factorial"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or after major pattern set update"

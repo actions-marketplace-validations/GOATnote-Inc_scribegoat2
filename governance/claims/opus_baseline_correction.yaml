@@ -1,0 +1,146 @@
+# Claim: Opus Baseline Correction (54%)
+
+id: "CLM-2026-0011"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Opus 4.5/4.6 baseline violation rate is approximately 54%, not 4% as
+  originally reported. The 4% figure was a pattern-grading artifact caused
+  by insufficient sensitivity in regex-based failure detection. Cross-vendor
+  LLM-as-judge grading reveals the true baseline is an order of magnitude
+  higher. This correction fundamentally changes the interpretation of Opus
+  mitigation effectiveness: preamble mitigations DO work on Opus (baseline
+  54% → preamble 85% pass rate, h=0.68), contrary to the prior conclusion
+  that mitigations were ineffective.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0011-A"
+    assertion: "Opus baseline violation rate is ~54% under LLM judge (not 4% under pattern grading)"
+    evidence:
+      - artifact: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+        field: "opus.baseline.pass_rate_llm_judge"
+        value: 0.54
+        access_date: "2026-02-27"
+      - artifact: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+        field: "opus.baseline.pass_rate_pattern"
+        value: 0.04
+        access_date: "2026-02-27"
+    interpretation: |
+      Pattern grading missed ~93% of Opus failures (false negative rate ~93%).
+      The pattern grader was calibrated primarily on GPT-style failures and
+      missed Opus's distinct failure modes (e.g., hedged capitulation, embedded
+      monitoring guidance within otherwise correct responses).
+
+  - id: "CLM-2026-0011-B"
+    assertion: "GPT-5.2 baseline is ~20% under same LLM judge methodology"
+    evidence:
+      - artifact: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+        field: "gpt52.baseline.pass_rate_llm_judge"
+        value: 0.20
+        access_date: "2026-02-27"
+    interpretation: |
+      GPT's pattern-graded and LLM-judged rates are much closer, indicating
+      the pattern grader was better calibrated for GPT failure modes.
+
+  - id: "CLM-2026-0011-C"
+    assertion: "Preamble mitigation effect size for Opus: h=0.68 (baseline 54% → preamble 85%)"
+    evidence:
+      - artifact: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+        field: "opus.preamble.pass_rate_llm_judge"
+        value: 0.85
+        access_date: "2026-02-27"
+      - artifact: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+        field: "opus.effect_size_h"
+        value: 0.68
+        access_date: "2026-02-27"
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "LLM judge shown to be systematically biased against Opus (inflating failures)"
+    interpretation: "54% baseline is judge artifact, not model behavior"
+    test: |
+      Compare LLM judge verdicts against independent physician panel on
+      stratified sample of Opus responses. If physician agreement with
+      pattern grader > agreement with LLM judge, then judge bias confirmed.
+    status: "Not triggered — cross-vendor judging mitigates same-vendor bias"
+
+  - id: "FALS-002"
+    condition: "Pattern grading validated against physician panel with κ ≥ 0.80"
+    interpretation: "Pattern grading was correct; LLM judge over-detects failures"
+    status: "Not triggered — pattern grading has documented 30-40% FN rate (EXP-002)"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim the exact 54% figure is precise"
+    explanation: "Seeds 2×2 used 17 seeds × n=5; confidence intervals are non-trivial"
+
+  - statement: "We do not claim Opus is inherently less safe than GPT"
+    explanation: "Opus has higher baseline failure but also responds to preamble mitigation"
+
+  - statement: "We do not claim pattern grading is useless"
+    explanation: "Pattern grading remains useful as Layer 0 fast filter; it must not be the sole method"
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "evaluation/bloom_eval_v2/results/seeds_2x2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "17 seeds × 2 models × 2 conditions × n=5, LLM-judged cross-vendor"
+
+  supporting:
+    - source: "experiments/run_log.jsonl"
+      type: "quantitative"
+      weight: "supporting"
+      description: "Run log entries for SEEDS-2x2-FACTORIAL experiments"
+
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Narrative synthesis documenting grading artifact discovery"
+
+  calibration:
+    - source: "evaluation/bloom_eval_v2/graders/bloom_grader.py"
+      type: "methodological"
+      weight: "supporting"
+      description: "Cross-vendor judge implementation ensuring no same-vendor bias"
+
+## Limitations
+
+limitations:
+  - limitation: "17 seeds may not cover full failure distribution"
+    impact: "54% may shift with broader scenario coverage"
+    mitigation: "Seeds persistence study expanded to 4 models × 17 seeds confirms direction"
+
+  - limitation: "LLM judge is not a gold standard"
+    impact: "Judge may have its own systematic biases"
+    mitigation: "Cross-vendor judging, physician calibration checks planned"
+
+  - limitation: "Seeds designed to probe safety boundaries"
+    impact: "54% rate is for adversarial scenarios; benign scenarios may differ"
+    mitigation: "Rate explicitly scoped to safety-persistence evaluation scenarios"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on Seeds 2×2 factorial experiment and accumulated grading methodology evidence"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

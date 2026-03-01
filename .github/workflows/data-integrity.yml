@@ -62,6 +62,11 @@ jobs:
         echo "Checking WHITEPAPER_FULL.md is up to date..."
         python scripts/build_whitepaper_md.py --check
 
+    - name: Verify Claim Evidence Chains
+      run: |
+        echo "Verifying claim-to-evidence chains..."
+        python scripts/verify_claim_evidence.py --strict
+
     - name: Generate Integrity Report
       if: always()
       run: |

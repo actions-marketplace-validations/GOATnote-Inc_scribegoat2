@@ -1,0 +1,133 @@
+# Claim: Cross-Vendor Judge Inconsistency
+
+id: "CLM-2026-0012"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Same-vendor judging produces systematic bias in multi-turn safety
+  evaluations; cross-vendor judging is mandatory for valid inter-model
+  comparisons. When the judge model is from the same provider as the target
+  model, failure detection rates are distorted — in both directions. The
+  MSTS 80:1 GPT/Opus failure ratio under same-vendor judging inverts under
+  cross-vendor grading, demonstrating that published inter-model comparisons
+  without cross-vendor controls are unreliable.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0012-A"
+    assertion: "MSTS 80:1 GPT/Opus failure ratio inverts under cross-vendor judging"
+    evidence:
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "ratio_same_vendor"
+        value: 80.0
+        access_date: "2026-02-28"
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "ratio_cross_vendor"
+        value: "inverted"
+        access_date: "2026-02-28"
+    interpretation: |
+      Under same-vendor judging, GPT appeared 80× safer than Opus. Cross-vendor
+      judging eliminates this artifact. The ratio was driven by judge leniency
+      toward same-family models and strictness toward competitors.
+
+  - id: "CLM-2026-0012-B"
+    assertion: "Inter-judge agreement κ = −0.21 to −0.40 between same-vendor and cross-vendor judges"
+    evidence:
+      - artifact: "lostbench/results/msts-crossvendor-v2/"
+        field: "kappa_same_vs_cross"
+        value: [-0.21, -0.40]
+        access_date: "2026-02-28"
+    interpretation: |
+      Negative kappa indicates worse-than-chance agreement — the judges
+      actively disagree on which responses constitute failures. This is
+      not noise; it is systematic directional bias.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Same-vendor and cross-vendor judges agree (κ ≥ 0.80) on independent evaluation set"
+    interpretation: "Vendor bias does not generalize; original finding was dataset-specific"
+    test: |
+      Run same evaluation scenarios with both same-vendor and cross-vendor
+      judges on a held-out set of ≥100 responses. Compute Cohen's kappa.
+      If κ ≥ 0.80, vendor bias is negligible.
+    status: "Not triggered — κ consistently negative across multiple evaluation campaigns"
+
+  - id: "FALS-002"
+    condition: "Physician panel agrees with same-vendor judge more than cross-vendor judge"
+    interpretation: "Cross-vendor judging introduces its own bias; same-vendor is more accurate"
+    status: "Not triggered — physician calibration pending"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim cross-vendor judging eliminates all bias"
+    explanation: "Cross-vendor reduces systematic vendor bias; other biases may remain"
+
+  - statement: "We do not claim all same-vendor evaluations are invalid"
+    explanation: "Within-model comparisons (e.g., mitigation A vs B on same model) are less affected"
+
+  - statement: "We do not claim the 80:1 ratio had no signal"
+    explanation: "GPT and Opus do differ in safety persistence; the magnitude was distorted, not the direction"
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/msts-crossvendor-v2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "MSTS cross-vendor regrade with corrected deduplication (N=8,000)"
+
+  supporting:
+    - source: "lostbench/docs/aars/AAR-MSTS-CROSSVENDOR.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "After-action review documenting the discovery and correction process"
+
+    - source: "lostbench/scripts/compare_msts_judges.py"
+      type: "methodological"
+      weight: "supporting"
+      description: "Tooling for systematic judge comparison"
+
+  calibration:
+    - source: "evaluation/bloom_eval_v2/graders/bloom_grader.py"
+      type: "methodological"
+      weight: "supporting"
+      description: "Cross-vendor judge implementation adopted after this finding"
+
+## Limitations
+
+limitations:
+  - limitation: "MSTS corpus may have specific characteristics amplifying vendor bias"
+    impact: "Magnitude of bias may differ on other corpora"
+    mitigation: "Cross-vendor protocol now applied to all LostBench and ScribeGoat2 evaluations"
+
+  - limitation: "Only two vendor families tested as judges (OpenAI, Anthropic)"
+    impact: "Cannot confirm pattern with Google, xAI, or other judge providers"
+    mitigation: "Seeds persistence study used cross-vendor judging across 4 model families"
+
+  - limitation: "No physician gold standard for the full MSTS corpus"
+    impact: "Cannot definitively say which judge is 'correct'"
+    mitigation: "Physician review of stratified sample planned"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on MSTS cross-vendor regrade and accumulated judging methodology evidence"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

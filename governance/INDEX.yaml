@@ -3,8 +3,8 @@
 # Version: 1.0.0
 
 meta:
-  version: "1.0.0"
-  last_updated: "2026-01-31"
+  version: "1.1.0"
+  last_updated: "2026-03-01"
   purpose: |
     Tracks all artifacts under governance control. Modifications to
     indexed artifacts require changelog entries and may trigger
@@ -98,6 +98,108 @@ skills:
       purpose: "Lab-calibrated evaluator brief generation"
       invariants:
         - INV-BRIEF-001
+
+# ============================================
+# CLAIMS
+# ============================================
+
+claims:
+  description: "Versioned empirical claims with falsification tracking"
+  governance_level: high
+  modification_requires:
+    - changelog_entry
+    - version_bump
+
+  items:
+    - id: CLM-2026-0001
+      name: "Turn 2 Cliff Vulnerability"
+      path: "governance/claims/turn2_cliff_claim.yaml"
+      version: "1.1.0"
+      status: partially_falsified
+
+    - id: CLM-2026-0002
+      name: "82.4% Violation Rate"
+      path: "governance/claims/violation_rate.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0003
+      name: "Preamble Dominance"
+      path: "governance/claims/preamble_dominance.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0004
+      name: "Enforcement Interference (Opus)"
+      path: "governance/claims/enforcement_interference.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0005
+      name: "MSIW Pass^k Scalability"
+      path: "governance/claims/msiw_scalability.yaml"
+      version: "1.0.0"
+      status: superseded
+
+    - id: CLM-2026-0006
+      name: "No Config Meets Pass^5>=0.95"
+      path: "governance/claims/deployment_threshold_gap.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0007
+      name: "Sonnet 4.6 Safety Regression"
+      path: "governance/claims/sonnet_regression.yaml"
+      version: "1.0.0"
+      status: provisional
+
+    - id: CLM-2026-0008
+      name: "Pattern Grading Insufficient"
+      path: "governance/claims/pattern_grading_insufficient.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0009
+      name: "RAG Grounding Lifts Pass^k"
+      path: "governance/claims/rag_grounding.yaml"
+      version: "1.0.0"
+      status: provisional
+
+    - id: CLM-2026-0010
+      name: "Code-Agent Attack Vector"
+      path: "governance/claims/code_agent_attack.yaml"
+      version: "1.0.0"
+      status: provisional
+
+    - id: CLM-2026-0011
+      name: "Opus Baseline Correction (54%)"
+      path: "governance/claims/opus_baseline_correction.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0012
+      name: "Cross-Vendor Judge Inconsistency"
+      path: "governance/claims/cross_vendor_judge.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0013
+      name: "SAH Universal Failure"
+      path: "governance/claims/sah_universal_failure.yaml"
+      version: "1.0.0"
+      status: provisional
+
+    - id: CLM-2026-0014
+      name: "Anaphylaxis Outlier"
+      path: "governance/claims/anaphylaxis_outlier.yaml"
+      version: "1.0.0"
+      status: established
+
+    - id: CLM-2026-0015
+      name: "Seeds Persistence Cross-Model"
+      path: "governance/claims/seeds_persistence.yaml"
+      version: "1.0.0"
+      status: established
 
 # ============================================
 # GOVERNANCE FILES
@@ -205,6 +307,12 @@ enforcement_scripts:
       
     - path: "scripts/check_terminology.py"
       purpose: "Pre-commit terminology compliance"
+
+    - path: "scripts/verify_claim_evidence.py"
+      purpose: "Claim-to-evidence chain verification"
+
+    - path: "scripts/build_whitepaper_md.py"
+      purpose: "Whitepaper build with claim reference resolution"
 
 # ============================================
 # TEMPLATES

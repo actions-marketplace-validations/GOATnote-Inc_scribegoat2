@@ -1,0 +1,138 @@
+# Claim: Preamble Dominance
+
+id: "CLM-2026-0003"
+status: "established"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  System prompt preamble is the dominant mitigation mechanism for safety boundary
+  persistence. Pattern-based enforcement (MSIW wrapper) adds minimal or negative
+  value when combined with preamble. Across 23 scenarios and 4 models, preamble-only
+  matches or exceeds the full wrapper configuration for 3 of 4 models.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0003-A"
+    assertion: "GPT-5.2 preamble-only Pass^k equals wrapper Pass^k (0.696) on 23 scenarios"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "gpt52.preamble_only.pass_k"
+        value: 0.696
+        access_date: "2026-02-27"
+      - artifact: "lostbench/results/2x2/"
+        field: "gpt52.wrapper.pass_k"
+        value: 0.696
+        access_date: "2026-02-27"
+    interpretation: |
+      Enforcement adds zero marginal value for GPT-5.2. The preamble alone
+      accounts for the full mitigation effect.
+
+  - id: "CLM-2026-0003-B"
+    assertion: "Effect replicates on adversarial corpus (code-agent, integrated vectors)"
+    evidence:
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "preamble_vs_wrapper_delta"
+        value: "preamble >= wrapper for code-agent and integrated vectors"
+        access_date: "2026-02-27"
+    interpretation: |
+      Preamble dominance holds even under adversarial pressure, not just
+      standard emergency scenarios.
+
+  - id: "CLM-2026-0003-C"
+    assertion: "Preamble-only matches or exceeds wrapper for 3 of 4 models"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "cross_model_preamble_comparison"
+        values:
+          gpt52: "preamble == wrapper"
+          gemini31: "preamble >= wrapper"
+          opus46: "preamble > wrapper (enforcement interferes)"
+          grok41: "preamble ~= wrapper"
+        access_date: "2026-02-27"
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Enforcement-only (no preamble) outperforms preamble-only on ≥2 model families"
+    interpretation: "Enforcement has independent value beyond preamble priming"
+    status: "Not triggered — no model shows enforcement-only > preamble-only"
+
+  - id: "FALS-002"
+    condition: "Preamble dominance effect disappears on external scenario set (≥50 scenarios, independent authorship)"
+    interpretation: "Effect is scenario-design-specific, not a general property"
+    status: "Not triggered — replicated across emergency (23) and adversarial (43) corpora"
+
+  - id: "FALS-003"
+    condition: "Updated enforcement logic (non-pattern-based) exceeds preamble-only by ≥0.10 Pass^k on ≥2 models"
+    interpretation: "Pattern-based enforcement was the problem, not enforcement as a concept"
+    status: "Not triggered"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim enforcement is universally harmful"
+    explanation: "Enforcement is neutral for GPT-5.2. Harm is model-specific (see CLM-2026-0004)."
+
+  - statement: "We do not claim preamble alone is sufficient for deployment"
+    explanation: "Best preamble-only Pass^k is 0.696, well below pass^5 >= 0.95 gate."
+
+  - statement: "We do not claim non-pattern enforcement mechanisms would show the same result"
+    explanation: "Only MSIW pattern-based wrapper was tested. Semantic or TIC-based enforcement untested."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/2x2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "23-scenario × 4-model × 4-config 2x2 factorial results"
+    - source: "lostbench/results/2x2-adversarial/"
+      type: "quantitative"
+      weight: "primary"
+      description: "Adversarial corpus replication (code-agent, integrated vectors)"
+
+  supporting:
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Narrative synthesis including LOSTBENCH-2x2-EXPANDED findings"
+    - source: "lostbench/SEEDS_PERSISTENCE_FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Seeds persistence analysis confirming preamble as primary mechanism"
+
+## Limitations
+
+limitations:
+  - limitation: "Only one enforcement mechanism tested (MSIW pattern-based wrapper)"
+    impact: "Cannot generalize to semantic or TIC-based enforcement"
+    mitigation: "Explicit scope boundary. TIC-based enforcement is future work."
+
+  - limitation: "23-scenario corpus may not capture all failure modes"
+    impact: "Preamble may have blind spots on untested scenario types"
+    mitigation: "Adversarial replication on 43-scenario corpus provides partial coverage"
+
+  - limitation: "Cross-vendor LLM judge may have systematic biases"
+    impact: "Judge could systematically favor preamble-style responses"
+    mitigation: "Judge calibration documented in METHODOLOGY.md. TIC audit shows 40-60% agreement."
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on LostBench 2x2 expanded and adversarial evaluations"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

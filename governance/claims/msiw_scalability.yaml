@@ -1,0 +1,130 @@
+# Claim: MSIW Pass^k Scalability
+
+id: "CLM-2026-0005"
+status: "superseded"
+version: "1.0.0"
+
+## Assertion
+
+assertion:
+  original: |
+    MSIW wrapper achieves Pass^k=1.000 across all models, demonstrating perfect
+    safety boundary persistence under enforcement.
+  current: |
+    Pass^k=1.000 was an artifact of an 8-scenario corpus. On the expanded 23-scenario
+    corpus, no model × intervention combination exceeds Pass^k=0.696. The 15 additional
+    scenarios introduced failure modes invisible to the original small corpus.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0005-A"
+    assertion: "8-scenario MSIW wrapper achieved Pass^k=1.000 (original finding)"
+    evidence:
+      - artifact: "experiments/run_log.jsonl"
+        field: "msiw_8scenario.pass_k"
+        value: 1.000
+        access_date: "2026-02-15"
+    interpretation: |
+      Original result on 8 curated emergency scenarios. All models passed all
+      trials under MSIW enforcement. This was a real result on the tested corpus.
+
+  - id: "CLM-2026-0005-B"
+    assertion: "23-scenario corpus: best Pass^k = 0.696 (GPT-5.2 with MSIW wrapper)"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "gpt52.wrapper.pass_k"
+        value: 0.696
+        access_date: "2026-02-27"
+    interpretation: |
+      Expanding from 8 to 23 scenarios dropped best Pass^k from 1.000 to 0.696.
+      The 15 additional scenarios exposed failure modes the original 8 did not cover.
+
+  - id: "CLM-2026-0005-C"
+    assertion: "Preamble is the dominant mechanism; enforcement adds zero for GPT-5.2"
+    evidence:
+      - artifact: "lostbench/results/2x2/"
+        field: "gpt52.preamble_only.pass_k"
+        value: 0.696
+        access_date: "2026-02-27"
+    interpretation: |
+      GPT-5.2 preamble-only Pass^k (0.696) equals wrapper Pass^k (0.696).
+      The MSIW enforcement layer contributed nothing beyond the preamble.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Pass^k=1.000 replicates on ≥20 scenarios with cross-vendor LLM judge"
+    interpretation: "Original finding holds at scale; expansion failure was scenario-selection artifact"
+    status: "TRIGGERED — did not replicate. Best is 0.696 on 23 scenarios."
+
+  - id: "FALS-002"
+    condition: "Original 8-scenario result was a measurement error (re-evaluation yields Pass^k < 1.000)"
+    interpretation: "Not even the small-corpus result was real"
+    status: "Not triggered — 8-scenario result was valid on that corpus"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim the 8-scenario result was fabricated"
+    explanation: "Pass^k=1.000 on 8 scenarios was a real measurement. The error was extrapolating to larger corpora."
+
+  - statement: "We do not claim MSIW enforcement is useless"
+    explanation: "For GPT-5.2 it adds no value (preamble sufficient). For other models the interaction is more complex."
+
+  - statement: "We do not claim 23 scenarios is the final corpus size"
+    explanation: "Further expansion may reveal additional failure modes or stabilize the rate."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "experiments/run_log.jsonl"
+      type: "quantitative"
+      weight: "primary"
+      description: "Original 8-scenario MSIW Pass^k=1.000 result"
+    - source: "lostbench/results/2x2/"
+      type: "quantitative"
+      weight: "primary"
+      description: "23-scenario expanded evaluation showing 0.696 ceiling"
+
+  supporting:
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Finding marked SUPERSEDED with explanation"
+    - source: "lostbench/results/seeds-persistence/"
+      type: "quantitative"
+      weight: "supporting"
+      description: "Seeds persistence analysis identifying specific failure scenarios"
+
+## Limitations
+
+limitations:
+  - limitation: "Only MSIW pattern-based wrapper tested"
+    impact: "Cannot extrapolate to other enforcement mechanisms"
+    mitigation: "Explicit scope boundary"
+
+  - limitation: "Supersession based on single expansion (8 → 23)"
+    impact: "Ceiling could shift with further corpus changes"
+    mitigation: "Claim status tracks corpus version; re-evaluate on corpus expansion"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: |
+      Initial claim documenting supersession of Pass^k=1.000 finding.
+      Original finding (8-scenario) was valid but did not generalize.
+      Expanded 23-scenario evaluation shows 0.696 ceiling. Claim status: superseded.
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on corpus expansion"

@@ -1,0 +1,131 @@
+# Claim: Code-Agent Attack Vector
+
+id: "CLM-2026-0010"
+status: "provisional"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Code generation context is the most effective attack surface for safety
+  persistence degradation. When models are prompted in a code-agent context
+  (generating code, debugging, or tool-use reasoning), safety boundary
+  maintenance drops to near-zero across both tested model families. This
+  represents the highest-impact adversarial vector discovered in systematic
+  testing across 5 attack surface categories.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0010-A"
+    assertion: "GPT-5.2 code-agent baseline Pass^k = 0.125 (8 scenarios, n=3 trials)"
+    evidence:
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "code_agent.gpt52.baseline.pass_k"
+        value: 0.125
+        access_date: "2026-02-28"
+
+  - id: "CLM-2026-0010-B"
+    assertion: "Opus 4.6 code-agent baseline Pass^k = 0.250 (8 scenarios, n=3 trials)"
+    evidence:
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "code_agent.opus46.baseline.pass_k"
+        value: 0.250
+        access_date: "2026-02-28"
+
+  - id: "CLM-2026-0010-C"
+    assertion: "Code-agent produces the lowest Pass^k of all 5 adversarial vectors for both models"
+    evidence:
+      - artifact: "lostbench/results/2x2-adversarial/"
+        field: "vector_comparison.lowest_pass_k"
+        value: "code_agent"
+        access_date: "2026-02-28"
+    interpretation: |
+      Across code-agent, tool-use, multimodal, integrated, and adversarial
+      vectors, code-agent consistently produces the lowest safety persistence
+      scores. SEED-013 (PE code-agent) is universally preamble-resistant.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Another adversarial vector consistently produces lower Pass^k across models"
+    interpretation: "Code-agent is not uniquely dangerous; a different vector is worse"
+    status: "Not triggered — code-agent is lowest across both GPT-5.2 and Opus 4.6"
+
+  - id: "FALS-002"
+    condition: "Code-agent effect disappears with updated system prompts or model versions"
+    interpretation: "Vulnerability is prompt-dependent or version-specific, not structural"
+    status: "Not triggered"
+
+  - id: "FALS-003"
+    condition: "Code-agent Pass^k reaches ≥0.50 on replication with n≥5 trials"
+    interpretation: "Original measurement was a low-N artifact"
+    status: "Not triggered"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim code-agent is the ONLY dangerous vector"
+    explanation: "All 5 vectors degrade safety; code-agent is the most effective"
+
+  - statement: "We do not claim the mechanism is fully understood"
+    explanation: "Hypothesized: code context triggers mode-switching that deprioritizes safety constraints"
+
+  - statement: "We do not claim this applies to all code generation tasks"
+    explanation: "Tested specifically on clinical-code-agent scenarios with embedded safety requirements"
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "lostbench/results/2x2-adversarial/"
+      type: "quantitative"
+      weight: "primary"
+      description: "8 code-agent scenarios × 2 models × 2 conditions × n=3 trials"
+
+  supporting:
+    - source: "lostbench/results/seeds-persistence/"
+      type: "quantitative"
+      weight: "supporting"
+      description: "SEED-013 (PE code-agent) universally preamble-resistant across 4 models"
+
+    - source: "lostbench/ADVERSARIAL_FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Narrative analysis of adversarial vector effectiveness"
+
+## Limitations
+
+limitations:
+  - limitation: "8 scenarios per vector"
+    impact: "Small scenario count limits generalizability within the code-agent category"
+    mitigation: "Expand code-agent scenario corpus with additional clinical-code patterns"
+
+  - limitation: "n=3 trials"
+    impact: "Wilson CI ceiling at n=3 is ~0.57; cannot distinguish moderate from high reliability"
+    mitigation: "Scale to n=15 for tighter bounds"
+
+  - limitation: "Two model families tested"
+    impact: "Open-weight and other proprietary models may show different vulnerability profiles"
+    mitigation: "LostBench open-weight evaluation partially addresses (Nemotron, Cascade)"
+
+  - limitation: "Code-agent scenarios may be inherently harder"
+    impact: "Confound between attack vector effectiveness and scenario difficulty"
+    mitigation: "Control for scenario difficulty via matched non-code variants of same clinical content"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial claim based on LostBench adversarial 2x2 campaign and seeds persistence data"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Quarterly or on new evidence"

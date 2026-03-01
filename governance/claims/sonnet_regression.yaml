@@ -1,0 +1,141 @@
+# Claim: Sonnet 4.6 Safety Regression
+
+id: "CLM-2026-0007"
+status: "provisional"
+version: "1.0.0"
+
+## Assertion
+
+assertion: |
+  Sonnet 4.6 shows approximately 70% reduction in preamble effectiveness compared
+  to Sonnet 4.5. Preamble lift drops from +0.435 (Sonnet 4.5) to +0.131 (Sonnet 4.6),
+  suggesting a safety regression in the model's responsiveness to system prompt
+  safety instructions between versions.
+
+## Quantitative Claims
+
+claims:
+  - id: "CLM-2026-0007-A"
+    assertion: "Sonnet 4.5 preamble lift = +0.435"
+    evidence:
+      - artifact: "experiments/run_log.jsonl"
+        field: "sonnet45.preamble_lift"
+        value: 0.435
+        access_date: "2026-02-27"
+    interpretation: |
+      Sonnet 4.5 baseline to preamble delta measured on emergency scenarios.
+      Preamble substantially improved safety persistence.
+
+  - id: "CLM-2026-0007-B"
+    assertion: "Sonnet 4.6 preamble lift = +0.131"
+    evidence:
+      - artifact: "experiments/run_log.jsonl"
+        field: "sonnet46.preamble_lift"
+        value: 0.131
+        access_date: "2026-02-27"
+    interpretation: |
+      Same preamble, same scenarios, but lift is 70% smaller on Sonnet 4.6.
+      Suggests reduced sensitivity to system prompt safety instructions.
+
+  - id: "CLM-2026-0007-C"
+    assertion: "Lift reduction is 70% ((0.435 - 0.131) / 0.435 = 0.699)"
+    evidence:
+      - artifact: "experiments/run_log.jsonl"
+        field: "sonnet_version_comparison.lift_reduction"
+        value: 0.699
+        access_date: "2026-02-27"
+    interpretation: |
+      The proportional reduction in preamble effectiveness is ~70%.
+      This is a single version comparison and carries provisional status.
+
+## Falsification Criteria
+
+falsification_criteria:
+  - id: "FALS-001"
+    condition: "Re-evaluation on updated Sonnet 4.6 shows preamble lift within 10% of Sonnet 4.5 (i.e., lift >= 0.392)"
+    interpretation: "Regression was transient or version-specific; resolved by model update"
+    status: "Not triggered"
+
+  - id: "FALS-002"
+    condition: "Original measurement shown to be LLM judge artifact (e.g., judge systematically rates Sonnet 4.6 lower)"
+    interpretation: "Regression is in measurement, not model behavior"
+    test: |
+      Compare judge scores with physician annotation on matched subset.
+      If judge-physician kappa < 0.60 specifically for Sonnet 4.6, flag as artifact.
+    status: "Not triggered — but judge calibration on Sonnet 4.6 specifically has not been verified"
+
+  - id: "FALS-003"
+    condition: "Lift reduction explained by baseline change (Sonnet 4.6 baseline higher, leaving less room for lift)"
+    interpretation: "Model is safer at baseline; lower lift reflects ceiling effect, not regression"
+    status: "Under investigation — baseline comparison needed"
+
+## What This Claim Does NOT Assert
+
+non_claims:
+  - statement: "We do not claim this is an intentional Anthropic design decision"
+    explanation: "Regression could be a side-effect of other training changes."
+
+  - statement: "We do not claim Sonnet 4.6 is less safe than Sonnet 4.5 overall"
+    explanation: "Preamble lift is one dimension. Baseline safety, constitutional training, and other factors may differ."
+
+  - statement: "We do not claim this effect generalizes to all safety-relevant prompts"
+    explanation: "Only emergency medicine preamble tested. Other domains may show different patterns."
+
+  - statement: "We do not claim the 70% figure is precise"
+    explanation: "Single version comparison on one scenario set. Confidence intervals not computed on the difference."
+
+## Evidence Chain
+
+evidence_chain:
+  primary:
+    - source: "experiments/run_log.jsonl"
+      type: "quantitative"
+      weight: "primary"
+      description: "Preamble lift measurements for both Sonnet versions"
+
+  supporting:
+    - source: "experiments/FINDINGS.md"
+      type: "qualitative"
+      weight: "supporting"
+      description: "Cross-model mitigation asymmetry analysis"
+
+  calibration:
+    - source: "evaluation/bloom_eval_v2/METHODOLOGY.md"
+      type: "methodological"
+      weight: "supporting"
+      description: "Judge calibration protocol (cross-vendor LLM judge)"
+
+## Limitations
+
+limitations:
+  - limitation: "Single version comparison (4.5 vs 4.6)"
+    impact: "No trend line — could be noise, regression, or ceiling effect"
+    mitigation: "Track across future Sonnet releases to establish trend"
+
+  - limitation: "No confidence intervals on the lift difference"
+    impact: "Difference may not be statistically significant"
+    mitigation: "Compute bootstrap CI on lift difference in follow-up evaluation"
+
+  - limitation: "Judge not specifically calibrated for Sonnet 4.6 outputs"
+    impact: "Judge may score Sonnet 4.6's response style differently"
+    mitigation: "Physician review of Sonnet 4.6 subset planned"
+
+  - limitation: "Baseline comparison not yet performed"
+    impact: "If Sonnet 4.6 baseline is higher, reduced lift could be a ceiling effect"
+    mitigation: "FALS-003 explicitly tracks this alternative explanation"
+
+## Revision History
+
+revisions:
+  - version: "1.0.0"
+    date: "2026-03-01"
+    change: "Initial provisional claim based on single version comparison"
+    author: "safety-lead"
+
+## Ownership
+
+owners:
+  - "@safety-lead"
+  - "@physician-reviewer"
+
+review_schedule: "Re-evaluate on each Sonnet model update or within 60 days"

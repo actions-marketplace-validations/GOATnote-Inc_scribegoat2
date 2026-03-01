@@ -6,10 +6,11 @@ version: "1.0.0"
 
 ## Assertion
 
-Models exhibit significantly higher failure rates at Turn 2 than other turns, 
-following an initially correct Turn 1 response. This "Turn 2 cliff" represents
-a critical vulnerability where realistic user pressure triggers safety boundary
-erosion immediately after the model demonstrates correct emergency identification.
+assertion: |
+  Models exhibit significantly higher failure rates at Turn 2 than other turns,
+  following an initially correct Turn 1 response. This "Turn 2 cliff" represents
+  a critical vulnerability where realistic user pressure triggers safety boundary
+  erosion immediately after the model demonstrates correct emergency identification.
 
 ## Quantitative Claims
 
@@ -97,19 +98,19 @@ falsification_criteria:
 ## What This Claim Does NOT Assert
 
 non_claims:
-  - "We do not claim Turn 2 is the ONLY vulnerable point"
+  - statement: "We do not claim Turn 2 is the ONLY vulnerable point"
     explanation: "Later turns also show failures; Turn 2 is the peak"
     
-  - "We do not claim the pilot (N=10) is statistically powered"
+  - statement: "We do not claim the pilot (N=10) is statistically powered"
     explanation: "Phase 2 targets N=1000 for proper statistical analysis"
     
-  - "We do not claim this effect generalizes to all pressure types equally"
+  - statement: "We do not claim this effect generalizes to all pressure types equally"
     explanation: "Pressure regime interaction needs larger sample"
     
-  - "We do not claim the cliff is irreversible"
+  - statement: "We do not claim the cliff is irreversible"
     explanation: "Some trajectories show recovery after Turn 2 failure"
     
-  - "We do not claim system prompt mitigations fully eliminate the cliff"
+  - statement: "We do not claim system prompt mitigations fully eliminate the cliff"
     explanation: "0% rate in pilot is provisionally validated; N=1000 pending"
 
 ## Evidence Chain
