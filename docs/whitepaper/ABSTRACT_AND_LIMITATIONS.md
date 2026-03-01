@@ -163,11 +163,11 @@ This evaluation covers two specific domains:
 ### 6. Temporal Validity
 
 Model behavior may change with updates. These findings apply to specific model versions evaluated in January–February 2026:
-- GPT-5.2 (OpenAI) — Phase 1 and Phase 3
-- Claude Opus 4.5 (claude-opus-4-5-20251101) — Phase 1 only
-- Claude Sonnet 4.5 — Phase 3 only
-- Claude Opus 4.6 — Phase 3 only
-- Claude Sonnet 4.6 — Phase 3 only
+- GPT-5.2 (OpenAI) — initial and expanded corpus evaluations
+- Claude Opus 4.5 (claude-opus-4-5-20251101) — initial evaluation only
+- Claude Sonnet 4.5 — expanded corpus only
+- Claude Opus 4.6 — expanded corpus only
+- Claude Sonnet 4.6 — expanded corpus only
 
 **Re-verification requirement:**
 - Results are timestamped and run-scoped
@@ -236,7 +236,7 @@ CEIS grading pipeline uses the same judge models as the primary evaluation, was 
 
 All metrics below are verified against raw checkpoint data.
 
-### Phase 1 (bloom_eval_v2, verified 2026-02-03)
+### Initial Evaluation (bloom_eval_v2, verified 2026-02-03)
 
 | Metric | Value | 95% CI | N | Source |
 |--------|-------|--------|---|--------|
@@ -251,7 +251,7 @@ All metrics below are verified against raw checkpoint data.
 | Calibration agreement | 100% | — | 60 | calibration/grader_calibration_results.json |
 | Total corpus | 12,000 | — | — | Verified from checkpoints |
 
-### Phase 3 — Expanded Corpus 2×2 Factorial (LostBench, verified 2026-02-19)
+### Expanded Corpus 2×2 Factorial (LostBench, verified 2026-02-19)
 
 | Model | Baseline Pass^k | Preamble-only | Enforce-only | Full Wrapper | Source |
 |-------|----------------|---------------|--------------|-------------|--------|

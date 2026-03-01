@@ -176,11 +176,11 @@ This evaluation covers two specific domains:
 ### 6. Temporal Validity
 
 Model behavior may change with updates. These findings apply to specific model versions evaluated in January–February 2026:
-- GPT-5.2 (OpenAI) — Phase 1 and Phase 3
-- Claude Opus 4.5 (claude-opus-4-5-20251101) — Phase 1 only
-- Claude Sonnet 4.5 — Phase 3 only
-- Claude Opus 4.6 — Phase 3 only
-- Claude Sonnet 4.6 — Phase 3 only
+- GPT-5.2 (OpenAI) — initial and expanded corpus evaluations
+- Claude Opus 4.5 (claude-opus-4-5-20251101) — initial evaluation only
+- Claude Sonnet 4.5 — expanded corpus only
+- Claude Opus 4.6 — expanded corpus only
+- Claude Sonnet 4.6 — expanded corpus only
 
 **Re-verification requirement:**
 - Results are timestamped and run-scoped
@@ -249,7 +249,7 @@ CEIS grading pipeline uses the same judge models as the primary evaluation, was 
 
 All metrics below are verified against raw checkpoint data.
 
-### Phase 1 (bloom_eval_v2, verified 2026-02-03)
+### Initial Evaluation (bloom_eval_v2, verified 2026-02-03)
 
 | Metric | Value | 95% CI | N | Source |
 |--------|-------|--------|---|--------|
@@ -264,7 +264,7 @@ All metrics below are verified against raw checkpoint data.
 | Calibration agreement | 100% | — | 60 | calibration/grader_calibration_results.json |
 | Total corpus | 12,000 | — | — | Verified from checkpoints |
 
-### Phase 3 — Expanded Corpus 2×2 Factorial (LostBench, verified 2026-02-19)
+### Expanded Corpus 2×2 Factorial (LostBench, verified 2026-02-19)
 
 | Model | Baseline Pass^k | Preamble-only | Enforce-only | Full Wrapper | Source |
 |-------|----------------|---------------|--------------|-------------|--------|
@@ -935,7 +935,7 @@ Model versions are recorded as-is from evaluation runs. These are the exact iden
 | Healthcare Emergency (MSTS) | 4,000 trajectories | 4,000 trajectories |
 | Crisis Resource (turn4) | 3,000 trajectories | 1,000 trajectories |
 
-**Note:** GPT-5.2 has higher coverage in the crisis resource domain due to additional studies (turn4_baseline, turn4_mitigated, turn4_extended). Expanded model coverage (Opus 4.6, Sonnet 4.5/4.6, open-weight) was added in Phase 3 evaluations through the LostBench corpus.
+**Note:** GPT-5.2 has higher coverage in the crisis resource domain due to additional studies (turn4_baseline, turn4_mitigated, turn4_extended). Expanded model coverage (Opus 4.6, Sonnet 4.5/4.6, open-weight) was added in the expanded corpus evaluations through the LostBench corpus.
 
 ---
 
@@ -1906,7 +1906,7 @@ A blinded multi-rater replication protocol is documented for Phase 2.1:
 
 ## 7.2 Sample Size Constraints [PARTIALLY_ADDRESSED]
 
-**Status note:** Phase 1 corpus is 12,000 trajectories; expanded corpus adds 23 scenarios x 4 models x 3 trials. Seeds persistence adds 17 seeds x 4 models x 5 trials (3,400 graded responses). Total graded trajectories continue to grow with each evaluation campaign.
+**Status note:** Initial evaluation corpus is 12,000 trajectories; expanded corpus adds 23 scenarios x 4 models x 3 trials. Seeds persistence adds 17 seeds x 4 models x 5 trials (3,400 graded responses). Total graded trajectories continue to grow with each evaluation campaign.
 
 **Current sample sizes:**
 - Crisis resource persistence: 4,000 trajectories (1,000 per condition)
@@ -2003,11 +2003,11 @@ This evaluation covers two specific domains:
 
 Model behavior may change with updates. These findings apply to specific model versions evaluated in January-February 2026:
 
-**Phase 1 (January 2026):**
+**Initial evaluation (January 2026):**
 - GPT-5.2 (OpenAI)
 - Claude Opus 4.5 (claude-opus-4-5-20251101)
 
-**Phase 3 — expanded corpus (February 2026):**
+**Expanded corpus (February 2026):**
 - GPT-5.2 (OpenAI)
 - Claude Opus 4.6 (Anthropic)
 - Claude Sonnet 4.5 (Anthropic)
@@ -2280,17 +2280,17 @@ From §9 of the archived v1, reframed as open research directions:
 
 **Multi-rater replication (highest priority).** Single-adjudicator calibration limits all findings to existence claims. Multi-rater adjudication (minimum 2 additional board-certified EM physicians, blinded, target kappa >= 0.60) is required to establish prevalence estimates. Protocol documented for Phase 2.1; recruitment not started, contingent on funding.
 
-**Judge model diversity.** Current judging uses Claude Sonnet 4.5 (MSTS) and Claude Sonnet 4 (Phase 1 calibration). Planned extensions include GPT-4o as cross-family validator and human-only evaluation for contested cases. The construct validity of using one AI to judge another's safety behavior is not empirically established beyond the calibration set.
+**Judge model diversity.** Current judging uses Claude Sonnet 4.5 (MSTS) and Claude Sonnet 4 (initial calibration). Planned extensions include GPT-4o as cross-family validator and human-only evaluation for contested cases. The construct validity of using one AI to judge another's safety behavior is not empirically established beyond the calibration set.
 
 **Deployment monitoring as validation.** The repository provides TIC (Trajectory Invariant Checker) and MSC (Monotonic Safety Contract) infrastructure. Production monitoring would test whether evaluation-identified failure modes occur in real conversations. Monitoring is positioned as future validation, not evidence — absence of detected violations does not prove safety.
 
 **Domain expansion.** Candidate domains include financial advice (high-stakes, multi-turn common), legal guidance (professional liability), child safety (extreme harm potential), and elder care (vulnerable population). Each domain requires independent adjudicator(s), operational failure definitions, scenario generation, detection mechanism selection, and calibration set creation.
 
-**Longer trajectories.** Phase 1 trajectories are 4 turns; Phase 3 extended to 5 turns. Persistence decay beyond Turn 5 is not measured. Extension to 8-turn trajectories would allow measurement of the persistence decay curve and identification of critical turn thresholds.
+**Longer trajectories.** Initial evaluation trajectories are 4 turns; the expanded corpus extended to 5 turns. Persistence decay beyond Turn 5 is not measured. Extension to 8-turn trajectories would allow measurement of the persistence decay curve and identification of critical turn thresholds.
 
 **Training-level interventions.** Only prompt-level mitigation is evaluated. RLHF with persistence-aware reward, constitutional AI with trajectory-level principles, and fine-tuning on persistence-positive examples are all unexplored.
 
-**External scenario validation.** All Phase 3 results are in-distribution — evaluated on scenarios from the same pipeline used to develop mitigation. The emergency corpus expansion from 23 to 78 scenarios partially addresses this by introducing condition families absent from the original set (disaster triage, procedural emergencies, rare presentations), though they were still generated by the same team. Independent clinical scenario generation by EM physicians not involved in evaluation design remains the highest-priority gap for publication.
+**External scenario validation.** All expanded corpus results are in-distribution — evaluated on scenarios from the same pipeline used to develop mitigation. The emergency corpus expansion from 23 to 78 scenarios partially addresses this by introducing condition families absent from the original set (disaster triage, procedural emergencies, rare presentations), though they were still generated by the same team. Independent clinical scenario generation by EM physicians not involved in evaluation design remains the highest-priority gap for publication.
 
 ### 8.4.3 Reproducibility Requirements
 
@@ -2578,7 +2578,7 @@ Every quantitative claim in this document maps to one or more verifiable artifac
 | 2026-01-29 | Audit report generated | `audit_report_20260129_044943.md` |
 | 2026-02-03 | Whitepaper verification | This document |
 | 2026-02-03 | Documentation reconciliation | Changelog entries |
-| 2026-02-19 | Phase 3 results verified | LostBench results/2x2/ |
+| 2026-02-19 | Expanded corpus results verified | LostBench results/2x2/ |
 | 2026-02-26 | Expanded corpus (78 scenarios) | LostBench emergency corpus |
 | 2026-02-27 | Seeds 2x2 factorial | evaluation/bloom_eval_v2/results/seeds_2x2/ |
 | 2026-02-28 | Seeds persistence (4-model) | lostbench/results/seeds-persistence/ |
@@ -2690,7 +2690,7 @@ For questions about reproducibility or access to additional artifacts:
 
 **Steelman:** If pattern grading had an 85-97% false negative rate, how many other findings relied on pattern grading and are therefore suspect?
 
-**Our response:** This is the right question. We document this explicitly in S06 (Falsification Record). Phase 1 crisis resource detection (RESOURCE_OMISSION) used rule-based detection and is not affected. Phase 1 Tier 1 results used LLM-as-judge. The pattern grading artifact affected seeds evaluations and open-weight model assessments prior to cross-validation.
+**Our response:** This is the right question. We document this explicitly in S06 (Falsification Record). Initial crisis resource detection (RESOURCE_OMISSION) used rule-based detection and is not affected. Initial Tier 1 results used LLM-as-judge. The pattern grading artifact affected seeds evaluations and open-weight model assessments prior to cross-validation.
 
 ---
 

@@ -40,7 +40,7 @@ A blinded multi-rater replication protocol is documented for Phase 2.1:
 
 ## 7.2 Sample Size Constraints [PARTIALLY_ADDRESSED]
 
-**Status note:** Phase 1 corpus is 12,000 trajectories; expanded corpus adds 23 scenarios x 4 models x 3 trials. Seeds persistence adds 17 seeds x 4 models x 5 trials (3,400 graded responses). Total graded trajectories continue to grow with each evaluation campaign.
+**Status note:** Initial evaluation corpus is 12,000 trajectories; expanded corpus adds 23 scenarios x 4 models x 3 trials. Seeds persistence adds 17 seeds x 4 models x 5 trials (3,400 graded responses). Total graded trajectories continue to grow with each evaluation campaign.
 
 **Current sample sizes:**
 - Crisis resource persistence: 4,000 trajectories (1,000 per condition)
@@ -137,11 +137,11 @@ This evaluation covers two specific domains:
 
 Model behavior may change with updates. These findings apply to specific model versions evaluated in January-February 2026:
 
-**Phase 1 (January 2026):**
+**Initial evaluation (January 2026):**
 - GPT-5.2 (OpenAI)
 - Claude Opus 4.5 (claude-opus-4-5-20251101)
 
-**Phase 3 — expanded corpus (February 2026):**
+**Expanded corpus (February 2026):**
 - GPT-5.2 (OpenAI)
 - Claude Opus 4.6 (Anthropic)
 - Claude Sonnet 4.5 (Anthropic)

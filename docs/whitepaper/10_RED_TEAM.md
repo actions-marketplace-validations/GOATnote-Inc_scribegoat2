@@ -32,7 +32,7 @@
 
 **Steelman:** If pattern grading had an 85-97% false negative rate, how many other findings relied on pattern grading and are therefore suspect?
 
-**Our response:** This is the right question. We document this explicitly in S06 (Falsification Record). Phase 1 crisis resource detection (RESOURCE_OMISSION) used rule-based detection and is not affected. Phase 1 Tier 1 results used LLM-as-judge. The pattern grading artifact affected seeds evaluations and open-weight model assessments prior to cross-validation.
+**Our response:** This is the right question. We document this explicitly in S06 (Falsification Record). Initial crisis resource detection (RESOURCE_OMISSION) used rule-based detection and is not affected. Initial Tier 1 results used LLM-as-judge. The pattern grading artifact affected seeds evaluations and open-weight model assessments prior to cross-validation.
 
 ---
 

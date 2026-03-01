@@ -199,7 +199,7 @@ Every quantitative claim in this document maps to one or more verifiable artifac
 | 2026-01-29 | Audit report generated | `audit_report_20260129_044943.md` |
 | 2026-02-03 | Whitepaper verification | This document |
 | 2026-02-03 | Documentation reconciliation | Changelog entries |
-| 2026-02-19 | Phase 3 results verified | LostBench results/2x2/ |
+| 2026-02-19 | Expanded corpus results verified | LostBench results/2x2/ |
 | 2026-02-26 | Expanded corpus (78 scenarios) | LostBench emergency corpus |
 | 2026-02-27 | Seeds 2x2 factorial | evaluation/bloom_eval_v2/results/seeds_2x2/ |
 | 2026-02-28 | Seeds persistence (4-model) | lostbench/results/seeds-persistence/ |

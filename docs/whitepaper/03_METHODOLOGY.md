@@ -313,7 +313,7 @@ Model versions are recorded as-is from evaluation runs. These are the exact iden
 | Healthcare Emergency (MSTS) | 4,000 trajectories | 4,000 trajectories |
 | Crisis Resource (turn4) | 3,000 trajectories | 1,000 trajectories |
 
-**Note:** GPT-5.2 has higher coverage in the crisis resource domain due to additional studies (turn4_baseline, turn4_mitigated, turn4_extended). Expanded model coverage (Opus 4.6, Sonnet 4.5/4.6, open-weight) was added in Phase 3 evaluations through the LostBench corpus.
+**Note:** GPT-5.2 has higher coverage in the crisis resource domain due to additional studies (turn4_baseline, turn4_mitigated, turn4_extended). Expanded model coverage (Opus 4.6, Sonnet 4.5/4.6, open-weight) was added in the expanded corpus evaluations through the LostBench corpus.
 
 ---
 
