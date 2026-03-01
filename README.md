@@ -205,7 +205,7 @@ Both expose `gate-result` (`PASS`/`FAIL`) and `pass-rate` as outputs. The reusab
 - Does not constitute a deployment recommendation or regulatory assessment.
 - Controlled evaluation behavior does not predict production behavior.
 
-Full discussion: [`docs/whitepaper/08_LIMITATIONS.md`](docs/whitepaper/08_LIMITATIONS.md)
+Full discussion: [`docs/whitepaper/07_LIMITATIONS.md`](docs/whitepaper/07_LIMITATIONS.md)
 
 ## Project Structure
 
@@ -261,4 +261,4 @@ Architecture overview: [CROSS_REPO_ARCHITECTURE.md](https://github.com/GOATnote-
 
 b@thegoatnote.com | GOATnote Inc
 
-**v0.6.0** | [Governance](governance/) | [Limitations](docs/whitepaper/08_LIMITATIONS.md) | [Failure Taxonomy](configs/failure_taxonomy.yaml)
+**v0.6.0** | [Governance](governance/) | [Limitations](docs/whitepaper/07_LIMITATIONS.md) | [Failure Taxonomy](configs/failure_taxonomy.yaml)
