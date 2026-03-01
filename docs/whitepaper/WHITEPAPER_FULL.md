@@ -370,7 +370,7 @@ gate (0.95) represents a fundamental capability shortfall, not a tuning problem.
 > Best Pass^k across all configurations is 0.696 (GPT-5.2); All 4 models × all configs < 0.70 on 23-scenario corpus
 > *Evidence: 2x2, FINDINGS.md, seeds-persistence | Last verified: 2026-02-27* |
 | Claims tracked | 15 | -- | -- |
-| Claims falsified/superseded | 2 | -- | S06 |
+| Claims falsified/superseded | 7 | -- | S06 (§6.1–§6.7) |
 | Models evaluated | 6 (GPT-5.2, Opus 4.5, Opus 4.6, Sonnet 4.5, Sonnet 4.6, + open-weight) | -- | -- |
 | Emergency conditions | 23 (expanded corpus) | -- | -- |
 | Adversarial scenarios | 43 (5 vectors) | -- | -- |

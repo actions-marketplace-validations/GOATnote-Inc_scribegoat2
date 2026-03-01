@@ -1,4 +1,4 @@
-# /whitepaper-refresh — Living Evidence Portfolio Update
+# Living Evidence Portfolio Update
 
 Refresh the whitepaper by verifying claim-evidence chains, synthesizing new evidence, and red-teaming the result.
 

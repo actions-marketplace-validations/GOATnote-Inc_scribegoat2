@@ -157,6 +157,10 @@ Commit conventions: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`. Branch namin
 | Evaluation methodology | `evaluation/bloom_eval_v2/METHODOLOGY.md` |
 | Validated mitigations | `docs/VALIDATED_MITIGATIONS.md` |
 | Skills index | `skills/INDEX.md` |
+| Whitepaper builder (claim refs, §01 auto-gen) | `scripts/build_whitepaper_md.py` |
+| Claim evidence chain verification | `scripts/verify_claim_evidence.py` |
+| Versioned empirical claims (15 total) | `governance/claims/*.yaml` |
+| Whitepaper navigation index | `docs/whitepaper/WHITEPAPER_INDEX.md` |
 | Rust kernel | `tsr_core/src/lib.rs` |
 | FHIR resource builders | `src/fhir/resources.py` |
 | FHIR generator (scenarios + bundle assembly) | `src/fhir/generator.py` |

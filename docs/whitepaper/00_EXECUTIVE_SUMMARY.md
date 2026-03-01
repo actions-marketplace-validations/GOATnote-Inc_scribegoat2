@@ -42,7 +42,7 @@ This document follows three principles:
 | Aggregate violation rate | 82.4% (N=11,547) | ESTABLISHED | {{claim:CLM-2026-0002}} |
 | Best achievable Pass^k | 0.696 (GPT-5.2, preamble) | ESTABLISHED | {{claim:CLM-2026-0006}} |
 | Claims tracked | 15 | -- | -- |
-| Claims falsified/superseded | 2 | -- | S06 |
+| Claims falsified/superseded | 7 | -- | S06 (§6.1–§6.7) |
 | Models evaluated | 6 (GPT-5.2, Opus 4.5, Opus 4.6, Sonnet 4.5, Sonnet 4.6, + open-weight) | -- | -- |
 | Emergency conditions | 23 (expanded corpus) | -- | -- |
 | Adversarial scenarios | 43 (5 vectors) | -- | -- |
