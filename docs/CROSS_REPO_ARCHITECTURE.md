@@ -30,7 +30,7 @@ Key modules:
 
 **Role:** Published, pip-installable benchmark derived from ScribeGoat2.
 
-The public-facing evaluation suite. Adds CEIS (3-layer grading), MSIW (fail-closed wrapper), multi-trial pooling, and a cleaner CLI. Uses 50 emergency + 3 crisis + 15 defer + 10 adversarial + 8 tool-use + 8 code-agent + 8 multimodal + 9 integrated scenarios (111 total) in YAML format.
+The public-facing evaluation suite. Adds CEIS (3-layer grading), MSIW (fail-closed wrapper), multi-trial pooling, and a cleaner CLI. Uses 50 emergency + 3 crisis + 15 defer + 10 adversarial + 8 tool-use + 8 code-agent + 8 multimodal + 9 integrated hand-written scenarios (111 total) in YAML format, plus 279 coverage-cycle generated seeds (CYC-001 through CYC-279, 96.7% OpenEM condition coverage) evaluated via a two-phase methodology: Phase 1 deterministic screen (temp=0) identifies discriminative seeds, Phase 2 stochastic characterization (temp=0.7, per-trial seed variation) measures deployment risk via pass^k and intermittent failure rates.
 
 Key modules:
 
@@ -379,7 +379,7 @@ Four complementary evaluation frameworks measuring different aspects of model be
 | Property | ScribeGoat2 | LostBench | SafeShift | RadSlice |
 |----------|-------------|-----------|-----------|----------|
 | Format | Python dataclasses | YAML files | YAML files | YAML files |
-| Count | 300+ escalation, 100+ defer | 111 total (50 emergency, 15 defer, 43 adversarial) | 23 (15 clinical, 8 robotic) | 320 tasks across 4 modalities (+ generated G-prefix variants) |
+| Count | 300+ escalation, 100+ defer | 111 hand-written (50 emergency, 15 defer, 43 adversarial) + 279 coverage-cycle generated seeds (96.7% OpenEM coverage) | 23 (15 clinical, 8 robotic) | 320 tasks across 4 modalities (+ generated G-prefix variants) |
 | Loader | `scenarios/loader.py` | YAML glob | `scenario.py` | `task.py` |
 | Metadata | ESI level, red flags, clinical notes | CEIS severity weight, condition ID | Optimization config, safety dimension weights | `condition_id` → OpenEM, modality, anatomy, ground truth, confusion pairs |
 | OpenEM link | Condition map wrapper | Condition map wrapper | Optional `[openem]` extra | `condition_id` field (reference, not import) |
