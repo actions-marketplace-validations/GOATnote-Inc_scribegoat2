@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -43,7 +42,9 @@ def _write_ids(path: Path, ids: List[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Export GPT-5.2 high-risk triage prompt_id queues (extractive).")
+    parser = argparse.ArgumentParser(
+        description="Export GPT-5.2 high-risk triage prompt_id queues (extractive)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -113,12 +114,14 @@ def main() -> None:
     combined = sorted(set(emergency_ids + halluc_ids))
     _write_ids(out_dir / "gpt52_combined_high_risk_ids.txt", combined)
 
-    print(f"✅ Wrote: {out_dir/'gpt52_emergency_low_score_non_abstained_ids.txt'} ({len(emergency_ids)} ids)")
-    print(f"✅ Wrote: {out_dir/'gpt52_hallucination_low_score_non_abstained_ids.txt'} ({len(halluc_ids)} ids)")
-    print(f"✅ Wrote: {out_dir/'gpt52_combined_high_risk_ids.txt'} ({len(combined)} ids)")
+    print(
+        f"✅ Wrote: {out_dir / 'gpt52_emergency_low_score_non_abstained_ids.txt'} ({len(emergency_ids)} ids)"
+    )
+    print(
+        f"✅ Wrote: {out_dir / 'gpt52_hallucination_low_score_non_abstained_ids.txt'} ({len(halluc_ids)} ids)"
+    )
+    print(f"✅ Wrote: {out_dir / 'gpt52_combined_high_risk_ids.txt'} ({len(combined)} ids)")
 
 
 if __name__ == "__main__":
     main()
-
-

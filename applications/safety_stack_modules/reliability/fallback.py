@@ -15,12 +15,13 @@ Critical for healthcare system availability
 import asyncio
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, Type
 
 
 @dataclass
 class FallbackPolicy:
     """Configuration for fallback behavior"""
+
     # Static fallback value
     fallback_value: Optional[Any] = None
     # Callable fallback function
@@ -264,7 +265,7 @@ class CachedFallback:
 
             return result
 
-        except Exception as e:
+        except Exception:
             # Check for cached value
             if cache_key in self._cache:
                 cached_time = self._timestamps.get(cache_key, 0)

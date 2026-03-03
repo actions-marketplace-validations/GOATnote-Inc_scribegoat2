@@ -13,9 +13,9 @@ from pathlib import Path
 def find_references(content: str) -> list[str]:
     """Extract file references from content."""
     patterns = [
-        r'See:\s*`?([^`\n]+)`?',
-        r'Source:\s*`?([^`\n]+)`?',
-        r'Defined in:\s*`?([^`\n]+)`?',
+        r"See:\s*`?([^`\n]+)`?",
+        r"Source:\s*`?([^`\n]+)`?",
+        r"Defined in:\s*`?([^`\n]+)`?",
         r'path:\s*["\']?([^"\'}\n]+)["\']?',
     ]
 
@@ -58,9 +58,7 @@ def main():
 
             if not full_ref.exists() and not rel_ref.exists():
                 # Could be a pattern or partial path
-                if "*" not in ref and not any(
-                    p.exists() for p in repo_root.glob(f"**/{ref}")
-                ):
+                if "*" not in ref and not any(p.exists() for p in repo_root.glob(f"**/{ref}")):
                     broken_refs.append(f"{filepath.relative_to(repo_root)}: {ref}")
 
     if broken_refs:

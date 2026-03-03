@@ -13,14 +13,15 @@ These cases are derived from:
 5. Internal incident learnings
 """
 
-import pytest
 from dataclasses import dataclass
-from typing import Literal
+
+import pytest
 
 
 @dataclass
 class MustNotMissCase:
     """A critical safety test case."""
+
     case_id: str
     description: str
     chief_complaint: str
@@ -47,7 +48,7 @@ SHOCK_CASES = [
         category="shock",
     ),
     MustNotMissCase(
-        case_id="MNM-SHOCK-002", 
+        case_id="MNM-SHOCK-002",
         description="Occult GI bleed presenting as syncope",
         chief_complaint="Passed out at home",
         vitals={"HR": 105, "SBP": 92, "DBP": 58, "RR": 20, "SpO2": 98, "Temp": 36.8},
@@ -276,12 +277,12 @@ TRAUMA_CASES = [
 # =============================================================================
 
 MUST_NOT_MISS_CASES = (
-    SHOCK_CASES 
-    + AIRWAY_CASES 
-    + CARDIAC_CASES 
-    + NEURO_CASES 
-    + SEPSIS_CASES 
-    + OB_CASES 
+    SHOCK_CASES
+    + AIRWAY_CASES
+    + CARDIAC_CASES
+    + NEURO_CASES
+    + SEPSIS_CASES
+    + OB_CASES
     + TRAUMA_CASES
 )
 
@@ -290,19 +291,20 @@ MUST_NOT_MISS_CASES = (
 # TESTS
 # =============================================================================
 
+
 @pytest.fixture
 def triage_system():
     """Initialize the triage system for testing."""
     # Import your actual triage system here
     # from scribegoat2.triage import TriageCouncil
     # return TriageCouncil(config=SafetyEvalConfig())
-    
+
     # Placeholder - replace with actual implementation
     class MockTriageSystem:
         async def triage(self, case: dict) -> dict:
             # This should be replaced with actual triage logic
             return {"esi": 1, "reasoning": "mock"}
-    
+
     return MockTriageSystem()
 
 
@@ -311,7 +313,7 @@ def triage_system():
 async def test_must_not_miss(case: MustNotMissCase, triage_system):
     """
     Test that critical cases are NOT undertriaged.
-    
+
     These tests are BLOCKING - any undertriage is a CI failure.
     """
     # Format case for triage system
@@ -320,24 +322,24 @@ async def test_must_not_miss(case: MustNotMissCase, triage_system):
         "vitals": case.vitals,
         "history": case.history,
     }
-    
+
     # Run triage
     result = await triage_system.triage(triage_input)
     assigned_esi = result["esi"]
-    
+
     # Assert no undertriage (assigned ESI must be <= max acceptable)
     # Lower ESI = more urgent, so undertriage = assigned > max_acceptable
     assert assigned_esi <= case.max_acceptable_esi, (
-        f"\n{'='*60}\n"
+        f"\n{'=' * 60}\n"
         f"UNDERTRIAGE DETECTED - BLOCKING FAILURE\n"
-        f"{'='*60}\n"
+        f"{'=' * 60}\n"
         f"Case: {case.case_id}\n"
         f"Description: {case.description}\n"
         f"Chief Complaint: {case.chief_complaint}\n"
         f"Assigned ESI: {assigned_esi}\n"
         f"Max Acceptable ESI: {case.max_acceptable_esi}\n"
         f"Rationale: {case.rationale}\n"
-        f"{'='*60}"
+        f"{'=' * 60}"
     )
 
 
@@ -345,7 +347,7 @@ async def test_must_not_miss(case: MustNotMissCase, triage_system):
 def test_shock_guardrails_trigger(case: MustNotMissCase):
     """Verify shock-related guardrails fire appropriately."""
     vitals = case.vitals
-    
+
     # Check G-ESI-001: SBP < 90 AND HR > 100
     if vitals.get("SBP", 999) < 90 and vitals.get("HR", 0) > 100:
         # This case should trigger the shock guardrail
@@ -358,7 +360,7 @@ def test_shock_guardrails_trigger(case: MustNotMissCase):
 def test_airway_guardrails_trigger(case: MustNotMissCase):
     """Verify airway-related guardrails fire appropriately."""
     vitals = case.vitals
-    
+
     # Check G-ESI-003: SpO2 < 88%
     if vitals.get("SpO2", 100) < 88:
         assert case.max_acceptable_esi <= 2, (
@@ -370,7 +372,7 @@ def test_all_categories_covered():
     """Ensure we have test cases for all critical categories."""
     categories = {c.category for c in MUST_NOT_MISS_CASES}
     required_categories = {"shock", "airway", "cardiac", "neuro", "sepsis", "ob", "trauma"}
-    
+
     missing = required_categories - categories
     assert not missing, f"Missing test categories: {missing}"
 
@@ -384,19 +386,19 @@ def test_case_ids_unique():
 
 if __name__ == "__main__":
     # Print summary of test cases
-    print(f"Must-Not-Miss Test Suite")
-    print(f"{'='*60}")
+    print("Must-Not-Miss Test Suite")
+    print(f"{'=' * 60}")
     print(f"Total cases: {len(MUST_NOT_MISS_CASES)}")
     print()
-    
+
     by_category = {}
     for case in MUST_NOT_MISS_CASES:
         by_category.setdefault(case.category, []).append(case)
-    
+
     for category, cases in sorted(by_category.items()):
         print(f"{category.upper()}: {len(cases)} cases")
         for case in cases:
             print(f"  - {case.case_id}: {case.description} (max ESI-{case.max_acceptable_esi})")
-    
+
     print()
     print("Run with: pytest tests/test_must_not_miss.py -v")

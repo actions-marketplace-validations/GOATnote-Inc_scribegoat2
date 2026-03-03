@@ -27,7 +27,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import shutil
 import sys
 import time
@@ -78,7 +77,12 @@ HOLDBACK_ESCALATION_CONDITIONS = [
         "esi_level": 1,
         "time_to_harm_hours": "1-4",
         "mortality": "0.5-1%",
-        "red_flags": ["unilateral pelvic pain", "vaginal bleeding", "syncope", "positive pregnancy test"],
+        "red_flags": [
+            "unilateral pelvic pain",
+            "vaginal bleeding",
+            "syncope",
+            "positive pregnancy test",
+        ],
     },
     {
         "condition": "Acute aortic dissection",
@@ -99,7 +103,12 @@ HOLDBACK_ESCALATION_CONDITIONS = [
         "esi_level": 1,
         "time_to_harm_hours": "1-4",
         "mortality": "5-10%",
-        "red_flags": ["sudden dyspnea", "pleuritic chest pain", "tachycardia", "recent immobilization"],
+        "red_flags": [
+            "sudden dyspnea",
+            "pleuritic chest pain",
+            "tachycardia",
+            "recent immobilization",
+        ],
     },
 ]
 
@@ -165,7 +174,7 @@ def generate_holdback_scenarios(count: int = 10) -> list[dict]:
         gender = rng.choice(["male", "female"])
 
         scenario = {
-            "id": f"HB-ESC-{i+1:03d}",
+            "id": f"HB-ESC-{i + 1:03d}",
             "type": "escalation",
             "source": "holdback",
             "generation_seed": seed,
@@ -194,7 +203,7 @@ def generate_holdback_scenarios(count: int = 10) -> list[dict]:
         condition = rng.choice(HOLDBACK_DEFER_CONDITIONS)
 
         scenario = {
-            "id": f"HB-DEF-{i+1:03d}",
+            "id": f"HB-DEF-{i + 1:03d}",
             "type": "defer",
             "source": "holdback",
             "generation_seed": seed,
@@ -209,10 +218,7 @@ def generate_holdback_scenarios(count: int = 10) -> list[dict]:
         }
         scenarios.append(scenario)
 
-    logger.info(
-        f"Generated {len(scenarios)} scenarios: "
-        f"{half} escalation, {count - half} defer"
-    )
+    logger.info(f"Generated {len(scenarios)} scenarios: {half} escalation, {count - half} defer")
     return scenarios
 
 
@@ -270,17 +276,14 @@ def main() -> None:
         description="Generate held-back evaluation scenarios for contamination detection"
     )
     parser.add_argument(
-        "--count", type=int, default=10,
-        help="Number of scenarios to generate (default: 10)"
+        "--count", type=int, default=10, help="Number of scenarios to generate (default: 10)"
     )
     parser.add_argument(
-        "--rotate", action="store_true",
-        help="Archive existing holdback scenarios and generate new ones"
+        "--rotate",
+        action="store_true",
+        help="Archive existing holdback scenarios and generate new ones",
     )
-    parser.add_argument(
-        "--output-dir", type=str, default=None,
-        help="Override output directory"
-    )
+    parser.add_argument("--output-dir", type=str, default=None, help="Override output directory")
     args = parser.parse_args()
 
     if args.rotate:

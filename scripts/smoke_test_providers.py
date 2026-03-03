@@ -221,9 +221,7 @@ def check_openai_response_structure(client: Any) -> tuple[CheckResult, str]:
         content = response.choices[0].message.content or ""
         assertions.append(("has_choices", len(response.choices) > 0))
         assertions.append(("has_content", bool(content)))
-        assertions.append(
-            ("has_finish_reason", response.choices[0].finish_reason is not None)
-        )
+        assertions.append(("has_finish_reason", response.choices[0].finish_reason is not None))
         assertions.append(("content_nonempty", len(content) > 10))
 
         failed = [name for name, ok in assertions if not ok]
@@ -432,8 +430,8 @@ def check_tic_trajectory(response_text: str) -> CheckResult:
     """Run a minimal single-turn trajectory through the full TIC checker."""
     start = time.perf_counter_ns()
     try:
-        from src.tic.contract import load_contract
         from src.tic.checker import TrajectoryInvariantChecker
+        from src.tic.contract import load_contract
 
         contract_path = PROJECT_ROOT / "configs" / "contracts" / "healthcare_emergency_v1.yaml"
         contract = load_contract(contract_path)
@@ -646,9 +644,7 @@ def run_smoke_test(providers: list[str]) -> SmokeTestReport:
         else:
             # Provider-only failures — exit code set by caller based on --require
             report.exit_code = 0
-            report.summary = (
-                f"Pipeline OK. Provider(s) unavailable: {', '.join(failed)}"
-            )
+            report.summary = f"Pipeline OK. Provider(s) unavailable: {', '.join(failed)}"
 
     return report
 

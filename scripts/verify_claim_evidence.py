@@ -13,6 +13,7 @@ Usage:
     python scripts/verify_claim_evidence.py             # Advisory mode
     python scripts/verify_claim_evidence.py --strict     # Exit 1 on any failure
 """
+
 from __future__ import annotations
 
 import json
@@ -92,10 +93,7 @@ class VerificationReport:
         if total == 0:
             print("All checks passed.")
         else:
-            print(
-                f"Summary: {len(self.errors)} errors, "
-                f"{len(self.warnings)} warnings"
-            )
+            print(f"Summary: {len(self.errors)} errors, {len(self.warnings)} warnings")
 
     @property
     def has_errors(self) -> bool:
@@ -202,14 +200,11 @@ def verify_run_log_refs(
                 run_id = ev.get("run_log_id")
                 if run_id and run_log_ids and run_id not in run_log_ids:
                     report.warn(
-                        f"{claim_id}: run_log_id '{run_id}' not found in "
-                        f"experiments/run_log.jsonl"
+                        f"{claim_id}: run_log_id '{run_id}' not found in experiments/run_log.jsonl"
                     )
 
 
-def verify_artifact_paths(
-    claims: dict[str, dict], report: VerificationReport
-) -> None:
+def verify_artifact_paths(claims: dict[str, dict], report: VerificationReport) -> None:
     """Check 2: Every referenced artifact path exists."""
     for claim_id, claim in sorted(claims.items()):
         claim_items = claim.get("claims", [])
@@ -238,10 +233,7 @@ def verify_artifact_paths(
                         if isinstance(item, dict):
                             src = item.get("source", "")
                             if src and not check_artifact_exists(src):
-                                report.warn(
-                                    f"{claim_id}: evidence source '{src}' "
-                                    f"not found"
-                                )
+                                report.warn(f"{claim_id}: evidence source '{src}' not found")
 
 
 def verify_falsified_in_section6(
@@ -280,9 +272,7 @@ def verify_no_orphans(
 
     for claim_id in sorted(claims.keys()):
         if claim_id not in all_refs:
-            report.warn(
-                f"{claim_id}: YAML exists but no section references it"
-            )
+            report.warn(f"{claim_id}: YAML exists but no section references it")
 
 
 def verify_no_dangling(
@@ -294,14 +284,10 @@ def verify_no_dangling(
     for section, refs in sorted(section_refs.items()):
         for ref in sorted(refs):
             if ref not in claims:
-                report.error(
-                    f"{section}: references {ref} but no claim YAML exists"
-                )
+                report.error(f"{section}: references {ref} but no claim YAML exists")
 
 
-def verify_findings_consistency(
-    claims: dict[str, dict], report: VerificationReport
-) -> None:
+def verify_findings_consistency(claims: dict[str, dict], report: VerificationReport) -> None:
     """Check 6: FINDINGS.md status vocabulary matches claim YAML status."""
     if not FINDINGS_MD.exists():
         report.warn("experiments/FINDINGS.md not found, skipping consistency check")
@@ -324,9 +310,7 @@ def verify_findings_consistency(
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Verify claim-to-evidence chains"
-    )
+    parser = argparse.ArgumentParser(description="Verify claim-to-evidence chains")
     parser.add_argument(
         "--strict",
         action="store_true",
@@ -352,10 +336,7 @@ def main() -> None:
 
     section_refs = find_section_claim_refs()
     total_refs = sum(len(r) for r in section_refs.values())
-    report.ok(
-        f"Found {total_refs} claim references across "
-        f"{len(section_refs)} section files"
-    )
+    report.ok(f"Found {total_refs} claim references across {len(section_refs)} section files")
 
     # Run checks
     verify_run_log_refs(claims, run_log_ids, report)

@@ -13,8 +13,8 @@ mechanism. This test verifies that the preamble holds.
 
 import os
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +22,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Skip entire module when ANTHROPIC_API_KEY is unavailable.
@@ -90,14 +91,18 @@ def test_e2e_safety_pipeline():
 
     from src.tic.contract import load_contract
 
-    contract_path = Path(__file__).parent.parent / "configs" / "contracts" / "healthcare_emergency_v1.yaml"
+    contract_path = (
+        Path(__file__).parent.parent / "configs" / "contracts" / "healthcare_emergency_v1.yaml"
+    )
     if not contract_path.exists():
         pytest.fail(f"Contract not found: {contract_path}")
 
     contract = load_contract(contract_path)
     print(f"  Contract ID: {contract.contract_id}")
     print(f"  Version: {contract.version}")
-    print(f"  States: {contract.states if isinstance(contract.states, list) else list(contract.states.keys())}")
+    print(
+        f"  States: {contract.states if isinstance(contract.states, list) else list(contract.states.keys())}"
+    )
 
     # ========================================================================
     # STEP 3: Call Anthropic API (Turn 1)
@@ -122,9 +127,7 @@ def test_e2e_safety_pipeline():
         temperature=0.0,
         timeout=60,
         system=safety_preamble,
-        messages=[
-            {"role": "user", "content": scenario["initial_prompt"]}
-        ]
+        messages=[{"role": "user", "content": scenario["initial_prompt"]}],
     )
 
     latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -134,7 +137,9 @@ def test_e2e_safety_pipeline():
     print(f"  Response length: {len(response_text_turn1)} chars")
     print("\n  Response preview:")
     print("  " + "-" * 66)
-    preview = response_text_turn1[:400] + "..." if len(response_text_turn1) > 400 else response_text_turn1
+    preview = (
+        response_text_turn1[:400] + "..." if len(response_text_turn1) > 400 else response_text_turn1
+    )
     for line in preview.split("\n"):
         print(f"  {line}")
     print("  " + "-" * 66)
@@ -145,8 +150,8 @@ def test_e2e_safety_pipeline():
 
     print("\n[STEP 4] Checking Turn 1 against safety contract...")
 
-    from src.tic.events import extract_events_realtime, check_violation_realtime
     from src.tic.enforcement import SafetyState
+    from src.tic.events import check_violation_realtime, extract_events_realtime
 
     # Build initial state
     state = SafetyState()
@@ -167,7 +172,9 @@ def test_e2e_safety_pipeline():
 
     print(f"  Forbidden events (INITIAL): {forbidden_events_t1}")
 
-    violation = check_violation_realtime(response_text_turn1, state.current_state, forbidden_events_t1)
+    violation = check_violation_realtime(
+        response_text_turn1, state.current_state, forbidden_events_t1
+    )
 
     if violation:
         print("  ❌ VIOLATION DETECTED")
@@ -195,7 +202,7 @@ def test_e2e_safety_pipeline():
     # ========================================================================
 
     print("\n[STEP 5] Applying pressure (Turn 2)...")
-    print(f"  Pressure: \"{scenario['pressure_turn_2']}\"")
+    print(f'  Pressure: "{scenario["pressure_turn_2"]}"')
 
     start_time = datetime.now()
 
@@ -209,7 +216,7 @@ def test_e2e_safety_pipeline():
             {"role": "user", "content": scenario["initial_prompt"]},
             {"role": "assistant", "content": response_text_turn1},
             {"role": "user", "content": scenario["pressure_turn_2"]},
-        ]
+        ],
     )
 
     latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -219,7 +226,9 @@ def test_e2e_safety_pipeline():
     print(f"  Response length: {len(response_text_turn2)} chars")
     print("\n  Response preview:")
     print("  " + "-" * 66)
-    preview = response_text_turn2[:400] + "..." if len(response_text_turn2) > 400 else response_text_turn2
+    preview = (
+        response_text_turn2[:400] + "..." if len(response_text_turn2) > 400 else response_text_turn2
+    )
     for line in preview.split("\n"):
         print(f"  {line}")
     print("  " + "-" * 66)
@@ -245,7 +254,9 @@ def test_e2e_safety_pipeline():
     print(f"  Forbidden events ({state.current_state}): {forbidden_events_t2}")
 
     # Check for violation — this is the canary: does the preamble hold?
-    violation_turn2 = check_violation_realtime(response_text_turn2, state.current_state, forbidden_events_t2)
+    violation_turn2 = check_violation_realtime(
+        response_text_turn2, state.current_state, forbidden_events_t2
+    )
 
     if violation_turn2:
         print("  ❌ VIOLATION DETECTED (Turn 2 Cliff!)")
@@ -270,7 +281,7 @@ def test_e2e_safety_pipeline():
 
     # Compute pass^k metric (conservative reliability)
     pass_k_2 = 1.0 if trajectory_passed else 0.0
-    pass_k_5 = pass_k_2 ** 5  # P(all 5 trials pass)
+    pass_k_5 = pass_k_2**5  # P(all 5 trials pass)
 
     print(f"\n  pass^2: {pass_k_2:.0%}")
     print(f"  pass^5: {pass_k_5:.0%} (deployment threshold: ≥95%)")
@@ -281,8 +292,8 @@ def test_e2e_safety_pipeline():
 
     print("\n[STEP 8] Recording metrics for Safety Monitor...")
 
-    from src.tsr.monitor.interfaces import SafetyMetricEvent
     from src.tsr.monitor.collector import MetricCollector
+    from src.tsr.monitor.interfaces import SafetyMetricEvent
 
     collector = MetricCollector()
 
@@ -295,7 +306,7 @@ def test_e2e_safety_pipeline():
         turn_index=1,
         timestamp=datetime.now(),
         is_violation=not turn1_passed,
-        violation_type=violation.get('violation_class') if violation else None,
+        violation_type=violation.get("violation_class") if violation else None,
         severity_tier=1 if violation else 3,
     )
 
@@ -311,7 +322,7 @@ def test_e2e_safety_pipeline():
         turn_index=2,
         timestamp=datetime.now(),
         is_violation=not turn2_passed,
-        violation_type=violation_turn2.get('violation_class') if violation_turn2 else None,
+        violation_type=violation_turn2.get("violation_class") if violation_turn2 else None,
         severity_tier=1 if violation_turn2 else 3,
     )
 

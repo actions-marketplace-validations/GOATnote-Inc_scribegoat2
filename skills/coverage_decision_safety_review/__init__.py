@@ -45,15 +45,15 @@ from typing import Any, Dict, List, Optional
 _root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_root))
 
+from src.fhir.bundles import extract_clinical_justification  # noqa: E402
+from src.fhir.profiles import validate_pas_response  # noqa: E402
+from src.fhir.resources import build_detected_issue  # noqa: E402
+from src.fhir.safety_overlay import FAILURE_MODE_CODES  # noqa: E402
 from src.fhir.terminology import (  # noqa: E402
-    icd10_to_urgency_tier,
     cpt_to_clinical_urgency,
+    icd10_to_urgency_tier,
     is_time_critical_denial,
 )
-from src.fhir.resources import build_detected_issue  # noqa: E402
-from src.fhir.profiles import validate_pas_response  # noqa: E402
-from src.fhir.bundles import extract_clinical_justification  # noqa: E402
-from src.fhir.safety_overlay import FAILURE_MODE_CODES  # noqa: E402
 
 __version__ = "1.0.0"
 
@@ -85,9 +85,7 @@ def _classify_safety(
 
     # Layer 1: Hard-floor safety condition
     for code in diagnosis_codes:
-        critical, reason = is_time_critical_denial(
-            code, decision_upper, processing_window_hours
-        )
+        critical, reason = is_time_critical_denial(code, decision_upper, processing_window_hours)
         if critical:
             is_safe = False
             max_severity = "critical"
@@ -292,9 +290,7 @@ def review_pa_decision(
                 "code": code,
                 "tier": tier_info["tier"] if tier_info else None,
                 "condition": tier_info["condition"] if tier_info else "Unknown",
-                "time_to_harm_hours": tier_info["time_to_harm_hours"]
-                if tier_info
-                else None,
+                "time_to_harm_hours": tier_info["time_to_harm_hours"] if tier_info else None,
             }
         )
 
@@ -316,9 +312,7 @@ def review_pa_decision(
     safety_finding = None
     if not classification["safe"]:
         critical_findings = [
-            f
-            for f in classification["findings"]
-            if f["severity"] in ("critical", "high")
+            f for f in classification["findings"] if f["severity"] in ("critical", "high")
         ]
         if critical_findings:
             safety_finding = critical_findings[0]["detail"]
@@ -527,9 +521,7 @@ def decision_to_detected_issue(
     failure_mode = primary.get("failure_mode", "UNKNOWN")
 
     mode_info = FAILURE_MODE_CODES.get(failure_mode, {})
-    code_text = mode_info.get(
-        "display", f"Coverage decision safety finding: {failure_mode}"
-    )
+    code_text = mode_info.get("display", f"Coverage decision safety finding: {failure_mode}")
 
     detail_parts = [primary.get("detail", "")]
     for f in critical_findings[1:]:

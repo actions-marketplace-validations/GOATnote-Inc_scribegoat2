@@ -21,7 +21,6 @@ Reference:
 License: CC0 1.0 (matching MSC framework)
 """
 
-import hashlib
 import json
 import os
 from dataclasses import dataclass, field
@@ -29,39 +28,43 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-
 # =============================================================================
 # EU AI ACT RISK CLASSIFICATION
 # =============================================================================
 
+
 class AIActRiskLevel(Enum):
     """EU AI Act risk classification levels."""
+
     UNACCEPTABLE = "unacceptable"  # Prohibited (Article 5)
-    HIGH = "high"                   # Subject to strict requirements (Annex III)
-    LIMITED = "limited"             # Transparency obligations only
-    MINIMAL = "minimal"             # No specific requirements
+    HIGH = "high"  # Subject to strict requirements (Annex III)
+    LIMITED = "limited"  # Transparency obligations only
+    MINIMAL = "minimal"  # No specific requirements
 
 
 class HighRiskCategory(Enum):
     """EU AI Act Annex III high-risk categories relevant to healthcare."""
+
     # Section 5: Access to essential services
-    HEALTHCARE_ACCESS = "5a"        # Access to healthcare services
+    HEALTHCARE_ACCESS = "5a"  # Access to healthcare services
     HEALTHCARE_TRIAGE = "5a_triage"  # Emergency triage systems
-    HEALTHCARE_DIAGNOSIS = "5a_dx"   # Diagnostic assistance
+    HEALTHCARE_DIAGNOSIS = "5a_dx"  # Diagnostic assistance
 
     # Section 6: Law enforcement (N/A for healthcare)
 
     # Section 8: Biometric identification (may apply to some health systems)
-    BIOMETRIC_HEALTH = "8_health"    # Health-related biometric processing
+    BIOMETRIC_HEALTH = "8_health"  # Health-related biometric processing
 
 
 # =============================================================================
 # COMPLIANCE REQUIREMENTS
 # =============================================================================
 
+
 @dataclass
 class ComplianceRequirement:
     """Individual compliance requirement under EU AI Act."""
+
     article: str
     title: str
     description: str
@@ -152,9 +155,11 @@ HIGH_RISK_REQUIREMENTS = [
 # COMPLIANCE STATUS TRACKING
 # =============================================================================
 
+
 @dataclass
 class ComplianceStatus:
     """Overall compliance status for the AI system."""
+
     system_name: str
     risk_level: AIActRiskLevel
     high_risk_category: Optional[HighRiskCategory] = None
@@ -168,8 +173,7 @@ class ComplianceStatus:
     def __post_init__(self):
         if not self.requirements and self.risk_level == AIActRiskLevel.HIGH:
             self.requirements = [
-                ComplianceRequirement(**r.__dict__)
-                for r in HIGH_RISK_REQUIREMENTS
+                ComplianceRequirement(**r.__dict__) for r in HIGH_RISK_REQUIREMENTS
             ]
 
     def get_compliance_percentage(self) -> float:
@@ -191,6 +195,7 @@ class ComplianceStatus:
 # =============================================================================
 # EU AI ACT COMPLIANCE TRACKER
 # =============================================================================
+
 
 class EUAIActCompliance:
     """
@@ -276,7 +281,6 @@ class EUAIActCompliance:
             - Enforcement layer with escalating interventions
             Location: src/tic/, contracts/
             """.strip(),
-
             "Article 10 - Data Governance": """
             Implemented through:
             - PHI detection (scripts/detect_phi.py)
@@ -284,7 +288,6 @@ class EUAIActCompliance:
             - Demographic bias detection (MIMIC-IV-ED reference)
             Location: skills/phi_detection/, principles.py
             """.strip(),
-
             "Article 11 - Technical Documentation": """
             Implemented through:
             - CLAUDE.md comprehensive documentation
@@ -292,7 +295,6 @@ class EUAIActCompliance:
             - Contract YAML specifications
             Location: CLAUDE.md, evaluation/bloom_eval_v2/METHODOLOGY.md
             """.strip(),
-
             "Article 12 - Record-Keeping": """
             Implemented through:
             - Observability layer (src/observability/)
@@ -300,7 +302,6 @@ class EUAIActCompliance:
             - Git commit tracking for reproducibility
             Location: src/observability/events.py
             """.strip(),
-
             "Article 13 - Transparency": """
             Implemented through:
             - Constitutional principles with clear rationales
@@ -308,7 +309,6 @@ class EUAIActCompliance:
             - Hardcoded/softcoded behavior framework
             Location: constitutional_ai/principles.py
             """.strip(),
-
             "Article 14 - Human Oversight": """
             Implemented through:
             - Professional review gate (enforcement.py)
@@ -316,7 +316,6 @@ class EUAIActCompliance:
             - Appropriate escalation principle (HARDCODED)
             Location: src/tic/enforcement.py, principles.py
             """.strip(),
-
             "Article 15 - Accuracy/Robustness": """
             Implemented through:
             - Deterministic evaluation (seed=42, temperature=0)
@@ -346,7 +345,9 @@ class EUAIActCompliance:
             },
             "risk_classification": {
                 "level": self.status.risk_level.value,
-                "category": self.status.high_risk_category.value if self.status.high_risk_category else None,
+                "category": self.status.high_risk_category.value
+                if self.status.high_risk_category
+                else None,
                 "rationale": self.SYSTEM_CLASSIFICATION["rationale"],
             },
             "compliance_summary": {
@@ -364,8 +365,7 @@ class EUAIActCompliance:
                     "title": req.title,
                     "status": req.status,
                     "scribegoat_implementation": mapping.get(
-                        f"{req.article} - {req.title.split()[0]}",
-                        "See documentation"
+                        f"{req.article} - {req.title.split()[0]}", "See documentation"
                     ),
                     "evidence_path": req.evidence_path,
                     "last_verified": req.last_verified.isoformat() if req.last_verified else None,
@@ -458,6 +458,7 @@ class EUAIActCompliance:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
+
 def get_compliance_tracker() -> EUAIActCompliance:
     """Get a configured compliance tracker instance."""
     return EUAIActCompliance()
@@ -471,23 +472,23 @@ def generate_quick_compliance_summary() -> str:
     summary = f"""
 EU AI Act Compliance Summary
 ============================
-System: {report['report_metadata']['system_name']}
-Generated: {report['report_metadata']['generated_at']}
+System: {report["report_metadata"]["system_name"]}
+Generated: {report["report_metadata"]["generated_at"]}
 
-Risk Classification: {report['risk_classification']['level'].upper()}
-Category: {report['risk_classification']['category']}
+Risk Classification: {report["risk_classification"]["level"].upper()}
+Category: {report["risk_classification"]["category"]}
 
 Compliance Status:
-- Overall: {report['compliance_summary']['compliance_percentage']:.1f}%
-- Requirements: {report['compliance_summary']['compliant_requirements']}/{report['compliance_summary']['total_requirements']}
-- CE Marking Eligible: {'Yes' if report['compliance_summary']['ce_marking_eligible'] else 'No'}
+- Overall: {report["compliance_summary"]["compliance_percentage"]:.1f}%
+- Requirements: {report["compliance_summary"]["compliant_requirements"]}/{report["compliance_summary"]["total_requirements"]}
+- CE Marking Eligible: {"Yes" if report["compliance_summary"]["ce_marking_eligible"] else "No"}
 
-Pending Actions: {len(report['pending_actions'])}
+Pending Actions: {len(report["pending_actions"])}
 """.strip()
 
-    if report['pending_actions']:
+    if report["pending_actions"]:
         summary += "\n\nPending Requirements:\n"
-        for action in report['pending_actions']:
+        for action in report["pending_actions"]:
             summary += f"- {action['article']}: {action['title']}\n"
 
     return summary

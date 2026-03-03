@@ -10,12 +10,25 @@ Tests cover:
 5. Safety overlay (ClinicalExposure -> DetectedIssue, RiskProfile -> MeasureReport)
 """
 
-import pytest
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.fhir.bundles import (
+    build_pas_request_bundle,
+    build_pas_response_bundle,
+    extract_clinical_justification,
+    extract_supporting_info,
+    parse_pas_response_bundle,
+)
+from src.fhir.profiles import (
+    validate_pas_claim,
+    validate_pas_response,
+    validate_us_core_condition,
+)
 from src.fhir.resources import (
     build_claim,
     build_claim_response,
@@ -24,32 +37,19 @@ from src.fhir.resources import (
     build_detected_issue,
     build_procedure,
 )
-from src.fhir.profiles import (
-    validate_pas_claim,
-    validate_pas_response,
-    validate_us_core_condition,
-)
-from src.fhir.terminology import (
-    icd10_to_urgency_tier,
-    cpt_to_clinical_urgency,
-    x12_to_fhir_outcome,
-    get_denial_reason_display,
-    get_denial_reason_coding,
-    is_time_critical_denial,
-)
-from src.fhir.bundles import (
-    build_pas_request_bundle,
-    build_pas_response_bundle,
-    parse_pas_response_bundle,
-    extract_supporting_info,
-    extract_clinical_justification,
-)
 from src.fhir.safety_overlay import (
+    exposure_to_adverse_event,
     failure_to_detected_issue,
     risk_profile_to_measure_report,
-    exposure_to_adverse_event,
 )
-
+from src.fhir.terminology import (
+    cpt_to_clinical_urgency,
+    get_denial_reason_coding,
+    get_denial_reason_display,
+    icd10_to_urgency_tier,
+    is_time_critical_denial,
+    x12_to_fhir_outcome,
+)
 
 # =============================================================================
 # Resource Builder Tests
@@ -538,9 +538,7 @@ class TestTimeCriticalDenial:
 
     def test_processing_window_comparison(self):
         """Should note when processing window exceeds time-to-harm."""
-        critical, reason = is_time_critical_denial(
-            "N44.00", "PENDED", processing_window_hours=168
-        )
+        critical, reason = is_time_critical_denial("N44.00", "PENDED", processing_window_hours=168)
         assert critical
         assert "processing window" in reason
 

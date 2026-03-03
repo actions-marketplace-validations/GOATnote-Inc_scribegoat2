@@ -15,10 +15,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 def _load(path: str) -> Any:
@@ -82,7 +82,9 @@ def _safe_mean(xs: List[float]) -> float:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Stratify safety invariants for GPT-5.2 run (non-grading).")
+    parser = argparse.ArgumentParser(
+        description="Stratify safety invariants for GPT-5.2 run (non-grading)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -238,7 +240,9 @@ def main() -> None:
     md.append("")
     md.append("## By score bucket (non-grading; diagnostics-derived)")
     md.append("")
-    md.append("| score bucket | n | abstention rate | avg corrections | emergency rate | hallucination rate | medication safety rate |")
+    md.append(
+        "| score bucket | n | abstention rate | avg corrections | emergency rate | hallucination rate | medication safety rate |"
+    )
     md.append("|---|---:|---:|---:|---:|---:|---:|")
     for r in rows:
         md.append(
@@ -251,9 +255,18 @@ def main() -> None:
     for r in rows:
         md.append(f"#### {r.bucket}")
         md.append("")
-        md.append("- Emergency rules: " + (", ".join([f"`{k}`×{v}" for k, v in r.top_emergency_rules]) or "(none)"))
-        md.append("- Hallucination-related rules: " + (", ".join([f"`{k}`×{v}" for k, v in r.top_hallucination_rules]) or "(none)"))
-        md.append("- Medication-safety rules: " + (", ".join([f"`{k}`×{v}" for k, v in r.top_medication_rules]) or "(none)"))
+        md.append(
+            "- Emergency rules: "
+            + (", ".join([f"`{k}`×{v}" for k, v in r.top_emergency_rules]) or "(none)")
+        )
+        md.append(
+            "- Hallucination-related rules: "
+            + (", ".join([f"`{k}`×{v}" for k, v in r.top_hallucination_rules]) or "(none)")
+        )
+        md.append(
+            "- Medication-safety rules: "
+            + (", ".join([f"`{k}`×{v}" for k, v in r.top_medication_rules]) or "(none)")
+        )
         md.append("")
     md.append("---")
     md.append("")
@@ -282,5 +295,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

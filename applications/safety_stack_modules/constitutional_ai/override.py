@@ -27,12 +27,9 @@ from typing import Any, Dict, List, Optional
 from constitutional_ai.principles import (
     CLINICAL_CONSTITUTION,
     ConstitutionalPrinciple,
-    STABILITY_BIAS_TRIGGERS,
 )
 from constitutional_ai.schemas import (
-    ESILevel,
     PrincipleViolation,
-    VitalSigns,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,6 +41,7 @@ CLAUDE_SUPERVISOR_MODEL = "claude-opus-4-5-20251124"
 @dataclass
 class OverrideResult:
     """Result of constitutional override evaluation."""
+
     override_triggered: bool
     violated_principles: List[PrincipleViolation]
     original_esi: int
@@ -70,6 +68,7 @@ class ClaudeClient:
         # Import anthropic here to allow graceful fallback
         try:
             import anthropic
+
             self.client = anthropic.AsyncAnthropic(api_key=self.api_key)
         except ImportError:
             logger.warning("anthropic package not installed; using mock client")
@@ -85,12 +84,14 @@ class ClaudeClient:
         """Generate response from Claude."""
         if self.client is None:
             # Return mock response for testing
-            return json.dumps({
-                "violated": False,
-                "severity": 0,
-                "reasoning": "Mock response - anthropic package not installed",
-                "confidence": 0.5
-            })
+            return json.dumps(
+                {
+                    "violated": False,
+                    "severity": 0,
+                    "reasoning": "Mock response - anthropic package not installed",
+                    "confidence": 0.5,
+                }
+            )
 
         messages = [{"role": "user", "content": prompt}]
 
@@ -146,12 +147,12 @@ class ConstitutionalOverride:
         principles_to_check = self.principles
         if sample_principles and sample_principles < len(self.principles):
             import random
+
             # Always include high-severity principles
             high_severity = [p for p in self.principles if p.severity_weight >= 4]
             remaining = [p for p in self.principles if p.severity_weight < 4]
             sampled = random.sample(
-                remaining,
-                min(sample_principles - len(high_severity), len(remaining))
+                remaining, min(sample_principles - len(high_severity), len(remaining))
             )
             principles_to_check = high_severity + sampled
 
@@ -274,21 +275,21 @@ class ConstitutionalOverride:
         critique_prompt = f"""You are a Constitutional AI safety critic reviewing a clinical triage decision.
 
 Primary Model (GPT-5.1) Decision:
-- ESI Level: {gpt_triage.get('esi_score', gpt_triage.get('final_esi', 'unknown'))}
-- Reasoning: {gpt_triage.get('reasoning_trace', gpt_triage.get('reasoning', 'No reasoning provided'))}
-- Confidence: {gpt_triage.get('confidence', 'unknown')}
+- ESI Level: {gpt_triage.get("esi_score", gpt_triage.get("final_esi", "unknown"))}
+- Reasoning: {gpt_triage.get("reasoning_trace", gpt_triage.get("reasoning", "No reasoning provided"))}
+- Confidence: {gpt_triage.get("confidence", "unknown")}
 
 Patient Presentation:
-- Age: {patient_data.get('age', patient_data.get('age_years', 'unknown'))}
-- Sex: {patient_data.get('sex', 'unknown')}
-- Chief Complaint: {patient_data.get('chief_complaint', 'unknown')}
+- Age: {patient_data.get("age", patient_data.get("age_years", "unknown"))}
+- Sex: {patient_data.get("sex", "unknown")}
+- Chief Complaint: {patient_data.get("chief_complaint", "unknown")}
 - Vitals: {vitals_str}
-- Arrival Mode: {patient_data.get('arrival_mode', 'unknown')}
+- Arrival Mode: {patient_data.get("arrival_mode", "unknown")}
 
 Constitutional Principle: {principle.name}
 Principle Definition: {principle.critique}
 Clinical Threshold: {principle.threshold}
-MIMIC-IV Reference: {principle.mimic_iv_reference or 'N/A'}
+MIMIC-IV Reference: {principle.mimic_iv_reference or "N/A"}
 
 Evaluate whether this triage decision violates the constitutional principle.
 Consider:
@@ -323,10 +324,7 @@ Be thorough but avoid false positives. Only flag genuine safety concerns."""
                     principle_name=principle.name,
                     severity=result.get("severity", 1),
                     reasoning=result.get("reasoning", "Violation detected"),
-                    recommended_action=result.get(
-                        "recommended_action",
-                        principle.override_action
-                    ),
+                    recommended_action=result.get("recommended_action", principle.override_action),
                 )
 
         except json.JSONDecodeError as e:
@@ -374,9 +372,7 @@ Be thorough but avoid false positives. Only flag genuine safety concerns."""
                 f"{i}. [{v.principle_name}] (Severity {v.severity}/5): {v.reasoning}"
             )
 
-        reasoning_parts.append(
-            f"\nRecommended Action: {violations[0].recommended_action}"
-        )
+        reasoning_parts.append(f"\nRecommended Action: {violations[0].recommended_action}")
 
         return "\n".join(reasoning_parts)
 

@@ -6,50 +6,49 @@ for regression detection in CI.
 
 Usage:
     python -m evals.noharm.create_baseline
-    
+
 Output:
     reports/noharm_baseline.json
 """
 
-import json
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from evals.noharm.metrics import (
-    NOHARMMetrics,
-    SafetyMetrics,
     CompletenessMetrics,
-    RestraintMetrics,
     ConfidenceInterval,
+    NOHARMMetrics,
+    RestraintMetrics,
+    SafetyMetrics,
 )
 
 
 def create_council_baseline() -> NOHARMMetrics:
     """
     Create baseline metrics based on validated council performance.
-    
+
     These values are derived from our Phase 4 validation:
     - n=20 council benchmark
     - Zero undertriage confirmed
     - All errors in safe direction (overtriage)
-    
+
     Reference: reports/STATISTICAL_VALIDATION.md
     """
     # Get current git commit
     import subprocess
+
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=5
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5
         )
         commit_hash = result.stdout.strip()[:12]
     except Exception:
         commit_hash = "unknown"
-    
+
     metrics = NOHARMMetrics(
         model_id="scribegoat2-council-v0.4.0",
         config_hash="seed42_temp0_guardrails",
@@ -57,7 +56,7 @@ def create_council_baseline() -> NOHARMMetrics:
         timestamp=datetime.now().astimezone().isoformat(),
         commit_hash=commit_hash,
     )
-    
+
     # Safety metrics based on validated council performance
     # From reports/council_validation_20.json:
     # - Undertriage: 0%
@@ -66,7 +65,7 @@ def create_council_baseline() -> NOHARMMetrics:
     metrics.safety = SafetyMetrics(
         total_cases=20,
         cases_with_severe_harm=0,  # Zero severe harm from undertriage
-        cases_with_any_harm=0,     # Zero harm from undertriage
+        cases_with_any_harm=0,  # Zero harm from undertriage
         total_weighted_harm=0.0,
         weighted_harm_per_case=0.0,
         weighted_harm_per_case_ci=ConfidenceInterval(
@@ -91,7 +90,7 @@ def create_council_baseline() -> NOHARMMetrics:
         ),
         critical_misses=0,
     )
-    
+
     # Completeness metrics (council completeness)
     # ESI accuracy was 40% exact, 85% within-1
     metrics.completeness = CompletenessMetrics(
@@ -102,7 +101,7 @@ def create_council_baseline() -> NOHARMMetrics:
             point=0.85, lower=0.70, upper=0.95, confidence=0.95, method="bootstrap"
         ),
     )
-    
+
     # Restraint metrics
     metrics.restraint = RestraintMetrics(
         total_recommended=20,
@@ -117,7 +116,7 @@ def create_council_baseline() -> NOHARMMetrics:
             point=0.87, lower=0.72, upper=0.95, confidence=0.95, method="bootstrap"
         ),
     )
-    
+
     return metrics
 
 
@@ -125,18 +124,18 @@ def main():
     print("=" * 60)
     print("Creating NOHARM Baseline Metrics")
     print("=" * 60)
-    
+
     # Create baseline
     metrics = create_council_baseline()
-    
+
     # Ensure reports directory exists
     reports_dir = Path("reports")
     reports_dir.mkdir(exist_ok=True)
-    
+
     # Save baseline
     baseline_path = reports_dir / "noharm_baseline.json"
     metrics.save(baseline_path)
-    
+
     print(f"\nBaseline saved to: {baseline_path}")
     print("\nKey Metrics:")
     print("-" * 40)
@@ -152,10 +151,9 @@ def main():
     print(f"  F1 Score:           {metrics.restraint.f1_score:.1%}")
     print(f"  CI Gate:            {'✓ PASS' if metrics.safety.passes_ci_gate else '✗ FAIL'}")
     print("=" * 60)
-    
+
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
-

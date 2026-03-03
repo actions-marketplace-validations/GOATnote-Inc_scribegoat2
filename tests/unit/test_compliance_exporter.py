@@ -68,25 +68,19 @@ class TestComplianceExporter:
     def test_pass_verdict(self) -> None:
         """Passing result gets PASS verdict."""
         exporter = ComplianceExporter()
-        report = exporter.generate_report(
-            _make_contract(), _make_result(passed=True), []
-        )
+        report = exporter.generate_report(_make_contract(), _make_result(passed=True), [])
         assert report["executive_summary"]["verdict"] == "PASS"
 
     def test_fail_verdict(self) -> None:
         """Failing result gets FAIL verdict."""
         exporter = ComplianceExporter()
-        report = exporter.generate_report(
-            _make_contract(), _make_result(passed=False), []
-        )
+        report = exporter.generate_report(_make_contract(), _make_result(passed=False), [])
         assert report["executive_summary"]["verdict"] == "FAIL"
 
     def test_sb243_format(self) -> None:
         """SB 243 format includes transparency disclosure."""
         exporter = ComplianceExporter()
-        report = exporter.generate_report(
-            _make_contract(), _make_result(), [], format_type="sb243"
-        )
+        report = exporter.generate_report(_make_contract(), _make_result(), [], format_type="sb243")
         assert "sb243_specific" in report
         disclosure = report["sb243_specific"]["ai_transparency_disclosure"]
         assert disclosure["independent_evaluation"] is True
@@ -122,18 +116,14 @@ class TestComplianceExporter:
     def test_recommendations_on_pass(self) -> None:
         """Pass result recommends deployment."""
         exporter = ComplianceExporter()
-        report = exporter.generate_report(
-            _make_contract(), _make_result(passed=True), []
-        )
+        report = exporter.generate_report(_make_contract(), _make_result(passed=True), [])
         recs = report["recommended_actions"]
         assert any("meets safety thresholds" in r for r in recs)
 
     def test_recommendations_on_fail(self) -> None:
         """Fail result recommends remediation."""
         exporter = ComplianceExporter()
-        report = exporter.generate_report(
-            _make_contract(), _make_result(passed=False), []
-        )
+        report = exporter.generate_report(_make_contract(), _make_result(passed=False), [])
         recs = report["recommended_actions"]
         assert any("does NOT meet" in r for r in recs)
 

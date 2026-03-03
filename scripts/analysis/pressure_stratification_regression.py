@@ -37,15 +37,13 @@ Date: February 2026
 
 import json
 import math
-import os
-import sys
-import hashlib
 import platform
+import sys
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 # ============================================================
 # DEPENDENCY MANAGEMENT
@@ -58,12 +56,14 @@ HAVE_NUMPY = False
 
 try:
     import pandas as pd
+
     HAVE_PANDAS = True
 except ImportError:
     pass
 
 try:
     import numpy as np
+
     HAVE_NUMPY = True
 except ImportError:
     pass
@@ -72,16 +72,19 @@ try:
     import statsmodels.api as sm
     from statsmodels.formula.api import logit as sm_logit
     from statsmodels.stats.multitest import multipletests
+
     HAVE_STATSMODELS = True
 except ImportError:
     pass
 
 try:
-    from scipy.stats import fisher_exact
     from scipy.special import expit
+    from scipy.stats import fisher_exact
+
     HAVE_SCIPY = True
 except ImportError:
     pass
+
 
 def check_dependencies():
     """Report dependency status and minimum requirements."""
@@ -168,6 +171,7 @@ CONTEXT_TO_SCENARIO_PREFIX = {
 # STATISTICAL HELPERS
 # ============================================================
 
+
 def wilson_ci(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
     """Wilson score confidence interval."""
     if n == 0:
@@ -181,8 +185,7 @@ def wilson_ci(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 def cohens_h(p1: float, p2: float) -> float:
     """Cohen's h for two proportions."""
-    return 2 * (math.asin(math.sqrt(max(0, min(1, p1)))) -
-                math.asin(math.sqrt(max(0, min(1, p2)))))
+    return 2 * (math.asin(math.sqrt(max(0, min(1, p1)))) - math.asin(math.sqrt(max(0, min(1, p2)))))
 
 
 def mantel_haenszel(strata: list[dict]) -> dict:
@@ -195,8 +198,13 @@ def mantel_haenszel(strata: list[dict]) -> dict:
     Returns: {"OR": float, "CI_lower": float, "CI_upper": float, "p": float}
     """
     if not HAVE_SCIPY or not HAVE_NUMPY:
-        return {"OR": None, "CI_lower": None, "CI_upper": None, "p": None,
-                "note": "scipy/numpy required"}
+        return {
+            "OR": None,
+            "CI_lower": None,
+            "CI_upper": None,
+            "p": None,
+            "note": "scipy/numpy required",
+        }
 
     numerator = 0.0
     denominator = 0.0
@@ -216,36 +224,47 @@ def mantel_haenszel(strata: list[dict]) -> dict:
         r = a + d
         ss = b + c
         if (a * d) > 0:
-            var_ln_or += (r * a * d / n**2 +
-                          (r * b * c + ss * a * d) / (2 * n**2) +
-                          ss * b * c / n**2) / (2 * (a * d / n)**2 +
-                          (a * d / n) * (b * c / n) + (b * c / n)**2 + 1e-12)
+            var_ln_or += (
+                r * a * d / n**2 + (r * b * c + ss * a * d) / (2 * n**2) + ss * b * c / n**2
+            ) / (2 * (a * d / n) ** 2 + (a * d / n) * (b * c / n) + (b * c / n) ** 2 + 1e-12)
         valid_strata += 1
 
     if denominator == 0 or valid_strata < 2:
-        return {"OR": None, "CI_lower": None, "CI_upper": None,
-                "p": None, "note": f"insufficient strata ({valid_strata})"}
+        return {
+            "OR": None,
+            "CI_lower": None,
+            "CI_upper": None,
+            "p": None,
+            "note": f"insufficient strata ({valid_strata})",
+        }
 
     or_mh = numerator / denominator
     # Simplified variance (Greenland-Robins)
     try:
         ln_or = math.log(or_mh)
-        se_ln_or = math.sqrt(var_ln_or) if var_ln_or > 0 else float('inf')
+        se_ln_or = math.sqrt(var_ln_or) if var_ln_or > 0 else float("inf")
         ci_lower = math.exp(ln_or - 1.96 * se_ln_or)
         ci_upper = math.exp(ln_or + 1.96 * se_ln_or)
         z_stat = ln_or / se_ln_or if se_ln_or > 0 else 0
         from scipy.stats import norm
+
         p_val = 2 * (1 - norm.cdf(abs(z_stat)))
     except (ValueError, ZeroDivisionError):
         ci_lower = ci_upper = p_val = None
 
-    return {"OR": or_mh, "CI_lower": ci_lower, "CI_upper": ci_upper,
-            "p": p_val, "n_strata": valid_strata}
+    return {
+        "OR": or_mh,
+        "CI_lower": ci_lower,
+        "CI_upper": ci_upper,
+        "p": p_val,
+        "n_strata": valid_strata,
+    }
 
 
 # ============================================================
 # DATA LOADING
 # ============================================================
+
 
 def load_scenarios(scenarios_dir: str) -> dict[str, dict]:
     """Load all scenario JSONs keyed by scenario_id."""
@@ -352,8 +371,10 @@ def load_results_and_map(
         ctx_scenario_files = scenario_files_by_context[ctx]
 
         if len(ctx_results) != len(ctx_scenario_files):
-            print(f"    {ctx}: WARNING - count mismatch: "
-                  f"{len(ctx_results)} results vs {len(ctx_scenario_files)} scenarios")
+            print(
+                f"    {ctx}: WARNING - count mismatch: "
+                f"{len(ctx_results)} results vs {len(ctx_scenario_files)} scenarios"
+            )
             # Still try to map what we can (use min of both)
             n_map = min(len(ctx_results), len(ctx_scenario_files))
         else:
@@ -373,24 +394,28 @@ def load_results_and_map(
 
             scenario_id = scenario.get("scenario_id", scenario_file.stem)
 
-            rows.append({
-                "scenario_id": scenario_id,
-                "result_id": result["scenario_id"],
-                "context": ctx,
-                "model": model_name,
-                "condition": result.get("condition", "baseline"),
-                "resource_omission": int(bool(result.get("stage1_unsafe", False))),
-                "stage1_failure_type": result.get("stage1_failure_type"),
-                "trajectory_decay": int(bool(result.get("trajectory_decay", False))),
-                "_scenario": scenario,  # carry for feature extraction
-            })
+            rows.append(
+                {
+                    "scenario_id": scenario_id,
+                    "result_id": result["scenario_id"],
+                    "context": ctx,
+                    "model": model_name,
+                    "condition": result.get("condition", "baseline"),
+                    "resource_omission": int(bool(result.get("stage1_unsafe", False))),
+                    "stage1_failure_type": result.get("stage1_failure_type"),
+                    "trajectory_decay": int(bool(result.get("trajectory_decay", False))),
+                    "_scenario": scenario,  # carry for feature extraction
+                }
+            )
             n_mapped_ctx += 1
 
         total_mapped += n_mapped_ctx
         prefix = CONTEXT_TO_SCENARIO_PREFIX.get(ctx, "?")
         r_prefix = CONTEXT_TO_RESULT_PREFIX.get(ctx, "?")
-        print(f"    {ctx}: {n_mapped_ctx}/{len(ctx_results)} mapped "
-              f"(results: {r_prefix}-*, scenarios: {prefix}-*)")
+        print(
+            f"    {ctx}: {n_mapped_ctx}/{len(ctx_results)} mapped "
+            f"(results: {r_prefix}-*, scenarios: {prefix}-*)"
+        )
 
     print(f"\n  Total mapped: {total_mapped}/{len(all_results)}")
     return rows
@@ -399,6 +424,7 @@ def load_results_and_map(
 # ============================================================
 # FEATURE ENGINEERING
 # ============================================================
+
 
 def extract_features(scenario: dict) -> dict:
     """
@@ -434,7 +460,7 @@ def extract_features(scenario: dict) -> dict:
         if op is None:
             continue
 
-        is_final = (turn_num == max_turn)
+        is_final = turn_num == max_turn
 
         if is_final and op == "autonomy_assertion":
             autonomy_final_present = True
@@ -521,11 +547,11 @@ def build_analysis_dataframe(
         print(f"  RESOURCE_OMISSION rate: {df['resource_omission'].mean():.1%}")
 
         # Single-model note
-        if df['model'].nunique() == 1:
-            model_name = df['model'].iloc[0]
+        if df["model"].nunique() == 1:
+            model_name = df["model"].iloc[0]
             print(f"\n  NOTE: Single-model analysis ({model_name}).")
-            print(f"  Model comparison requires additional evaluation runs.")
-            print(f"  C(model) and autonomy_midturn:C(model) terms will be dropped.")
+            print("  Model comparison requires additional evaluation runs.")
+            print("  C(model) and autonomy_midturn:C(model) terms will be dropped.")
 
     return df
 
@@ -533,6 +559,7 @@ def build_analysis_dataframe(
 # ============================================================
 # ANALYSIS 1: DESCRIPTIVE STRATIFICATION (preserved from v1)
 # ============================================================
+
 
 def descriptive_stratification(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -548,7 +575,7 @@ def descriptive_stratification(df: pd.DataFrame) -> pd.DataFrame:
         mdf = df[df["model"] == model]
         print(f"\n  Model: {model} (N={len(mdf)})")
         print(f"  {'Category':<25} {'N':>6} {'Fail':>6} {'Rate':>8} {'95% CI':>18}")
-        print(f"  {'-'*65}")
+        print(f"  {'-' * 65}")
 
         for cat in sorted(mdf["dominant_category"].unique()):
             cdf = mdf[mdf["dominant_category"] == cat]
@@ -558,15 +585,17 @@ def descriptive_stratification(df: pd.DataFrame) -> pd.DataFrame:
             ci = wilson_ci(f, n)
 
             print(f"  {cat:<25} {n:>6} {f:>6} {rate:>7.1%} [{ci[0]:.1%}, {ci[1]:.1%}]")
-            results_rows.append({
-                "model": model,
-                "category": cat,
-                "n": n,
-                "failures": int(f),
-                "rate": round(rate, 4),
-                "ci_lower": round(ci[0], 4),
-                "ci_upper": round(ci[1], 4),
-            })
+            results_rows.append(
+                {
+                    "model": model,
+                    "category": cat,
+                    "n": n,
+                    "failures": int(f),
+                    "rate": round(rate, 4),
+                    "ci_lower": round(ci[0], 4),
+                    "ci_upper": round(ci[1], 4),
+                }
+            )
 
     return pd.DataFrame(results_rows)
 
@@ -574,6 +603,7 @@ def descriptive_stratification(df: pd.DataFrame) -> pd.DataFrame:
 # ============================================================
 # ANALYSIS 2: LOGISTIC REGRESSION
 # ============================================================
+
 
 def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
     """
@@ -614,8 +644,12 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
     predictors = ["autonomy_midturn"]
 
     # Only include category indicators with sufficient variation
-    for col in ["structural_present", "authority_present", "cultural_present",
-                "convenience_present"]:
+    for col in [
+        "structural_present",
+        "authority_present",
+        "cultural_present",
+        "convenience_present",
+    ]:
         if df[col].nunique() > 1 and df[col].sum() >= 5:
             predictors.append(col)
 
@@ -648,7 +682,9 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
     xtab.columns = ["no_autonomy", "autonomy", "total"]
     for idx in xtab.index:
         row = xtab.loc[idx]
-        print(f"    {idx:<30} autonomy={int(row['autonomy']):>5}  no_autonomy={int(row['no_autonomy']):>5}  total={int(row['total']):>5}")
+        print(
+            f"    {idx:<30} autonomy={int(row['autonomy']):>5}  no_autonomy={int(row['no_autonomy']):>5}  total={int(row['total']):>5}"
+        )
 
     # Warn about small cells
     min_cell = xtab.drop("All", errors="ignore").values.min()
@@ -676,16 +712,23 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
             # First try with cluster-robust SE
             if cluster_var:
                 try:
-                    fit = model.fit(disp=0, maxiter=100,
-                                    cov_type='cluster',
-                                    cov_kwds={'groups': df[cluster_var]})
+                    fit = model.fit(
+                        disp=0,
+                        maxiter=100,
+                        cov_type="cluster",
+                        cov_kwds={"groups": df[cluster_var]},
+                    )
                     clustering_applied = True
                     method_used = f"MLE_cluster({cluster_var})"
-                    print(f"\n  Cluster-robust SE by '{cluster_var}' ({df[cluster_var].nunique()} clusters)")
+                    print(
+                        f"\n  Cluster-robust SE by '{cluster_var}' ({df[cluster_var].nunique()} clusters)"
+                    )
                 except Exception as cluster_err:
-                    print(f"  WARNING: Cluster-robust SE failed ({cluster_err}). Falling back to HC1.")
+                    print(
+                        f"  WARNING: Cluster-robust SE failed ({cluster_err}). Falling back to HC1."
+                    )
                     try:
-                        fit = model.fit(disp=0, maxiter=100, cov_type='HC1')
+                        fit = model.fit(disp=0, maxiter=100, cov_type="HC1")
                         method_used = "MLE_HC1"
                     except Exception:
                         fit = model.fit(disp=0, maxiter=100)
@@ -694,9 +737,13 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
                 fit = model.fit(disp=0, maxiter=100)
 
             # Check for convergence / separation warnings
-            separation_warnings = [x for x in w if "separation" in str(x.message).lower()
-                                   or "singular" in str(x.message).lower()
-                                   or "converge" in str(x.message).lower()]
+            separation_warnings = [
+                x
+                for x in w
+                if "separation" in str(x.message).lower()
+                or "singular" in str(x.message).lower()
+                or "converge" in str(x.message).lower()
+            ]
 
             if separation_warnings or not fit.mle_retvals.get("converged", True):
                 print("  WARNING: Possible separation detected. Trying penalized logistic.")
@@ -708,8 +755,9 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
                 # NOTE: fit_regularized does not support clustered SE.
                 # Penalized model uses IID SE; used only for separation cases.
                 try:
-                    fit = model.fit_regularized(method='l1', alpha=0.1, disp=0,
-                                                maxiter=100, trim_mode='off')
+                    fit = model.fit_regularized(
+                        method="l1", alpha=0.1, disp=0, maxiter=100, trim_mode="off"
+                    )
                 except Exception:
                     # Fallback: simpler model without interactions
                     simple_formula = "resource_omission ~ " + " + ".join(predictors + categoricals)
@@ -744,24 +792,28 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
     print(f"  BIC: {regression_result.bic:.1f}")
 
     # Summary table
-    summary_df = pd.DataFrame({
-        "coef": regression_result.params,
-        "se": regression_result.bse,
-        "z": regression_result.tvalues,
-        "p": regression_result.pvalues,
-        "OR": np.exp(regression_result.params),
-        "OR_ci_lower": np.exp(regression_result.conf_int()[0]),
-        "OR_ci_upper": np.exp(regression_result.conf_int()[1]),
-    })
+    summary_df = pd.DataFrame(
+        {
+            "coef": regression_result.params,
+            "se": regression_result.bse,
+            "z": regression_result.tvalues,
+            "p": regression_result.pvalues,
+            "OR": np.exp(regression_result.params),
+            "OR_ci_lower": np.exp(regression_result.conf_int()[0]),
+            "OR_ci_upper": np.exp(regression_result.conf_int()[1]),
+        }
+    )
 
     # Focus on primary predictor
     print("\n  Regression Results (key predictors):")
     print(f"  {'Predictor':<40} {'OR':>7} {'95% CI':>18} {'p':>8}")
-    print(f"  {'-'*75}")
+    print(f"  {'-' * 75}")
 
-    key_vars = [v for v in ["autonomy_midturn", "structural_present",
-                            "authority_present", "max_intensity"]
-                if v in summary_df.index]
+    key_vars = [
+        v
+        for v in ["autonomy_midturn", "structural_present", "authority_present", "max_intensity"]
+        if v in summary_df.index
+    ]
 
     # Also show interaction terms
     interaction_vars = [v for v in summary_df.index if "autonomy_midturn" in v and ":" in v]
@@ -769,8 +821,18 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
 
     for var in key_vars:
         row = summary_df.loc[var]
-        sig = "***" if row["p"] < 0.001 else "**" if row["p"] < 0.01 else "*" if row["p"] < 0.05 else ""
-        print(f"  {var:<40} {row['OR']:>7.3f} [{row['OR_ci_lower']:.3f}, {row['OR_ci_upper']:.3f}] {row['p']:>7.4f} {sig}")
+        sig = (
+            "***"
+            if row["p"] < 0.001
+            else "**"
+            if row["p"] < 0.01
+            else "*"
+            if row["p"] < 0.05
+            else ""
+        )
+        print(
+            f"  {var:<40} {row['OR']:>7.3f} [{row['OR_ci_lower']:.3f}, {row['OR_ci_upper']:.3f}] {row['p']:>7.4f} {sig}"
+        )
 
     # ---- Primary result extraction ----
     primary_result = {}
@@ -794,24 +856,28 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
         }
 
         # Interpret
-        print(f"\n  PRIMARY RESULT:")
-        print(f"  Autonomy midturn OR = {r['OR']:.3f} [{r['OR_ci_lower']:.3f}, {r['OR_ci_upper']:.3f}]")
+        print("\n  PRIMARY RESULT:")
+        print(
+            f"  Autonomy midturn OR = {r['OR']:.3f} [{r['OR_ci_lower']:.3f}, {r['OR_ci_upper']:.3f}]"
+        )
         print(f"  p = {r['p']:.4f}")
         if clustering_applied:
             print(f"  (Cluster-robust SE by {cluster_var})")
 
         if r["OR"] > 1 and r["p"] < 0.05:
-            print(f"  PREDICTION 1 SUPPORTED: Autonomy pressure predicts {r['OR']:.1f}x higher odds of RESOURCE_OMISSION")
+            print(
+                f"  PREDICTION 1 SUPPORTED: Autonomy pressure predicts {r['OR']:.1f}x higher odds of RESOURCE_OMISSION"
+            )
         elif r["OR"] > 1 and r["p"] >= 0.05:
-            print(f"  TREND in predicted direction but not significant at alpha=0.05")
+            print("  TREND in predicted direction but not significant at alpha=0.05")
         else:
-            print(f"  PREDICTION 1 NOT SUPPORTED in adjusted model")
+            print("  PREDICTION 1 NOT SUPPORTED in adjusted model")
 
     # ---- Model-specific marginal effects (Issue 4: interaction interpretation) ----
     if interaction_vars and n_models > 1:
-        print(f"\n  MODEL-SPECIFIC AUTONOMY EFFECTS (marginal):")
+        print("\n  MODEL-SPECIFIC AUTONOMY EFFECTS (marginal):")
         print(f"  {'Model':<30} {'OR':>7} {'95% CI':>18} {'p':>8}")
-        print(f"  {'-'*65}")
+        print(f"  {'-' * 65}")
 
         model_marginals = {}
         ref_model = sorted(df["model"].unique())[0]  # statsmodels reference level
@@ -828,8 +894,18 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
                         "p": float(base["p"]),
                         "is_reference": True,
                     }
-                    sig = "***" if base["p"] < 0.001 else "**" if base["p"] < 0.01 else "*" if base["p"] < 0.05 else ""
-                    print(f"  {mdl + ' (ref)':<30} {base['OR']:>7.3f} [{base['OR_ci_lower']:.3f}, {base['OR_ci_upper']:.3f}] {base['p']:>7.4f} {sig}")
+                    sig = (
+                        "***"
+                        if base["p"] < 0.001
+                        else "**"
+                        if base["p"] < 0.01
+                        else "*"
+                        if base["p"] < 0.05
+                        else ""
+                    )
+                    print(
+                        f"  {mdl + ' (ref)':<30} {base['OR']:>7.3f} [{base['OR_ci_lower']:.3f}, {base['OR_ci_upper']:.3f}] {base['p']:>7.4f} {sig}"
+                    )
             else:
                 # Non-reference: base + interaction coefficient
                 # Find the matching interaction term
@@ -840,7 +916,11 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
                         int_key = iv
                         break
 
-                if int_key and int_key in summary_df.index and "autonomy_midturn" in summary_df.index:
+                if (
+                    int_key
+                    and int_key in summary_df.index
+                    and "autonomy_midturn" in summary_df.index
+                ):
                     base_coef = summary_df.loc["autonomy_midturn", "coef"]
                     int_coef = summary_df.loc[int_key, "coef"]
                     total_coef = base_coef + int_coef
@@ -870,9 +950,10 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
                     # Two-tailed p from z
                     if HAVE_SCIPY:
                         from scipy.stats import norm
+
                         p_val = 2 * (1 - norm.cdf(abs(z)))
                     else:
-                        p_val = float('nan')
+                        p_val = float("nan")
 
                     model_marginals[mdl] = {
                         "OR": total_or,
@@ -882,22 +963,32 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
                         "is_reference": False,
                         "se_method": se_method,
                     }
-                    sig = "***" if p_val < 0.001 else "**" if p_val < 0.01 else "*" if p_val < 0.05 else ""
-                    print(f"  {mdl:<30} {total_or:>7.3f} [{ci_lo:.3f}, {ci_hi:.3f}] {p_val:>7.4f} {sig}")
+                    sig = (
+                        "***"
+                        if p_val < 0.001
+                        else "**"
+                        if p_val < 0.01
+                        else "*"
+                        if p_val < 0.05
+                        else ""
+                    )
+                    print(
+                        f"  {mdl:<30} {total_or:>7.3f} [{ci_lo:.3f}, {ci_hi:.3f}] {p_val:>7.4f} {sig}"
+                    )
                 else:
                     print(f"  {mdl:<30}  (interaction term not found)")
 
         primary_result["model_marginals"] = model_marginals
 
     # ---- Modeling notes ----
-    print(f"\n  MODELING NOTES:")
-    print(f"  - Category indicators (binary) used as primary predictors")
-    print(f"  - Category counts (n_autonomy, n_structural, ...) available for sensitivity analysis")
-    print(f"  - Intensity: categorical C(max_intensity), no linearity assumption")
+    print("\n  MODELING NOTES:")
+    print("  - Category indicators (binary) used as primary predictors")
+    print("  - Category counts (n_autonomy, n_structural, ...) available for sensitivity analysis")
+    print("  - Intensity: categorical C(max_intensity), no linearity assumption")
     if clustering_applied:
         print(f"  - Cluster-robust SE by '{cluster_var}' ({df[cluster_var].nunique()} clusters)")
     else:
-        print(f"  - No clustering applied (IID assumption -- document as limitation)")
+        print("  - No clustering applied (IID assumption -- document as limitation)")
 
     # ---- Save full summary table ----
     summary_df.round(4).to_csv(output_dir / "regression_results.csv")
@@ -906,12 +997,16 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
     with open(output_dir / "regression_results.md", "w") as f:
         f.write("# Logistic Regression: Pressure-Operator Stratification\n\n")
         f.write(f"Formula: `{formula}`\n\n")
-        f.write(f"Method: {method_used} | N={len(df)} | Pseudo R-squared={regression_result.prsquared:.4f}\n\n")
+        f.write(
+            f"Method: {method_used} | N={len(df)} | Pseudo R-squared={regression_result.prsquared:.4f}\n\n"
+        )
         f.write("| Predictor | OR | 95% CI | p |\n")
         f.write("|---|---|---|---|\n")
         for var in summary_df.index:
             row = summary_df.loc[var]
-            f.write(f"| {var} | {row['OR']:.3f} | [{row['OR_ci_lower']:.3f}, {row['OR_ci_upper']:.3f}] | {row['p']:.4f} |\n")
+            f.write(
+                f"| {var} | {row['OR']:.3f} | [{row['OR_ci_lower']:.3f}, {row['OR_ci_upper']:.3f}] | {row['p']:.4f} |\n"
+            )
 
     return primary_result
 
@@ -919,6 +1014,7 @@ def run_regression(df: pd.DataFrame, output_dir: Path) -> Optional[dict]:
 # ============================================================
 # ANALYSIS 3: MANTEL-HAENSZEL STRATIFIED ANALYSIS
 # ============================================================
+
 
 def run_mantel_haenszel(df: pd.DataFrame) -> Optional[dict]:
     """
@@ -951,8 +1047,8 @@ def run_mantel_haenszel(df: pd.DataFrame) -> Optional[dict]:
         rate_unexp = c / (c + d) if (c + d) > 0 else 0
 
         print(f"\n  {ctx}:")
-        print(f"    Exposed (autonomy):   {a}/{a+b} = {rate_exp:.1%}")
-        print(f"    Unexposed:            {c}/{c+d} = {rate_unexp:.1%}")
+        print(f"    Exposed (autonomy):   {a}/{a + b} = {rate_exp:.1%}")
+        print(f"    Unexposed:            {c}/{c + d} = {rate_unexp:.1%}")
 
         if (a + b) > 0 and (c + d) > 0:
             strata.append({"a": a, "b": b, "c": c, "d": d, "context": ctx})
@@ -973,6 +1069,7 @@ def run_mantel_haenszel(df: pd.DataFrame) -> Optional[dict]:
 # ============================================================
 # ANALYSIS 4: CONTEXT-CONTROLLED WITHIN-CONTEXT VARIATION
 # ============================================================
+
 
 def context_controlled_analysis(df: pd.DataFrame):
     """
@@ -1003,6 +1100,7 @@ def context_controlled_analysis(df: pd.DataFrame):
 # ANALYSIS 5: PAIRWISE COMPARISONS WITH FDR CORRECTION
 # ============================================================
 
+
 def pairwise_with_fdr(df: pd.DataFrame) -> list[dict]:
     """
     Pairwise Fisher's exact tests between operator categories,
@@ -1023,7 +1121,7 @@ def pairwise_with_fdr(df: pd.DataFrame) -> list[dict]:
     comparisons = []
 
     for i, cat1 in enumerate(categories):
-        for cat2 in categories[i+1:]:
+        for cat2 in categories[i + 1 :]:
             df1 = df[df["dominant_category"] == cat1]
             df2 = df[df["dominant_category"] == cat2]
 
@@ -1040,18 +1138,23 @@ def pairwise_with_fdr(df: pd.DataFrame) -> list[dict]:
             r2 = c / (c + d)
             h = cohens_h(r1, r2)
 
-            is_primary = (
-                (cat1 == "autonomy" and cat2 == "structural") or
-                (cat1 == "structural" and cat2 == "autonomy")
+            is_primary = (cat1 == "autonomy" and cat2 == "structural") or (
+                cat1 == "structural" and cat2 == "autonomy"
             )
 
-            comparisons.append({
-                "cat1": cat1, "cat2": cat2,
-                "rate1": r1, "n1": a + b,
-                "rate2": r2, "n2": c + d,
-                "cohens_h": h, "p_raw": p,
-                "primary": is_primary,
-            })
+            comparisons.append(
+                {
+                    "cat1": cat1,
+                    "cat2": cat2,
+                    "rate1": r1,
+                    "n1": a + b,
+                    "rate2": r2,
+                    "n2": c + d,
+                    "cohens_h": h,
+                    "p_raw": p,
+                    "primary": is_primary,
+                }
+            )
 
     if not comparisons:
         return []
@@ -1068,14 +1171,16 @@ def pairwise_with_fdr(df: pd.DataFrame) -> list[dict]:
 
     # Print
     print(f"\n  {'Comparison':<35} {'Rates':>18} {'h':>7} {'p_raw':>8} {'p_FDR':>8} {'Type':>12}")
-    print(f"  {'-'*92}")
+    print(f"  {'-' * 92}")
 
     for c in sorted(comparisons, key=lambda x: x["p_raw"]):
         label = f"{c['cat1']} vs {c['cat2']}"
         rates = f"{c['rate1']:.1%} vs {c['rate2']:.1%}"
         typ = "PRIMARY" if c["primary"] else "exploratory"
         sig = "*" if c["p_fdr"] < 0.05 else ""
-        print(f"  {label:<35} {rates:>18} {c['cohens_h']:>7.3f} {c['p_raw']:>8.4f} {c['p_fdr']:>8.4f} {typ:>12} {sig}")
+        print(
+            f"  {label:<35} {rates:>18} {c['cohens_h']:>7.3f} {c['p_raw']:>8.4f} {c['p_fdr']:>8.4f} {typ:>12} {sig}"
+        )
 
     return comparisons
 
@@ -1084,8 +1189,8 @@ def pairwise_with_fdr(df: pd.DataFrame) -> list[dict]:
 # DIAGNOSTICS
 # ============================================================
 
-def generate_diagnostics(df: pd.DataFrame, primary_result: dict,
-                         mh_result: dict, output_dir: Path):
+
+def generate_diagnostics(df: pd.DataFrame, primary_result: dict, mh_result: dict, output_dir: Path):
     """Generate diagnostics JSON for audit trail."""
     diag = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -1110,15 +1215,23 @@ def generate_diagnostics(df: pd.DataFrame, primary_result: dict,
         "cell_sizes": {
             "autonomy_by_model": {
                 model: {
-                    "autonomy": int((df[(df["model"] == model) & (df["autonomy_midturn"] == 1)]).shape[0]),
-                    "no_autonomy": int((df[(df["model"] == model) & (df["autonomy_midturn"] == 0)]).shape[0]),
+                    "autonomy": int(
+                        (df[(df["model"] == model) & (df["autonomy_midturn"] == 1)]).shape[0]
+                    ),
+                    "no_autonomy": int(
+                        (df[(df["model"] == model) & (df["autonomy_midturn"] == 0)]).shape[0]
+                    ),
                 }
                 for model in df["model"].unique()
             },
             "autonomy_by_context": {
                 ctx: {
-                    "autonomy": int((df[(df["context"] == ctx) & (df["autonomy_midturn"] == 1)]).shape[0]),
-                    "no_autonomy": int((df[(df["context"] == ctx) & (df["autonomy_midturn"] == 0)]).shape[0]),
+                    "autonomy": int(
+                        (df[(df["context"] == ctx) & (df["autonomy_midturn"] == 1)]).shape[0]
+                    ),
+                    "no_autonomy": int(
+                        (df[(df["context"] == ctx) & (df["autonomy_midturn"] == 0)]).shape[0]
+                    ),
                 }
                 for ctx in df["context"].unique()
             },
@@ -1157,6 +1270,7 @@ def generate_diagnostics(df: pd.DataFrame, primary_result: dict,
 # PAPER CITATION BLOCK
 # ============================================================
 
+
 def print_citation_block(primary_result: dict, mh_result: Optional[dict]):
     """Print copy-pasteable text for paper integration."""
     print("\n" + "=" * 72)
@@ -1172,8 +1286,9 @@ def print_citation_block(primary_result: dict, mh_result: Optional[dict]):
         method = primary_result["method"]
         clustering = primary_result.get("clustering")
 
-        cluster_note = (f", cluster-robust SE by {clustering}"
-                        if clustering else ", IID standard errors")
+        cluster_note = (
+            f", cluster-robust SE by {clustering}" if clustering else ", IID standard errors"
+        )
 
         print(f"""
     Suggested text for S7.7.8 (Prediction 1):
@@ -1185,9 +1300,9 @@ def print_citation_block(primary_result: dict, mh_result: Optional[dict]):
     condition as covariates ({method}{cluster_note}, N={n}).
 
     Autonomy pressure in non-final turns was associated with
-    {'increased' if or_val > 1 else 'decreased'} odds of RESOURCE_OMISSION
+    {"increased" if or_val > 1 else "decreased"} odds of RESOURCE_OMISSION
     (adjusted OR = {or_val:.2f}, 95% CI [{ci_lo:.2f}, {ci_hi:.2f}],
-    p = {p:.4f}), {'supporting' if or_val > 1 and p < 0.05 else 'not supporting'}
+    p = {p:.4f}), {"supporting" if or_val > 1 and p < 0.05 else "not supporting"}
     Prediction 1."
     """)
 
@@ -1197,17 +1312,19 @@ def print_citation_block(primary_result: dict, mh_result: Optional[dict]):
             print("    Model-specific autonomy effects (for interaction interpretation):")
             for mdl, m in marginals.items():
                 ref = " (reference)" if m.get("is_reference") else ""
-                print(f"      {mdl}{ref}: OR = {m['OR']:.2f} [{m['CI_lower']:.2f}, {m['CI_upper']:.2f}]")
+                print(
+                    f"      {mdl}{ref}: OR = {m['OR']:.2f} [{m['CI_lower']:.2f}, {m['CI_upper']:.2f}]"
+                )
             print()
 
         if mh_result and mh_result.get("OR"):
             print(f"""    "This result was robust to stratification by context
-    (Mantel-Haenszel common OR = {mh_result['OR']:.2f},
-    95% CI [{mh_result['CI_lower']:.2f}, {mh_result['CI_upper']:.2f}],
-    p = {mh_result['p']:.4f}, {mh_result.get('n_strata', '?')} strata)."
+    (Mantel-Haenszel common OR = {mh_result["OR"]:.2f},
+    95% CI [{mh_result["CI_lower"]:.2f}, {mh_result["CI_upper"]:.2f}],
+    p = {mh_result["p"]:.4f}, {mh_result.get("n_strata", "?")} strata)."
     """)
 
-        print(f"""    LIMITATIONS TO NOTE:
+        print("""    LIMITATIONS TO NOTE:
     - Clustering by scenario family (ID prefix) used as proxy for template-level clustering
     - Context-operator confound partially controlled via fixed effects
     - Model-specific effects via delta method (SE from covariance matrix when available)
@@ -1223,22 +1340,24 @@ def print_citation_block(primary_result: dict, mh_result: Optional[dict]):
 # MAIN
 # ============================================================
 
+
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(
         description="Pressure-Operator Stratification: Regression-Grade Analysis"
     )
-    parser.add_argument("--scenarios-dir",
-        default="evaluation/evaluation126/goatnote-phase2/scenarios/tier2_generated")
-    parser.add_argument("--results-dir",
-        default="evaluation/evaluation126/goatnote-phase2/results/batch_20260127_195532")
-    parser.add_argument("--output-dir",
-        default="analysis/pressure_stratification")
-    parser.add_argument("--model", default=None,
-        help="Filter by model name")
-    parser.add_argument("--condition", default=None,
-        help="Filter by prompt condition")
+    parser.add_argument(
+        "--scenarios-dir",
+        default="evaluation/evaluation126/goatnote-phase2/scenarios/tier2_generated",
+    )
+    parser.add_argument(
+        "--results-dir",
+        default="evaluation/evaluation126/goatnote-phase2/results/batch_20260127_195532",
+    )
+    parser.add_argument("--output-dir", default="analysis/pressure_stratification")
+    parser.add_argument("--model", default=None, help="Filter by model name")
+    parser.add_argument("--condition", default=None, help="Filter by prompt condition")
 
     args = parser.parse_args()
     output_dir = Path(args.output_dir)

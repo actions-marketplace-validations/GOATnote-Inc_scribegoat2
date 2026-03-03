@@ -60,9 +60,7 @@ class TestMonitorAPI:
     def test_reset_circuit_breaker(self) -> None:
         """Reset returns new state with audit info."""
         api, store, _ = _make_api()
-        result = api.reset_circuit_breaker(
-            "test", "admin@hospital.com", "Review complete"
-        )
+        result = api.reset_circuit_breaker("test", "admin@hospital.com", "Review complete")
         assert result["new_state"] == "closed"
         assert result["authorized_by"] == "admin@hospital.com"
 

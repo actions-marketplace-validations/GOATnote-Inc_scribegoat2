@@ -10,15 +10,14 @@ Validates:
 
 import pytest
 from reliability.confidence_detector import (
+    CONSTITUTIONAL_UNCERTAINTY_THRESHOLD,
+    ConfidenceAssessment,
     IncorrectConfidenceDetector,
     RiskVector,
-    ConfidenceAssessment,
-    compute_risk_vector,
-    assess_confidence,
-    _compute_vital_instability,
     _compute_symptom_severity,
+    _compute_vital_instability,
     _compute_vulnerability,
-    CONSTITUTIONAL_UNCERTAINTY_THRESHOLD,
+    assess_confidence,
 )
 
 
@@ -105,10 +104,10 @@ class TestSymptomSeverity:
         """Reassuring findings decrease severity."""
         text_concerning = "Fever and cough"
         text_reassuring = "Fever and cough but well-appearing and interactive"
-        
+
         score_concerning = _compute_symptom_severity(text_concerning)
         score_reassuring = _compute_symptom_severity(text_reassuring)
-        
+
         assert score_reassuring < score_concerning
 
 
@@ -155,14 +154,7 @@ class TestConfidenceDetector:
             "sex": "F",
             "chief_complaint": "Fever and cough",
             "nursing_note": "Brought in by mother for 2 days of cough, runny nose, and fever. Mother reports decreased appetite but drinking fluids and making wet diapers, slightly less than usual. No vomiting or diarrhea. Up-to-date on immunizations, no chronic medical conditions. Child is alert, interactive with parent, watching a video on a phone, occasionally coughing. Mild nasal congestion, no obvious increased work of breathing, no retractions, no grunting. Mother gave acetaminophen 3 hours ago.",
-            "vital_signs": {
-                "hr": 112,
-                "sbp": 98,
-                "dbp": 60,
-                "rr": 22,
-                "spo2": 99,
-                "temp": 38.4
-            },
+            "vital_signs": {"hr": 112, "sbp": 98, "dbp": 60, "rr": 22, "spo2": 99, "temp": 38.4},
         }
 
     def test_synth_050_triggers_escalation(self, detector, synth_050_case):
@@ -173,13 +165,15 @@ class TestConfidenceDetector:
             final_esi=4,
             consensus_score=1.0,
         )
-        
+
         # Should recommend escalation due to risk/ESI mismatch
         # SYNTH-050 has a 4-year-old with fever - risk vector > expected for ESI-4
         assert assessment.escalation_recommended
-        assert "RISK_ESI_MISMATCH" in str(assessment.flags) or \
-               "OVERCONFIDENCE_WARNING" in str(assessment.flags) or \
-               "VULNERABLE_LOW_ESI" in str(assessment.flags)
+        assert (
+            "RISK_ESI_MISMATCH" in str(assessment.flags)
+            or "OVERCONFIDENCE_WARNING" in str(assessment.flags)
+            or "VULNERABLE_LOW_ESI" in str(assessment.flags)
+        )
 
     def test_high_consensus_correct(self, detector):
         """High consensus with matching risk = likely correct."""
@@ -189,14 +183,14 @@ class TestConfidenceDetector:
             "nursing_note": "Twisted ankle playing basketball. Stable.",
             "vital_signs": {"hr": 75, "rr": 16, "spo2": 99, "sbp": 120},
         }
-        
+
         assessment = detector.assess(
             case_data=case,
             agent_esi_predictions=[4, 4, 4],
             final_esi=4,
             consensus_score=1.0,
         )
-        
+
         # Low risk, low vulnerability = no escalation needed
         assert not assessment.escalation_recommended
 
@@ -208,21 +202,21 @@ class TestConfidenceDetector:
             "nursing_note": "Vague chest symptoms",
             "vital_signs": {"hr": 85, "rr": 18, "spo2": 97, "sbp": 135},
         }
-        
+
         high_consensus = detector.assess(
             case_data=case,
             agent_esi_predictions=[3, 3, 3],
             final_esi=3,
             consensus_score=1.0,
         )
-        
+
         low_consensus = detector.assess(
             case_data=case,
             agent_esi_predictions=[2, 3, 4],
             final_esi=3,
             consensus_score=0.33,
         )
-        
+
         assert low_consensus.uncertainty_score > high_consensus.uncertainty_score
 
     def test_should_escalate_method(self, detector, synth_050_case):
@@ -232,7 +226,7 @@ class TestConfidenceDetector:
             agent_esi_predictions=[4, 4, 4, 4],
             final_esi=4,
         )
-        
+
         assert should
         assert new_esi == 3  # ESI-4 → ESI-3
         assert len(reason) > 0
@@ -245,13 +239,13 @@ class TestConfidenceDetector:
             "nursing_note": "CPR in progress",
             "vital_signs": {"hr": 0, "sbp": 0},
         }
-        
+
         should, new_esi, _ = detector.should_escalate(
             case_data=case,
             agent_esi_predictions=[1, 1, 1],
             final_esi=1,
         )
-        
+
         assert new_esi == 1  # Cannot go below 1
 
 
@@ -265,7 +259,7 @@ class TestConstitutionalUncertaintyThreshold:
     def test_high_uncertainty_flagged(self):
         """Cases above threshold get flagged."""
         detector = IncorrectConfidenceDetector(uncertainty_threshold=0.3)
-        
+
         # Create a case that will have high uncertainty
         case = {
             "age": 2,  # Toddler = vulnerable
@@ -273,13 +267,13 @@ class TestConstitutionalUncertaintyThreshold:
             "nursing_note": "Decreased feeding, irritable",
             "vital_signs": {"hr": 140, "rr": 30, "temp": 39.5},
         }
-        
+
         assessment = detector.assess(
             case_data=case,
             agent_esi_predictions=[3, 4, 3],  # Some disagreement
             final_esi=4,
         )
-        
+
         assert any("HIGH_UNCERTAINTY" in f or "VULNERABLE" in f for f in assessment.flags)
 
 
@@ -293,14 +287,13 @@ class TestAssessConfidenceFunction:
             "chief_complaint": "Headache",
             "vital_signs": {"hr": 80},
         }
-        
+
         result = assess_confidence(
             case_data=case,
             agent_esi_predictions=[3, 3],
             final_esi=3,
         )
-        
+
         assert isinstance(result, ConfidenceAssessment)
         assert 0 <= result.uncertainty_score <= 1
         assert 0 <= result.confidence_correctness <= 1
-

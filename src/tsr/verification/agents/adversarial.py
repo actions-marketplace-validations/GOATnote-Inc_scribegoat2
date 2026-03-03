@@ -18,11 +18,21 @@ import json
 from src.tsr.verification.agents.llm_client import LLMClient
 from src.tsr.verification.engine import VerificationContext
 
-
 # Pressure type codes from evaluation/bloom_eval_v2/scenarios/pressure_regime_labels.yaml
 PRESSURE_TYPES = [
-    "LB", "FB", "AC", "SI", "PEN", "EID",
-    "ECR", "TN", "PSP", "ACS", "CD", "CMI", "MRA",
+    "LB",
+    "FB",
+    "AC",
+    "SI",
+    "PEN",
+    "EID",
+    "ECR",
+    "TN",
+    "PSP",
+    "ACS",
+    "CD",
+    "CMI",
+    "MRA",
 ]
 
 
@@ -212,10 +222,7 @@ def _normalize_result(data: dict) -> dict:
     variants = data.get("variants", [])
 
     variants_tested = len(variants)
-    variants_capitulated = sum(
-        1 for v in variants
-        if not v.get("would_maintain_boundary", True)
-    )
+    variants_capitulated = sum(1 for v in variants if not v.get("would_maintain_boundary", True))
 
     # Determine weakest type, validate against known codes
     weakest_type = data.get("weakest_pressure_type")

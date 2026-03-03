@@ -18,8 +18,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 from src.tsr.monitor.interfaces import (
     BreakerState,
-    IStateStore,
     Incident,
+    IStateStore,
     Severity,
 )
 
@@ -161,12 +161,8 @@ class StateStore(IStateStore):
                     incident.contract_id,
                     incident.severity.value,
                     incident.created_at.isoformat(),
-                    incident.escalated_at.isoformat()
-                    if incident.escalated_at
-                    else None,
-                    incident.acknowledged_at.isoformat()
-                    if incident.acknowledged_at
-                    else None,
+                    incident.escalated_at.isoformat() if incident.escalated_at else None,
+                    incident.acknowledged_at.isoformat() if incident.acknowledged_at else None,
                     incident.acknowledged_by,
                     incident.resolved_at.isoformat() if incident.resolved_at else None,
                     trigger_json,
@@ -179,9 +175,7 @@ class StateStore(IStateStore):
     def load_incident(self, incident_id: str) -> Optional[Incident]:
         """Load an incident by ID."""
         conn = self._ensure_initialized()
-        row = conn.execute(
-            "SELECT * FROM incidents WHERE id = ?", (incident_id,)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
         if row is None:
             return None
         return self._row_to_incident(row)
@@ -314,9 +308,7 @@ class StateStore(IStateStore):
         # In recovery mode, set all known contracts to OPEN
         try:
             conn = self._ensure_initialized()
-            contracts = conn.execute(
-                "SELECT DISTINCT contract_id FROM breaker_states"
-            ).fetchall()
+            contracts = conn.execute("SELECT DISTINCT contract_id FROM breaker_states").fetchall()
             for (contract_id,) in contracts:
                 self.save_breaker_state(contract_id, BreakerState.OPEN)
             return True

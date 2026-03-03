@@ -45,12 +45,6 @@ from typing import Any, Dict, List, Optional
 _root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(_root))
 
-from src.fhir.resources import (  # noqa: E402
-    build_claim,
-    build_condition,
-    build_coverage,
-    build_procedure,
-)
 from src.fhir.bundles import (  # noqa: E402
     build_pas_request_bundle,
 )
@@ -59,9 +53,15 @@ from src.fhir.profiles import (  # noqa: E402
     validate_pas_response,
     validate_us_core_condition,
 )
+from src.fhir.resources import (  # noqa: E402
+    build_claim,
+    build_condition,
+    build_coverage,
+    build_procedure,
+)
 from src.fhir.terminology import (  # noqa: E402
-    icd10_to_urgency_tier,
     cpt_to_clinical_urgency,
+    icd10_to_urgency_tier,
 )
 
 __version__ = "1.0.0"
@@ -354,9 +354,7 @@ def get_compliance_checklist(
         "regulation": "CMS-0057-F (Interoperability and Prior Authorization)",
         "deadline": "January 1, 2027",
         "items": items,
-        "all_met": all(
-            item["met"] is True for item in items if item["met"] is not None
-        ),
+        "all_met": all(item["met"] is True for item in items if item["met"] is not None),
     }
 
 
@@ -406,9 +404,7 @@ def get_urgency_assessment(
         )
 
     # Find most urgent tier
-    tiers = [
-        a["assessment"]["tier"] for a in dx_assessments if a["assessment"] is not None
-    ]
+    tiers = [a["assessment"]["tier"] for a in dx_assessments if a["assessment"] is not None]
     max_tier = min(tiers) if tiers else None  # Lower tier = more urgent
 
     return {

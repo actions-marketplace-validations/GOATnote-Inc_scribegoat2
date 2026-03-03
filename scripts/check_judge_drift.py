@@ -17,18 +17,19 @@ Usage:
     python scripts/check_judge_drift.py --strict  # Fail on any warning
 """
 
+import hashlib
 import json
 import sys
-import hashlib
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Optional, Tuple, List, Dict, Any
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -38,7 +39,7 @@ def load_config(config_path: Path) -> Dict[str, Any]:
     """Load grader configuration."""
     if not YAML_AVAILABLE:
         raise ImportError("PyYAML required: pip install pyyaml")
-    
+
     with open(config_path) as f:
         return yaml.safe_load(f)
 
@@ -58,16 +59,16 @@ def compute_reference_hash(cases: List[Dict]) -> str:
 def validate_reference_set(reference_data: Dict) -> Tuple[bool, List[str]]:
     """
     Validate that reference set is properly populated.
-    
+
     Returns:
         (is_valid, list_of_issues)
     """
     issues = []
     cases = reference_data.get("cases", [])
-    
+
     if len(cases) < 20:
         issues.append(f"Insufficient cases: {len(cases)}/20 required")
-    
+
     placeholder_count = 0
     for case in cases:
         if case.get("trajectory") is None:
@@ -75,19 +76,35 @@ def validate_reference_set(reference_data: Dict) -> Tuple[bool, List[str]]:
         if "PLACEHOLDER" in str(case.get("notes", "")):
             placeholder_count += 1
             break  # Only count once per case
-    
+
     if placeholder_count > 0:
         issues.append(
             "Reference set contains placeholders. "
             "Populate with actual trajectories before running drift check."
         )
-    
+
     # Check distribution
-    esc_pass = sum(1 for c in cases if c.get("scenario_type") == "escalation" and c.get("expected_classification") == "PASS")
-    esc_fail = sum(1 for c in cases if c.get("scenario_type") == "escalation" and c.get("expected_classification") == "FAIL")
-    def_pass = sum(1 for c in cases if c.get("scenario_type") == "defer" and c.get("expected_classification") == "PASS")
-    def_fail = sum(1 for c in cases if c.get("scenario_type") == "defer" and c.get("expected_classification") == "FAIL")
-    
+    esc_pass = sum(
+        1
+        for c in cases
+        if c.get("scenario_type") == "escalation" and c.get("expected_classification") == "PASS"
+    )
+    esc_fail = sum(
+        1
+        for c in cases
+        if c.get("scenario_type") == "escalation" and c.get("expected_classification") == "FAIL"
+    )
+    def_pass = sum(
+        1
+        for c in cases
+        if c.get("scenario_type") == "defer" and c.get("expected_classification") == "PASS"
+    )
+    def_fail = sum(
+        1
+        for c in cases
+        if c.get("scenario_type") == "defer" and c.get("expected_classification") == "FAIL"
+    )
+
     expected = 5
     if esc_pass != expected:
         issues.append(f"Expected {expected} escalation-pass cases, got {esc_pass}")
@@ -97,7 +114,7 @@ def validate_reference_set(reference_data: Dict) -> Tuple[bool, List[str]]:
         issues.append(f"Expected {expected} defer-pass cases, got {def_pass}")
     if def_fail != expected:
         issues.append(f"Expected {expected} defer-fail cases, got {def_fail}")
-    
+
     return len(issues) == 0, issues
 
 
@@ -119,8 +136,8 @@ def grade_trajectory(trajectory: Dict, model_id: str, scenario_type: str) -> str
     Returns:
         Classification string ("PASS" or "FAIL")
     """
-    from src.tic.contract import load_contract
     from src.tic.checker import TrajectoryInvariantChecker
+    from src.tic.contract import load_contract
     from src.tic.events import RealtimeEventExtractor
 
     turns = trajectory.get("turns", [])
@@ -159,22 +176,22 @@ def run_drift_check(
     config_path: Path = Path("configs/grader_config.yaml"),
     reference_path: Optional[Path] = None,
     verbose: bool = True,
-    dry_run: bool = False
+    dry_run: bool = False,
 ) -> Tuple[bool, List[Dict], List[str]]:
     """
     Run drift detection against reference cases.
-    
+
     Args:
         config_path: Path to grader configuration
         reference_path: Override path to reference cases
         verbose: Print progress messages
         dry_run: Validate setup without running actual grading
-        
+
     Returns:
         (passed, drift_events, warnings) where passed=True if no drift detected
     """
     warnings = []
-    
+
     # Load configuration
     try:
         config = load_config(config_path)
@@ -182,26 +199,26 @@ def run_drift_check(
         raise FileNotFoundError(f"Configuration not found: {config_path}")
     except Exception as e:
         raise ValueError(f"Configuration error: {e}")
-    
+
     # Determine reference path
     if reference_path is None:
         reference_path = Path(config["drift_detection"]["reference_set_path"])
-    
+
     # Load reference cases
     try:
         reference_data = load_reference_cases(reference_path)
     except FileNotFoundError:
         raise FileNotFoundError(f"Reference cases not found: {reference_path}")
-    
+
     cases = reference_data.get("cases", [])
-    
+
     if verbose:
         print(f"[DRIFT CHECK] Configuration: {config_path}")
         print(f"[DRIFT CHECK] Reference set: {reference_path}")
         print(f"[DRIFT CHECK] Cases loaded: {len(cases)}")
         print(f"[DRIFT CHECK] Reference hash: {compute_reference_hash(cases)}")
         print(f"[DRIFT CHECK] Judge model: {config['judge_model']['model_id']}")
-    
+
     # Validate reference set
     is_valid, validation_issues = validate_reference_set(reference_data)
     if not is_valid:
@@ -209,31 +226,31 @@ def run_drift_check(
             warnings.append(issue)
             if verbose:
                 print(f"[DRIFT CHECK] ⚠️  {issue}")
-        
+
         if "placeholders" in str(validation_issues).lower():
             if verbose:
                 print("[DRIFT CHECK] ❌ Reference set incomplete - cannot run drift check")
             return False, [], warnings
-    
+
     if dry_run:
         if verbose:
             print("[DRIFT CHECK] Dry run - skipping actual grading")
         return True, [], warnings
-    
+
     # Run grading on each case
     drift_events = []
     model_id = config["judge_model"]["model_id"]
-    
+
     for i, case in enumerate(cases):
         if verbose:
-            print(f"[DRIFT CHECK] Checking case {i+1}/{len(cases)}: {case['id']}")
-        
+            print(f"[DRIFT CHECK] Checking case {i + 1}/{len(cases)}: {case['id']}")
+
         # Skip placeholders
         if case.get("trajectory") is None:
             if verbose:
                 print("[DRIFT CHECK]   Skipping (no trajectory data)")
             continue
-        
+
         try:
             actual_classification = grade_trajectory(
                 case["trajectory"],
@@ -245,37 +262,37 @@ def run_drift_check(
             if verbose:
                 print(f"[DRIFT CHECK] Grading error on {case['id']}: {e}")
             continue
-        
+
         if actual_classification != case["expected_classification"]:
             drift_event = {
                 "case_id": case["id"],
                 "scenario_type": case.get("scenario_type"),
                 "expected": case["expected_classification"],
                 "actual": actual_classification,
-                "detected_at": datetime.now(timezone.utc).isoformat()
+                "detected_at": datetime.now(timezone.utc).isoformat(),
             }
             drift_events.append(drift_event)
-            
+
             if verbose:
                 print(f"[DRIFT CHECK] ⚠️  DRIFT DETECTED: {case['id']}")
                 print(f"    Expected: {case['expected_classification']}")
                 print(f"    Actual:   {actual_classification}")
-    
+
     passed = len(drift_events) == 0
-    
+
     if verbose:
         if passed:
             print(f"[DRIFT CHECK] ✅ No drift detected across {len(cases)} cases")
         else:
             print(f"[DRIFT CHECK] ❌ Drift detected in {len(drift_events)} cases")
-    
+
     return passed, drift_events, warnings
 
 
 def main():
     """CLI entry point."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Judge model drift detection (BR-6)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -290,50 +307,34 @@ Examples:
   python scripts/check_judge_drift.py
   python scripts/check_judge_drift.py --dry-run
   python scripts/check_judge_drift.py --config configs/grader_config.yaml
-        """
+        """,
     )
     parser.add_argument(
-        "--config", 
-        type=Path, 
+        "--config",
+        type=Path,
         default=Path("configs/grader_config.yaml"),
-        help="Path to grader configuration"
+        help="Path to grader configuration",
     )
     parser.add_argument(
-        "--reference", 
-        type=Path, 
-        default=None,
-        help="Override path to reference cases"
+        "--reference", type=Path, default=None, help="Override path to reference cases"
+    )
+    parser.add_argument("--quiet", action="store_true", help="Suppress progress output")
+    parser.add_argument("--output", type=Path, default=None, help="Write results to JSON file")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Validate setup without running actual grading"
     )
     parser.add_argument(
-        "--quiet", 
-        action="store_true",
-        help="Suppress progress output"
+        "--strict", action="store_true", help="Fail on any warning (including placeholders)"
     )
-    parser.add_argument(
-        "--output", 
-        type=Path, 
-        default=None, 
-        help="Write results to JSON file"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Validate setup without running actual grading"
-    )
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Fail on any warning (including placeholders)"
-    )
-    
+
     args = parser.parse_args()
-    
+
     try:
         passed, drift_events, warnings = run_drift_check(
             config_path=args.config,
             reference_path=args.reference,
             verbose=not args.quiet,
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
         )
     except FileNotFoundError as e:
         print(f"[DRIFT CHECK] Configuration error: {e}", file=sys.stderr)
@@ -341,7 +342,7 @@ Examples:
     except ValueError as e:
         print(f"[DRIFT CHECK] Configuration error: {e}", file=sys.stderr)
         sys.exit(2)
-    
+
     # Write output if requested
     if args.output:
         result = {
@@ -351,22 +352,22 @@ Examples:
             "warnings": warnings,
             "config_path": str(args.config),
             "reference_path": str(args.reference) if args.reference else None,
-            "dry_run": args.dry_run
+            "dry_run": args.dry_run,
         }
         with open(args.output, "w") as f:
             json.dump(result, f, indent=2)
         if not args.quiet:
             print(f"[DRIFT CHECK] Results written to: {args.output}")
-    
+
     # Determine exit code
     if args.strict and warnings:
         sys.exit(3)
-    
+
     if not passed:
         if "placeholders" in str(warnings).lower() or "incomplete" in str(warnings).lower():
             sys.exit(3)
         sys.exit(1)
-    
+
     sys.exit(0)
 
 

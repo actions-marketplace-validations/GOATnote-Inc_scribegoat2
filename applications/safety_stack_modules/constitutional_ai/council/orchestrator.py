@@ -12,23 +12,19 @@ The orchestrator:
 """
 
 import asyncio
-import json
 import logging
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from constitutional_ai.council.agents import (
     ClinicalCouncil,
-    CouncilConfig,
     create_clinical_council,
-    AUTOGEN_AVAILABLE,
 )
 from constitutional_ai.schemas import (
     CouncilAgentMessage,
-    CouncilDeliberation,
     ESILevel,
 )
 
@@ -38,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CouncilResult:
     """Result of clinical council deliberation."""
+
     final_esi: int
     confidence: float
     consensus_reached: bool
@@ -79,22 +76,17 @@ async def run_council_deliberation(
 
     if not council.is_available:
         logger.warning("AutoGen not available; using fallback deliberation")
-        return await _fallback_deliberation(
-            case_data, trigger_reason, gpt_result, claude_result
-        )
+        return await _fallback_deliberation(case_data, trigger_reason, gpt_result, claude_result)
 
     # Build initial prompt for council
-    initial_message = _build_initial_message(
-        case_data, trigger_reason, gpt_result, claude_result
-    )
+    initial_message = _build_initial_message(case_data, trigger_reason, gpt_result, claude_result)
 
     messages: List[CouncilAgentMessage] = []
 
     try:
         # Run deliberation with timeout
         result = await asyncio.wait_for(
-            _run_autogen_deliberation(council, initial_message, messages),
-            timeout=timeout_seconds
+            _run_autogen_deliberation(council, initial_message, messages), timeout=timeout_seconds
         )
     except asyncio.TimeoutError:
         logger.warning("Council deliberation timed out")
@@ -137,7 +129,9 @@ async def _run_autogen_deliberation(
     messages.append(nurse_response)
 
     # Attending MD review
-    md_prompt = f"Previous assessment:\n{nurse_response.message}\n\nProvide your clinical evaluation."
+    md_prompt = (
+        f"Previous assessment:\n{nurse_response.message}\n\nProvide your clinical evaluation."
+    )
     md_response = await _simulate_agent_response(
         council.attending_md.name,
         "AttendingMD",
@@ -335,7 +329,7 @@ def _build_initial_message(
     message_parts = [
         "CLINICAL COUNCIL DELIBERATION REQUIRED",
         f"\nTrigger Reason: {trigger_reason}",
-        f"\nPatient Presentation:",
+        "\nPatient Presentation:",
         f"- Age: {case_data.get('age', case_data.get('age_years', 'unknown'))}",
         f"- Sex: {case_data.get('sex', 'unknown')}",
         f"- Chief Complaint: {case_data.get('chief_complaint', 'unknown')}",
@@ -344,20 +338,24 @@ def _build_initial_message(
     ]
 
     if gpt_result:
-        message_parts.extend([
-            f"\nGPT-5.1 Assessment:",
-            f"- ESI: {gpt_result.get('esi_score', gpt_result.get('final_esi', 'unknown'))}",
-            f"- Confidence: {gpt_result.get('confidence', 'unknown')}",
-            f"- Reasoning: {gpt_result.get('reasoning_trace', gpt_result.get('reasoning', 'N/A'))[:300]}...",
-        ])
+        message_parts.extend(
+            [
+                "\nGPT-5.1 Assessment:",
+                f"- ESI: {gpt_result.get('esi_score', gpt_result.get('final_esi', 'unknown'))}",
+                f"- Confidence: {gpt_result.get('confidence', 'unknown')}",
+                f"- Reasoning: {gpt_result.get('reasoning_trace', gpt_result.get('reasoning', 'N/A'))[:300]}...",
+            ]
+        )
 
     if claude_result:
-        message_parts.extend([
-            f"\nClaude-Opus Critique:",
-            f"- Override Triggered: {claude_result.get('override_triggered', False)}",
-            f"- Revised ESI: {claude_result.get('revised_esi', 'N/A')}",
-            f"- Violated Principles: {claude_result.get('violated_principles', [])}",
-        ])
+        message_parts.extend(
+            [
+                "\nClaude-Opus Critique:",
+                f"- Override Triggered: {claude_result.get('override_triggered', False)}",
+                f"- Revised ESI: {claude_result.get('revised_esi', 'N/A')}",
+                f"- Violated Principles: {claude_result.get('violated_principles', [])}",
+            ]
+        )
 
     message_parts.append("\nBegin deliberation. Triage Nurse, provide initial assessment.")
 

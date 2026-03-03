@@ -15,10 +15,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from skills.coverage_decision_safety_review import (
-    review_pa_decision,
-    review_fhir_claim_response,
-    generate_safety_report,
     decision_to_detected_issue,
+    generate_safety_report,
+    review_fhir_claim_response,
+    review_pa_decision,
 )
 
 
@@ -99,9 +99,7 @@ class TestReviewPADecision:
 
         assert not result["safe"]
         # Should mention processing window in findings
-        has_delay = any(
-            "processing window" in f.get("detail", "") for f in result["findings"]
-        )
+        has_delay = any("processing window" in f.get("detail", "") for f in result["findings"])
         assert has_delay
 
     def test_missing_denial_reason_flagged(self):
@@ -123,9 +121,7 @@ class TestReviewPADecision:
             has_appeal_rights=False,
         )
 
-        compliance_findings = [
-            f for f in result["findings"] if f["type"] == "CMS_COMPLIANCE"
-        ]
+        compliance_findings = [f for f in result["findings"] if f["type"] == "CMS_COMPLIANCE"]
         assert any("Appeal rights" in f["detail"] for f in compliance_findings)
 
     def test_urgency_assessment_included(self):
@@ -164,8 +160,8 @@ class TestReviewFHIRClaimResponse:
 
     def test_approved_fhir_response(self):
         """Approved FHIR response should be safe."""
-        from src.fhir.resources import build_claim_response, build_claim
         from src.fhir.bundles import build_pas_request_bundle
+        from src.fhir.resources import build_claim, build_claim_response
 
         claim = build_claim(
             patient_id="p1",
@@ -192,8 +188,8 @@ class TestReviewFHIRClaimResponse:
 
     def test_denied_fhir_response(self):
         """Denied FHIR response for Tier 2 should be unsafe."""
-        from src.fhir.resources import build_claim_response, build_claim
         from src.fhir.bundles import build_pas_request_bundle
+        from src.fhir.resources import build_claim, build_claim_response
 
         claim = build_claim(
             patient_id="p1",

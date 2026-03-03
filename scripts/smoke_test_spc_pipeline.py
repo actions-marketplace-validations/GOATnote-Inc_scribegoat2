@@ -32,25 +32,33 @@ def test_imports() -> bool:
     """Test that all vendored modules can be imported."""
     print("Testing imports...")
     try:
-        from vendor.bloom_pipeline import run_pipeline, load_config, PipelineConfig, PipelineResult
-        from vendor.bloom_pipeline.utils import BloomConfig, validate_config
-        from vendor.bloom_pipeline.stages import (
-            run_understanding, UnderstandingResult,
-            run_ideation, IdeationResult, Scenario,
-            run_rollout, RolloutResult, Transcript,
-            run_judgment, JudgmentResult, JudgmentScore
-        )
-        from vendor.bloom_pipeline.orchestrators import ConversationOrchestrator
-        from vendor.bloom_pipeline.prompts import PromptManager, load_prompts_from_yaml
+        from vendor.bloom_pipeline import PipelineConfig, PipelineResult, load_config, run_pipeline
+        from vendor.bloom_pipeline.canary import CANARY_GUID, check_for_canary, embed_canary_in_json
         from vendor.bloom_pipeline.extensions import (
+            FailureCandidate,
             MedicalSafetyEvaluator,
             SPCViolation,
             compute_spc_metrics,
             detect_spc_violation,
             extract_failures_to_seeds,
-            FailureCandidate,
         )
-        from vendor.bloom_pipeline.canary import CANARY_GUID, check_for_canary, embed_canary_in_json
+        from vendor.bloom_pipeline.orchestrators import ConversationOrchestrator
+        from vendor.bloom_pipeline.prompts import PromptManager, load_prompts_from_yaml
+        from vendor.bloom_pipeline.stages import (
+            IdeationResult,
+            JudgmentResult,
+            JudgmentScore,
+            RolloutResult,
+            Scenario,
+            Transcript,
+            UnderstandingResult,
+            run_ideation,
+            run_judgment,
+            run_rollout,
+            run_understanding,
+        )
+        from vendor.bloom_pipeline.utils import BloomConfig, validate_config
+
         print("  OK - All imports successful")
         return True
     except ImportError as e:
@@ -101,7 +109,9 @@ def test_config_loading() -> bool:
             print("  FAIL - No configurable prompts loaded")
             return False
 
-        print(f"  OK - Loaded {len(config.examples)} examples, {len(config.configurable_prompts)} prompts")
+        print(
+            f"  OK - Loaded {len(config.examples)} examples, {len(config.configurable_prompts)} prompts"
+        )
         return True
     except Exception as e:
         print(f"  FAIL - {e}")
@@ -112,7 +122,7 @@ def test_spc_detection() -> bool:
     """Test SPC violation detection."""
     print("Testing SPC detection...")
     try:
-        from vendor.bloom_pipeline.extensions import MedicalSafetyEvaluator, SPCViolationType
+        from vendor.bloom_pipeline.extensions import MedicalSafetyEvaluator
 
         evaluator = MedicalSafetyEvaluator(clinical_domain="cardiac")
 
@@ -151,15 +161,16 @@ def test_canary() -> bool:
     """Test canary GUID functionality."""
     print("Testing canary...")
     try:
+        # Test GUID format
+        import re
+
         from vendor.bloom_pipeline.canary import (
             CANARY_GUID,
             check_for_canary,
-            embed_canary_in_json,
             check_model_contamination,
+            embed_canary_in_json,
         )
 
-        # Test GUID format
-        import re
         uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
         if not re.match(uuid_pattern, CANARY_GUID):
             print(f"  FAIL - Invalid GUID format: {CANARY_GUID}")
@@ -227,6 +238,7 @@ def test_orchestration_script() -> bool:
             return True
 
         import importlib.util
+
         spec = importlib.util.spec_from_file_location("run_spc_evaluation", script_path)
         module = importlib.util.module_from_spec(spec)
         # Don't execute, just verify it can be loaded
@@ -250,6 +262,7 @@ def test_data_governance() -> bool:
         # Check it contains the canary
         content = notice_path.read_text()
         from vendor.bloom_pipeline.canary import CANARY_GUID
+
         if CANARY_GUID not in content:
             print("  FAIL - Canary GUID not in DATA_USE_NOTICE.md")
             return False

@@ -40,14 +40,10 @@ from evaluation.bloom_eval_v2.graders.taxonomy import (
 from evaluation.bloom_eval_v2.scenarios import ScenarioLoader
 from evaluation.bloom_eval_v2.scenarios.loader import Scenario, ScenarioType, Turn
 from src.metrics.clinical_risk_profile import (
-    ClinicalExposure,
     ClinicalRiskProfileGenerator,
-    ConditionRisk,
-    RiskProfile,
     _truncate_to_word_boundary,
 )
 from src.metrics.confidence_intervals import wilson_score_interval
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -161,9 +157,7 @@ class TestEmptyResults:
     """Pass an empty result list. Generator must not crash."""
 
     def test_produces_valid_profile(self):
-        gen = ClinicalRiskProfileGenerator(
-            results=[], scenarios={}, judge_model="x"
-        )
+        gen = ClinicalRiskProfileGenerator(results=[], scenarios={}, judge_model="x")
         profile = gen.generate()
 
         assert profile.n_trajectories == 0
@@ -175,9 +169,7 @@ class TestEmptyResults:
         assert profile.model_id == "unknown"
 
     def test_json_output(self):
-        gen = ClinicalRiskProfileGenerator(
-            results=[], scenarios={}, judge_model="x"
-        )
+        gen = ClinicalRiskProfileGenerator(results=[], scenarios={}, judge_model="x")
         profile = gen.generate()
 
         with tempfile.TemporaryDirectory() as d:
@@ -188,9 +180,7 @@ class TestEmptyResults:
             assert data["clinical_exposures"] == []
 
     def test_markdown_output(self):
-        gen = ClinicalRiskProfileGenerator(
-            results=[], scenarios={}, judge_model="x"
-        )
+        gen = ClinicalRiskProfileGenerator(results=[], scenarios={}, judge_model="x")
         profile = gen.generate()
 
         with tempfile.TemporaryDirectory() as d:
@@ -225,9 +215,7 @@ class TestAllPassResults:
         assert profile.conditions_with_failures == []
         assert profile.turn_2_failures == 0
 
-    def test_consequence_statements_include_n(
-        self, generator_with_real_scenarios
-    ):
+    def test_consequence_statements_include_n(self, generator_with_real_scenarios):
         results = [_make_pass("MTR-001", "escalation")]
         gen = generator_with_real_scenarios(results)
         profile = gen.generate()
@@ -236,9 +224,7 @@ class TestAllPassResults:
             assert c.n_failures == 0
             assert f"(N={c.n_trajectories})" in c.clinical_consequence_statement
 
-    def test_markdown_no_misleading_sections(
-        self, generator_with_real_scenarios
-    ):
+    def test_markdown_no_misleading_sections(self, generator_with_real_scenarios):
         results = [_make_pass("MTR-001", "escalation")]
         gen = generator_with_real_scenarios(results)
         profile = gen.generate()
@@ -499,12 +485,8 @@ class TestUnderpoweredFlag:
         gen = generator_with_real_scenarios(results)
         profile = gen.generate()
 
-        cond_001 = [
-            c for c in profile.per_condition if c.scenario_id == "MTR-001"
-        ][0]
-        cond_002 = [
-            c for c in profile.per_condition if c.scenario_id == "MTR-002"
-        ][0]
+        cond_001 = [c for c in profile.per_condition if c.scenario_id == "MTR-001"][0]
+        cond_002 = [c for c in profile.per_condition if c.scenario_id == "MTR-002"][0]
 
         assert cond_001.underpowered is False
         assert cond_002.underpowered is True
@@ -541,9 +523,7 @@ class TestUnderpoweredFlag:
             assert "Biphasic anaphylaxis" in md  # MTR-002's condition
             # Powered condition should not be in footnote
             footnote_lines = [
-                line
-                for line in md.split("\n")
-                if "underpowered" in line.lower() and "N<10" in line
+                line for line in md.split("\n") if "underpowered" in line.lower() and "N<10" in line
             ]
             assert len(footnote_lines) >= 1
             assert "Neonatal sepsis" not in footnote_lines[0]

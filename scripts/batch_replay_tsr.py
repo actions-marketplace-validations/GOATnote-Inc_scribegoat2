@@ -16,7 +16,7 @@ import argparse
 import json
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -24,13 +24,14 @@ from typing import Optional
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.tsr.runtime.server import TSRServer
 from src.tsr.runtime.config import TSRConfig
+from src.tsr.runtime.server import TSRServer
 
 
 @dataclass
 class TurnResult:
     """TSR result for a single assistant turn."""
+
     turn_index: int  # 0-based index into transcript
     passed: bool
     events: list[str]
@@ -42,6 +43,7 @@ class TurnResult:
 @dataclass
 class TrajectoryResult:
     """Replay result for a single trajectory."""
+
     scenario_id: str
     model: str
     study: int
@@ -152,7 +154,9 @@ def replay_trajectory(server: TSRServer, trajectory: dict) -> TrajectoryResult:
     agreement = tsr_verdict == judge_verdict
     if tsr_verdict == "VIOLATION" and judge_verdict == "VIOLATION":
         category = "true_positive"
-        turn_agreement = (first_violation_turn == judge_failure_turn) if judge_failure_turn is not None else None
+        turn_agreement = (
+            (first_violation_turn == judge_failure_turn) if judge_failure_turn is not None else None
+        )
     elif tsr_verdict == "SAFE" and judge_verdict == "SAFE":
         category = "true_negative"
         turn_agreement = None
@@ -208,16 +212,21 @@ def compute_summary(results: list[TrajectoryResult]) -> dict:
     latency_mean = sum(all_latencies) / len(all_latencies) if all_latencies else 0
 
     # Turn agreement for true positives
-    turn_agreements = [r for r in results if r.category == "true_positive" and r.turn_agreement is not None]
+    turn_agreements = [
+        r for r in results if r.category == "true_positive" and r.turn_agreement is not None
+    ]
     turn_agreement_rate = (
         sum(1 for r in turn_agreements if r.turn_agreement) / len(turn_agreements)
-        if turn_agreements else 0.0
+        if turn_agreements
+        else 0.0
     )
 
     # Category to short key mapping
     cat_short = {
-        "true_positive": "tp", "true_negative": "tn",
-        "false_positive": "fp", "false_negative": "fn",
+        "true_positive": "tp",
+        "true_negative": "tn",
+        "false_positive": "fp",
+        "false_negative": "fn",
     }
 
     # Per-model breakdown
@@ -243,8 +252,12 @@ def compute_summary(results: list[TrajectoryResult]) -> dict:
         if key not in by_study:
             by_study[key] = {"total": 0, "tp": 0, "tn": 0, "fp": 0, "fn": 0}
         by_study[key]["total"] += 1
-        cat_short = {"true_positive": "tp", "true_negative": "tn",
-                      "false_positive": "fp", "false_negative": "fn"}[r.category]
+        cat_short = {
+            "true_positive": "tp",
+            "true_negative": "tn",
+            "false_positive": "fp",
+            "false_negative": "fn",
+        }[r.category]
         by_study[key][cat_short] += 1
 
     for study, counts in by_study.items():
@@ -308,9 +321,7 @@ def append_run_log(summary: dict, corpus_dir: str, output_dir: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Batch replay corpus through TSR boundary agent"
-    )
+    parser = argparse.ArgumentParser(description="Batch replay corpus through TSR boundary agent")
     parser.add_argument(
         "--corpus-dir",
         type=str,
@@ -396,9 +407,9 @@ def main():
         print("Appended to experiments/run_log.jsonl")
 
     # Print summary
-    print(f"\n{'='*60}")
-    print(f"BATCH REPLAY SUMMARY")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("BATCH REPLAY SUMMARY")
+    print(f"{'=' * 60}")
     print(f"Trajectories:     {summary['total_trajectories']}")
     print(f"Turns processed:  {summary['total_turns_processed']}")
     print(f"Agreement rate:   {summary['agreement_rate']:.1%}")
@@ -409,13 +420,15 @@ def main():
     print(f"Latency P50:      {summary['latency_p50_us']}µs")
     print(f"Latency P99:      {summary['latency_p99_us']}µs")
     print(f"Total time:       {total_time:.2f}s")
-    print(f"\nConfusion matrix:")
+    print("\nConfusion matrix:")
     print(f"  TP={summary['true_positive']}  FP={summary['false_positive']}")
     print(f"  FN={summary['false_negative']}  TN={summary['true_negative']}")
 
     for model, stats in summary.get("by_model", {}).items():
-        print(f"\n  {model}: agreement={stats['agreement_rate']:.1%} "
-              f"precision={stats['precision']:.1%} recall={stats['recall']:.1%}")
+        print(
+            f"\n  {model}: agreement={stats['agreement_rate']:.1%} "
+            f"precision={stats['precision']:.1%} recall={stats['recall']:.1%}"
+        )
 
 
 if __name__ == "__main__":

@@ -81,7 +81,9 @@ def _rubric_counts(grade: Dict[str, Any]) -> Tuple[int, int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate GPT-5.2 low-score slice casebook (extractive).")
+    parser = argparse.ArgumentParser(
+        description="Generate GPT-5.2 low-score slice casebook (extractive)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -211,7 +213,9 @@ def main() -> None:
     md.append(f"**Source:** `{args.graded}`, `{args.diag}`  ")
     md.append(f"**Meta:** `{args.meta}`")
     md.append("")
-    md.append("This document is **purely extractive**. It does not include prompt text and does not add interpretation.")
+    md.append(
+        "This document is **purely extractive**. It does not include prompt text and does not add interpretation."
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -247,7 +251,9 @@ def main() -> None:
     md.append("")
     md.append("## Cases (sorted by score asc, prompt_id)")
     md.append("")
-    md.append("| prompt_id | score | bucket | abstained | corrections | emergency | hallucination | medication | uncertainty | clinical_uncertainty | confidence | total_time_ms | rubric_met | rubric_missed |")
+    md.append(
+        "| prompt_id | score | bucket | abstained | corrections | emergency | hallucination | medication | uncertainty | clinical_uncertainty | confidence | total_time_ms | rubric_met | rubric_missed |"
+    )
     md.append("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for c in slice_cases:
         md.append(
@@ -286,5 +292,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

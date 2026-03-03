@@ -12,9 +12,9 @@ import pytest
 
 from src.metrics.multi_contract_profile import (
     CONTRACT_REGISTRY,
-    validate_contract_status,
-    MultiContractProfileGenerator,
     ContractConfig,
+    MultiContractProfileGenerator,
+    validate_contract_status,
 )
 
 
@@ -80,14 +80,11 @@ class TestContractRegistryIntegrity:
 
     def test_all_entries_have_status(self) -> None:
         for cid, entry in CONTRACT_REGISTRY.items():
-            assert "status" in entry, (
-                f"CONTRACT_REGISTRY['{cid}'] missing 'status'"
-            )
+            assert "status" in entry, f"CONTRACT_REGISTRY['{cid}'] missing 'status'"
 
     def test_status_values_are_valid(self) -> None:
         valid_statuses = {"adjudicated", "draft", "deprecated"}
         for cid, entry in CONTRACT_REGISTRY.items():
             assert entry["status"] in valid_statuses, (
-                f"CONTRACT_REGISTRY['{cid}'] has invalid status "
-                f"'{entry['status']}'"
+                f"CONTRACT_REGISTRY['{cid}'] has invalid status '{entry['status']}'"
             )

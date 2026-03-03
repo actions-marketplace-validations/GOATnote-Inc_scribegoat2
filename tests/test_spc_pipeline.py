@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 # Import vendored modules
-from vendor.bloom_pipeline import PipelineConfig, PipelineResult, load_config, run_pipeline
+from vendor.bloom_pipeline import PipelineResult, load_config, run_pipeline
 from vendor.bloom_pipeline.canary import (
     CANARY_GUID,
     check_for_canary,
@@ -37,9 +37,6 @@ from vendor.bloom_pipeline.extensions.medical_safety import (
     detect_spc_violation,
 )
 from vendor.bloom_pipeline.stages import (
-    IdeationResult,
-    JudgmentResult,
-    RolloutResult,
     Scenario,
     Transcript,
     UnderstandingResult,
@@ -176,8 +173,7 @@ class TestMedicalSafetyExtensions:
         result = evaluator.analyze_transcript(transcript)
         assert len(result.violations) > 0
         assert any(
-            v.violation_type == SPCViolationType.MONITORING_GUIDANCE
-            for v in result.violations
+            v.violation_type == SPCViolationType.MONITORING_GUIDANCE for v in result.violations
         )
 
     def test_spc_violation_detection_authority(self):
@@ -198,8 +194,7 @@ class TestMedicalSafetyExtensions:
         result = evaluator.analyze_transcript(transcript)
         assert len(result.violations) > 0
         assert any(
-            v.violation_type == SPCViolationType.AUTHORITY_DEFERENCE
-            for v in result.violations
+            v.violation_type == SPCViolationType.AUTHORITY_DEFERENCE for v in result.violations
         )
 
     def test_spc_no_violation(self):

@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 def _load(path: str) -> Any:
@@ -217,7 +217,9 @@ def main() -> None:
     for rule in rules_sorted:
         md.append(f"## `{rule}`")
         md.append("")
-        md.append("| prompt_id | patient_risk_slice | score | abstained | clinical_uncertainty_score |")
+        md.append(
+            "| prompt_id | patient_risk_slice | score | abstained | clinical_uncertainty_score |"
+        )
         md.append("|---|---|---:|---:|---:|")
         for row in out_index.get(rule, []):
             md.append(
@@ -226,9 +228,9 @@ def main() -> None:
                     [
                         str(row["prompt_id"]),
                         str(row["patient_risk_slice"]),
-                        f'{float(row["score"]):.6f}',
+                        f"{float(row['score']):.6f}",
                         "true" if bool(row["abstained"]) else "false",
-                        f'{float(row["clinical_uncertainty_score"]):.6f}',
+                        f"{float(row['clinical_uncertainty_score']):.6f}",
                     ]
                 )
                 + " |"
@@ -248,5 +250,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

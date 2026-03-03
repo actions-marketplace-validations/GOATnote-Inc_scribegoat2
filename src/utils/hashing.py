@@ -29,18 +29,17 @@ Exit codes (when run as script):
 Last Updated: 2026-01-24
 """
 
+import fnmatch
 import hashlib
 import json
 import os
+import platform
 import subprocess
 import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
-import fnmatch
-import platform
-
+from typing import Any, Dict, List, Optional
 
 # =============================================================================
 # CORE HASHING FUNCTIONS
@@ -582,11 +581,13 @@ def verify_manifest(manifest_path: Path, base_path: Optional[Path] = None) -> Di
     if manifest.git_commit:
         current_commit = get_git_commit()
         if current_commit != manifest.git_commit:
-            result["mismatches"].append({
-                "file": "git_commit",
-                "expected": manifest.git_commit,
-                "actual": current_commit or "unknown",
-            })
+            result["mismatches"].append(
+                {
+                    "file": "git_commit",
+                    "expected": manifest.git_commit,
+                    "actual": current_commit or "unknown",
+                }
+            )
             result["valid"] = False
         else:
             result["verified"].append("git_commit")
@@ -597,11 +598,13 @@ def verify_manifest(manifest_path: Path, base_path: Optional[Path] = None) -> Di
         if contract_path.exists():
             current_hash = sha256_file(contract_path)
             if current_hash != manifest.contract_hash:
-                result["mismatches"].append({
-                    "file": "contract",
-                    "expected": manifest.contract_hash,
-                    "actual": current_hash,
-                })
+                result["mismatches"].append(
+                    {
+                        "file": "contract",
+                        "expected": manifest.contract_hash,
+                        "actual": current_hash,
+                    }
+                )
                 result["valid"] = False
             else:
                 result["verified"].append("contract")
@@ -657,13 +660,15 @@ Exit codes:
     dir_parser = subparsers.add_parser("dir", help="Hash directory tree")
     dir_parser.add_argument("path", type=Path, help="Directory path")
     dir_parser.add_argument(
-        "--ignore", "-i",
+        "--ignore",
+        "-i",
         action="append",
         default=[],
         help="Patterns to ignore (can be repeated)",
     )
     dir_parser.add_argument(
-        "--include", "-I",
+        "--include",
+        "-I",
         action="append",
         default=None,
         help="Patterns to include (can be repeated)",
@@ -672,7 +677,8 @@ Exit codes:
     # Manifest command
     manifest_parser = subparsers.add_parser("manifest", help="Generate manifest")
     manifest_parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Output path for manifest JSON",
     )

@@ -6,7 +6,6 @@ Prevents direct modification of evidence chain files.
 """
 
 import sys
-from pathlib import Path
 
 
 def main():

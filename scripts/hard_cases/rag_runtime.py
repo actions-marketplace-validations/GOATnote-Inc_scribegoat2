@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from rag.config import RAGConfig, RAGSafetyConfig, RAGVersionInfo
+from rag.config import RAGConfig, RAGSafetyConfig
 from rag.embeddings import Embedder, get_embedder
-from rag.index import HybridIndex, create_in_memory_hybrid_index
+from rag.index import HybridIndex
 from rag.persistence import load_corpus
 from rag.retrieval import retrieve
 
@@ -167,5 +167,3 @@ def build_retrieval_augmented_question(
         "formatted_context_chars": len(ctx.formatted_context or ""),
     }
     return augmented, telemetry
-
-

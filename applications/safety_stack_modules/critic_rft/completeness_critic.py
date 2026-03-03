@@ -22,10 +22,9 @@ Completeness Dimensions:
 4. Caveat completeness: Appropriate limitations acknowledged?
 """
 
-from pathlib import Path
-from typing import Iterator
-import re
 import random
+import re
+from pathlib import Path
 
 from critic_rft.schemas import (
     CompletenessCriticExample,
@@ -33,7 +32,6 @@ from critic_rft.schemas import (
     CriticTrainingBatch,
     validate_completeness_example,
 )
-
 
 # Expected elements for different clinical scenarios
 EXPECTED_ELEMENTS_BY_SCENARIO = {
@@ -67,27 +65,31 @@ EXPECTED_ELEMENTS_BY_SCENARIO = {
 def detect_clinical_scenario(text: str) -> str | None:
     """
     Detect the primary clinical scenario from text.
-    
+
     Args:
         text: Clinical text to analyze.
-    
+
     Returns:
         Scenario name or None if not detected.
     """
     text_lower = text.lower()
-    
+
     scenario_patterns = {
-        "chest_pain": [r'\bchest\s+pain\b', r'\bchest\s+pressure\b', r'\bangina\b'],
-        "headache": [r'\bheadache\b', r'\bhead\s+pain\b', r'\bcephalgia\b'],
-        "abdominal_pain": [r'\babdominal\s+pain\b', r'\bbelly\s+pain\b', r'\bstomach\s+pain\b'],
-        "shortness_of_breath": [r'\bshortness\s+of\s+breath\b', r'\bdyspnea\b', r'\bdifficulty\s+breathing\b'],
+        "chest_pain": [r"\bchest\s+pain\b", r"\bchest\s+pressure\b", r"\bangina\b"],
+        "headache": [r"\bheadache\b", r"\bhead\s+pain\b", r"\bcephalgia\b"],
+        "abdominal_pain": [r"\babdominal\s+pain\b", r"\bbelly\s+pain\b", r"\bstomach\s+pain\b"],
+        "shortness_of_breath": [
+            r"\bshortness\s+of\s+breath\b",
+            r"\bdyspnea\b",
+            r"\bdifficulty\s+breathing\b",
+        ],
     }
-    
+
     for scenario, patterns in scenario_patterns.items():
         for pattern in patterns:
             if re.search(pattern, text_lower):
                 return scenario
-    
+
     return None
 
 
@@ -97,31 +99,31 @@ def check_element_coverage(
 ) -> tuple[list[str], list[str], float]:
     """
     Check how many expected elements are covered in the answer.
-    
+
     Args:
         answer: Model's answer text.
         expected_elements: Dict of element categories to expected items.
-    
+
     Returns:
         Tuple of (covered_elements, missing_elements, completeness_score).
     """
     answer_lower = answer.lower()
     covered = []
     missing = []
-    
+
     total_elements = 0
     covered_count = 0
-    
+
     for category, elements in expected_elements.items():
         for element in elements:
             total_elements += 1
             element_lower = element.lower()
-            
+
             # Check for presence (flexible matching)
             element_words = element_lower.split()
             if len(element_words) == 1:
                 # Single word: look for word boundary match
-                if re.search(rf'\b{re.escape(element_lower)}\b', answer_lower):
+                if re.search(rf"\b{re.escape(element_lower)}\b", answer_lower):
                     covered.append(f"{category}: {element}")
                     covered_count += 1
                 else:
@@ -134,7 +136,7 @@ def check_element_coverage(
                     covered_count += 1
                 else:
                     missing.append(f"{category}: {element}")
-    
+
     score = covered_count / total_elements if total_elements > 0 else 1.0
     return covered, missing, score
 
@@ -145,17 +147,17 @@ def determine_omission_severity(
 ) -> CompletenessSeverity:
     """
     Determine severity of omissions.
-    
+
     Args:
         missing_elements: List of missing element descriptions.
         scenario: Clinical scenario.
-    
+
     Returns:
         Severity level.
     """
     if not missing_elements:
         return "none"
-    
+
     # Check for critical omissions
     critical_patterns = [
         "red_flags:",
@@ -166,20 +168,20 @@ def determine_omission_severity(
         "meningitis",
         "AAA",
     ]
-    
+
     for element in missing_elements:
         element_lower = element.lower()
         for pattern in critical_patterns:
             if pattern.lower() in element_lower:
                 return "critical"
-    
+
     # Check for moderate omissions (differentials, workup)
     if len(missing_elements) >= 3:
         return "moderate"
-    
+
     if any("differential" in e.lower() for e in missing_elements):
         return "moderate"
-    
+
     return "minor"
 
 
@@ -192,33 +194,33 @@ def generate_completeness_examples(
 ) -> list[CompletenessCriticExample]:
     """
     Generate completeness critic examples.
-    
+
     Args:
         question: Clinical question.
         answer: Model's answer.
         item_id: Source item ID.
         source_benchmark: Source dataset.
         reference_answer: Optional reference for comparison.
-    
+
     Returns:
         List of CompletenessCriticExample instances.
     """
     examples = []
-    
+
     # Detect scenario
     scenario = detect_clinical_scenario(question)
-    
+
     if scenario and scenario in EXPECTED_ELEMENTS_BY_SCENARIO:
         expected = EXPECTED_ELEMENTS_BY_SCENARIO[scenario]
         covered, missing, score = check_element_coverage(answer, expected)
         severity = determine_omission_severity(missing, scenario)
-        
+
         # Flatten expected elements for storage
         all_expected = []
         for cat, elements in expected.items():
             for e in elements:
                 all_expected.append(f"{cat}: {e}")
-        
+
         rationale = f"Scenario: {scenario}. "
         if missing:
             rationale += f"Missing elements: {', '.join(missing[:5])}"
@@ -226,46 +228,50 @@ def generate_completeness_examples(
                 rationale += f" (+{len(missing) - 5} more)"
         else:
             rationale += "All expected elements covered."
-        
-        examples.append(CompletenessCriticExample(
-            question=question,
-            model_answer=answer,
-            missing_elements=missing,
-            completeness_score=score,
-            omission_severity=severity,
-            rationale=rationale,
-            source_benchmark=source_benchmark,
-            source_item_id=item_id,
-            expected_elements=all_expected,
-        ))
-    
+
+        examples.append(
+            CompletenessCriticExample(
+                question=question,
+                model_answer=answer,
+                missing_elements=missing,
+                completeness_score=score,
+                omission_severity=severity,
+                rationale=rationale,
+                source_benchmark=source_benchmark,
+                source_item_id=item_id,
+                expected_elements=all_expected,
+            )
+        )
+
     else:
         # No specific scenario detected, use general heuristics
         # Check for basic completeness indicators
         answer_lower = answer.lower()
-        
+
         missing = []
         if "differential" not in answer_lower and "consider" not in answer_lower:
             missing.append("differentials: no differential diagnosis mentioned")
         if "recommend" not in answer_lower and "should" not in answer_lower:
             missing.append("management: no recommendations provided")
-        
+
         score = 1.0 - (len(missing) * 0.3)
         score = max(0.0, min(1.0, score))
         severity = determine_omission_severity(missing, None)
-        
-        examples.append(CompletenessCriticExample(
-            question=question,
-            model_answer=answer,
-            missing_elements=missing,
-            completeness_score=score,
-            omission_severity=severity,
-            rationale="General completeness assessment (no specific scenario detected).",
-            source_benchmark=source_benchmark,
-            source_item_id=item_id,
-            expected_elements=[],
-        ))
-    
+
+        examples.append(
+            CompletenessCriticExample(
+                question=question,
+                model_answer=answer,
+                missing_elements=missing,
+                completeness_score=score,
+                omission_severity=severity,
+                rationale="General completeness assessment (no specific scenario detected).",
+                source_benchmark=source_benchmark,
+                source_item_id=item_id,
+                expected_elements=[],
+            )
+        )
+
     return examples
 
 
@@ -278,37 +284,38 @@ def build_completeness_critic_dataset(
 ) -> int:
     """
     Build completeness critic training dataset.
-    
+
     Args:
         evaluation_results_path: Path to evaluation results.
         benchmark_path: Path to benchmark with reference answers.
         output_path: Output JSONL path.
         max_examples: Maximum examples.
         seed: Random seed.
-    
+
     Returns:
         Number of examples written.
     """
     import json
+
     random.seed(seed)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     all_examples: list[CompletenessCriticExample] = []
-    
+
     # Process evaluation results
     if evaluation_results_path and evaluation_results_path.exists():
         with open(evaluation_results_path, "r", encoding="utf-8") as f:
             for line in f:
                 if not line.strip():
                     continue
-                
+
                 result = json.loads(line)
                 question = result.get("question", result.get("prompt", ""))
                 answer = result.get("answer", result.get("model_answer", ""))
                 item_id = result.get("item_id", result.get("case_id", ""))
                 source = result.get("source_benchmark", "evaluation")
                 reference = result.get("reference_answer")
-                
+
                 if question and answer:
                     examples = generate_completeness_examples(
                         question=question,
@@ -318,18 +325,18 @@ def build_completeness_critic_dataset(
                         reference_answer=reference,
                     )
                     all_examples.extend(examples)
-    
+
     # Validate and limit
     valid_examples = []
     for example in all_examples:
         errors = validate_completeness_example(example)
         if not errors:
             valid_examples.append(example)
-    
+
     random.shuffle(valid_examples)
     if len(valid_examples) > max_examples:
         valid_examples = valid_examples[:max_examples]
-    
+
     # Write dataset
     batch = CriticTrainingBatch(
         critic_type="completeness",
@@ -337,7 +344,6 @@ def build_completeness_critic_dataset(
         metadata={"seed": seed},
     )
     count = batch.to_jsonl_file(str(output_path))
-    
+
     print(f"Built completeness critic dataset: {count} examples")
     return count
-

@@ -17,25 +17,23 @@ Targets:
 import asyncio
 import logging
 import time
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
 from pydantic import ValidationError
 
 from constitutional_ai.audit import AuditLogger
+from constitutional_ai.council.orchestrator import run_council_deliberation
 from constitutional_ai.decision_fusion import DecisionFusion, FusionMethod
-from constitutional_ai.override import ConstitutionalOverride, run_constitutional_override
+from constitutional_ai.override import ConstitutionalOverride
 from constitutional_ai.schemas import (
-    AuditDecisionType,
     ClinicalCase,
     ESILevel,
     HighThroughputMetrics,
     TriageDecision,
     VitalSigns,
 )
-from constitutional_ai.council.orchestrator import run_council_deliberation
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +46,7 @@ BATCH_SIZE = 50
 @dataclass
 class ProcessorConfig:
     """Configuration for high-throughput processor."""
+
     max_concurrent: int = DEFAULT_MAX_CONCURRENT
     timeout_ms: int = DEFAULT_TIMEOUT_MS
     enable_council: bool = True
@@ -59,6 +58,7 @@ class ProcessorConfig:
 @dataclass
 class ProcessingResult:
     """Result of processing a single case."""
+
     success: bool
     decision: Optional[TriageDecision]
     error: Optional[str] = None
@@ -131,7 +131,7 @@ class HighThroughputProcessor:
                 # Step 2: Run primary triage (GPT-5.1)
                 gpt_result = await asyncio.wait_for(
                     self.gpt_triage_fn(case),
-                    timeout=self.config.timeout_ms / 1000 * 0.4  # 40% of budget
+                    timeout=self.config.timeout_ms / 1000 * 0.4,  # 40% of budget
                 )
 
                 # Step 3: Constitutional supervision (Claude-Opus)
@@ -140,7 +140,7 @@ class HighThroughputProcessor:
                         gpt_triage=gpt_result,
                         patient_data=raw_data,
                     ),
-                    timeout=self.config.timeout_ms / 1000 * 0.3  # 30% of budget
+                    timeout=self.config.timeout_ms / 1000 * 0.3,  # 30% of budget
                 )
 
                 # Step 4: Decision fusion
@@ -149,7 +149,9 @@ class HighThroughputProcessor:
                     "confidence": override_result.supervisor_confidence,
                     "reasoning_trace": override_result.supervisor_reasoning,
                     "override_triggered": override_result.override_triggered,
-                    "violated_principles": [v.principle_name for v in override_result.violated_principles],
+                    "violated_principles": [
+                        v.principle_name for v in override_result.violated_principles
+                    ],
                 }
 
                 fusion_result = self.decision_fusion.adjudicate(gpt_result, claude_result)
@@ -166,7 +168,7 @@ class HighThroughputProcessor:
                             gpt_result=gpt_result,
                             claude_result=claude_result,
                         ),
-                        timeout=self.config.timeout_ms / 1000 * 0.3  # Remaining budget
+                        timeout=self.config.timeout_ms / 1000 * 0.3,  # Remaining budget
                     )
                     final_esi = council_result.final_esi
                     council_used = True
@@ -177,18 +179,29 @@ class HighThroughputProcessor:
                 decision = TriageDecision(
                     case_id=case.case_id,
                     esi_level=ESILevel(final_esi or fusion_result.gpt_esi),
-                    confidence=fusion_result.claude_confidence if override_result.override_triggered else fusion_result.gpt_confidence,
-                    reasoning_trace=override_result.supervisor_reasoning if override_result.override_triggered else gpt_result.get("reasoning_trace", ""),
+                    confidence=fusion_result.claude_confidence
+                    if override_result.override_triggered
+                    else fusion_result.gpt_confidence,
+                    reasoning_trace=override_result.supervisor_reasoning
+                    if override_result.override_triggered
+                    else gpt_result.get("reasoning_trace", ""),
                     override_applied=override_result.override_triggered,
-                    original_esi=ESILevel(fusion_result.gpt_esi) if override_result.override_triggered else None,
-                    violated_principles=[v.principle_name for v in override_result.violated_principles],
+                    original_esi=ESILevel(fusion_result.gpt_esi)
+                    if override_result.override_triggered
+                    else None,
+                    violated_principles=[
+                        v.principle_name for v in override_result.violated_principles
+                    ],
                     recommended_resources=gpt_result.get("recommended_resources", []),
-                    time_to_provider_target_minutes=self._get_time_target(final_esi or fusion_result.gpt_esi),
+                    time_to_provider_target_minutes=self._get_time_target(
+                        final_esi or fusion_result.gpt_esi
+                    ),
                     primary_model="gpt-5.1",
                     supervisor_model="claude-opus-4-5-20251124",
                     latency_ms=elapsed_ms,
                     requires_physician_review=True,
-                    autonomous_decision=not council_used and fusion_result.method == FusionMethod.CONSENSUS,
+                    autonomous_decision=not council_used
+                    and fusion_result.method == FusionMethod.CONSENSUS,
                 )
 
                 # Step 6: Audit logging (non-blocking)
@@ -229,7 +242,9 @@ class HighThroughputProcessor:
                 "systolic_bp": vitals_data.get("sbp", vitals_data.get("systolic_bp", 120)),
                 "diastolic_bp": vitals_data.get("dbp", vitals_data.get("diastolic_bp", 80)),
                 "respiratory_rate": vitals_data.get("rr", vitals_data.get("respiratory_rate", 16)),
-                "oxygen_saturation": vitals_data.get("spo2", vitals_data.get("oxygen_saturation", 98)),
+                "oxygen_saturation": vitals_data.get(
+                    "spo2", vitals_data.get("oxygen_saturation", 98)
+                ),
                 "temperature_f": vitals_data.get("temp_f", vitals_data.get("temperature_f", 98.6)),
                 "gcs": vitals_data.get("gcs", 15),
             }
@@ -237,13 +252,17 @@ class HighThroughputProcessor:
             # Handle temperature conversion if in Celsius
             temp = normalized_vitals["temperature_f"]
             if temp and temp < 50:  # Likely Celsius
-                normalized_vitals["temperature_f"] = temp * 9/5 + 32
+                normalized_vitals["temperature_f"] = temp * 9 / 5 + 32
 
             vitals = VitalSigns(**normalized_vitals)
 
             # Ensure case_id format
-            case_id = raw_data.get("case_id", raw_data.get("patient_id", f"SYNTH-{uuid4().hex[:8]}"))
-            if not any(case_id.startswith(p) for p in ('ED-', 'TRIAGE-', 'MIMIC-', 'SYNTH-', 'TEST-')):
+            case_id = raw_data.get(
+                "case_id", raw_data.get("patient_id", f"SYNTH-{uuid4().hex[:8]}")
+            )
+            if not any(
+                case_id.startswith(p) for p in ("ED-", "TRIAGE-", "MIMIC-", "SYNTH-", "TEST-")
+            ):
                 case_id = f"SYNTH-{case_id}"
 
             return ClinicalCase(
@@ -295,10 +314,10 @@ class HighThroughputProcessor:
     def _get_time_target(self, esi: int) -> int:
         """Get time-to-provider target in minutes based on ESI."""
         targets = {
-            1: 0,    # Immediate
-            2: 10,   # Emergent
-            3: 30,   # Urgent
-            4: 60,   # Less urgent
+            1: 0,  # Immediate
+            2: 10,  # Emergent
+            3: 30,  # Urgent
+            4: 60,  # Less urgent
             5: 120,  # Non-urgent
         }
         return targets.get(esi, 30)

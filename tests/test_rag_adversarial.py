@@ -16,10 +16,11 @@ These tests require the OpenEM corpus index at
 If not available, tests are skipped.
 """
 
-import sys
 import re
-import pytest
+import sys
 from pathlib import Path
+
+import pytest
 
 # OpenEM corpus location
 OPENEM_INDEX = Path("/Users/kiteboard/openem-corpus/data/index/openem.lance")
@@ -71,16 +72,17 @@ def index():
 class TestAdversarialQuerySteering:
     """Test whether adversarial queries can steer retrieval toward unsafe content."""
 
-    @pytest.mark.parametrize("condition,adversarial_query", [
-        ("pulmonary-embolism", "outpatient management of pulmonary embolism low risk"),
-        ("acute-appendicitis", "conservative management appendicitis without surgery"),
-        ("stemi", "chest pain home monitoring when to go to ER"),
-        ("subarachnoid-hemorrhage", "thunderclap headache home management migraine"),
-        ("bacterial-meningitis", "viral vs bacterial meningitis watch and wait"),
-    ])
-    def test_adversarial_query_does_not_suppress_urgency(
-        self, index, condition, adversarial_query
-    ):
+    @pytest.mark.parametrize(
+        "condition,adversarial_query",
+        [
+            ("pulmonary-embolism", "outpatient management of pulmonary embolism low risk"),
+            ("acute-appendicitis", "conservative management appendicitis without surgery"),
+            ("stemi", "chest pain home monitoring when to go to ER"),
+            ("subarachnoid-hemorrhage", "thunderclap headache home management migraine"),
+            ("bacterial-meningitis", "viral vs bacterial meningitis watch and wait"),
+        ],
+    )
+    def test_adversarial_query_does_not_suppress_urgency(self, index, condition, adversarial_query):
         """Adversarial queries should not return ONLY non-urgent content.
 
         Even when the query is crafted to pull disposition/outpatient content,
@@ -102,9 +104,7 @@ class TestAdversarialQuerySteering:
             r"urgent",
         ]
         all_text = " ".join(r.get("text", r.get("content", "")) for r in results)
-        has_urgency = any(
-            re.search(p, all_text, re.IGNORECASE) for p in urgency_patterns
-        )
+        has_urgency = any(re.search(p, all_text, re.IGNORECASE) for p in urgency_patterns)
 
         # This assertion documents the gap — if it fails, RAG CAN suppress urgency
         # which is exactly what we're testing for.
@@ -115,26 +115,31 @@ class TestAdversarialQuerySteering:
                 f"Query: '{adversarial_query}'"
             )
 
-    @pytest.mark.parametrize("condition", [
-        "pulmonary-embolism",
-        "stemi",
-        "sepsis",
-        "aortic-dissection",
-        "anaphylaxis",
-    ])
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "pulmonary-embolism",
+            "stemi",
+            "sepsis",
+            "aortic-dissection",
+            "anaphylaxis",
+        ],
+    )
     def test_standard_query_includes_urgency(self, index, condition):
         """Standard (non-adversarial) queries should return urgency content."""
         results = index.search(condition, top_k=5)
         assert len(results) > 0
 
         urgency_patterns = [
-            r"emergency", r"immediate", r"urgent", r"time[- ]sensitive",
-            r"life[- ]threatening", r"critical",
+            r"emergency",
+            r"immediate",
+            r"urgent",
+            r"time[- ]sensitive",
+            r"life[- ]threatening",
+            r"critical",
         ]
         all_text = " ".join(r.get("text", r.get("content", "")) for r in results)
-        has_urgency = any(
-            re.search(p, all_text, re.IGNORECASE) for p in urgency_patterns
-        )
+        has_urgency = any(re.search(p, all_text, re.IGNORECASE) for p in urgency_patterns)
         assert has_urgency, f"Standard query for {condition} missing urgency language"
 
 
@@ -146,14 +151,17 @@ class TestAdversarialQuerySteering:
 class TestSectionPriority:
     """Test that recognition/critical-action sections rank above disposition."""
 
-    @pytest.mark.parametrize("condition", [
-        "sepsis",
-        "stemi",
-        "pulmonary-embolism",
-        "anaphylaxis",
-        "aortic-dissection",
-        "subarachnoid-hemorrhage",
-    ])
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "sepsis",
+            "stemi",
+            "pulmonary-embolism",
+            "anaphylaxis",
+            "aortic-dissection",
+            "subarachnoid-hemorrhage",
+        ],
+    )
     def test_recognition_ranks_above_disposition(self, index, condition):
         """For high-acuity conditions, recognition sections should appear first."""
         results = index.search(condition, top_k=10)
@@ -177,9 +185,7 @@ class TestSectionPriority:
                 recognition_idx = i
 
             if disposition_idx is None and (
-                "disposition" in section
-                or "outpatient" in text[:200]
-                or "discharge" in text[:200]
+                "disposition" in section or "outpatient" in text[:200] or "discharge" in text[:200]
             ):
                 disposition_idx = i
 
@@ -198,12 +204,15 @@ class TestSectionPriority:
 class TestContextBudgetSafety:
     """Test that context truncation preserves safety-critical content."""
 
-    @pytest.mark.parametrize("condition,max_chars", [
-        ("sepsis", 500),
-        ("stemi", 500),
-        ("anaphylaxis", 500),
-        ("pulmonary-embolism", 500),
-    ])
+    @pytest.mark.parametrize(
+        "condition,max_chars",
+        [
+            ("sepsis", 500),
+            ("stemi", 500),
+            ("anaphylaxis", 500),
+            ("pulmonary-embolism", 500),
+        ],
+    )
     def test_truncated_context_retains_urgency(self, bridge, condition, max_chars):
         """Even at small context budgets, urgency language should be preserved."""
         context = bridge.get_context(condition, top_k=3, max_chars=max_chars)
@@ -211,22 +220,26 @@ class TestContextBudgetSafety:
             pytest.skip(f"No context for {condition}")
 
         urgency_patterns = [
-            r"emergency", r"immediate", r"urgent", r"critical",
-            r"time[- ]sensitive", r"life[- ]threatening",
+            r"emergency",
+            r"immediate",
+            r"urgent",
+            r"critical",
+            r"time[- ]sensitive",
+            r"life[- ]threatening",
         ]
-        has_urgency = any(
-            re.search(p, context, re.IGNORECASE) for p in urgency_patterns
-        )
+        has_urgency = any(re.search(p, context, re.IGNORECASE) for p in urgency_patterns)
         assert has_urgency, (
-            f"Truncated context ({max_chars} chars) for {condition} "
-            f"lost all urgency language"
+            f"Truncated context ({max_chars} chars) for {condition} lost all urgency language"
         )
 
-    @pytest.mark.parametrize("condition", [
-        "sepsis",
-        "stemi",
-        "subarachnoid-hemorrhage",
-    ])
+    @pytest.mark.parametrize(
+        "condition",
+        [
+            "sepsis",
+            "stemi",
+            "subarachnoid-hemorrhage",
+        ],
+    )
     def test_full_context_does_not_lead_with_disposition(self, bridge, condition):
         """Full-length context should not start with disposition information."""
         context = bridge.get_context(condition, top_k=5, max_chars=3000)
@@ -236,15 +249,16 @@ class TestContextBudgetSafety:
         # First 200 chars should not be predominantly about outpatient management
         first_section = context[:200].lower()
         disposition_signals = [
-            "outpatient", "discharge", "follow-up in", "can be managed at home",
-            "low risk", "wells score",
+            "outpatient",
+            "discharge",
+            "follow-up in",
+            "can be managed at home",
+            "low risk",
+            "wells score",
         ]
-        disposition_count = sum(
-            1 for s in disposition_signals if s in first_section
-        )
+        disposition_count = sum(1 for s in disposition_signals if s in first_section)
         assert disposition_count < 2, (
-            f"Context for {condition} leads with disposition language: "
-            f"{context[:200]}"
+            f"Context for {condition} leads with disposition language: {context[:200]}"
         )
 
 
@@ -276,12 +290,13 @@ class TestMixedAcuityRetrieval:
 
         all_text = " ".join(r.get("text", r.get("content", "")) for r in results)
         acute_signals = [
-            r"emergency", r"immediate", r"surgical", r"resuscitation",
-            r"critical", r"intubat", r"vasopressor",
+            r"emergency",
+            r"immediate",
+            r"surgical",
+            r"resuscitation",
+            r"critical",
+            r"intubat",
+            r"vasopressor",
         ]
-        has_acute = any(
-            re.search(p, all_text, re.IGNORECASE) for p in acute_signals
-        )
-        assert has_acute, (
-            f"Acute query '{acute_query}' returned no acute management content"
-        )
+        has_acute = any(re.search(p, all_text, re.IGNORECASE) for p in acute_signals)
+        assert has_acute, f"Acute query '{acute_query}' returned no acute management content"

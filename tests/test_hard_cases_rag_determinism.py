@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from rag.config import RAGConfig, RAGSafetyConfig
@@ -52,8 +51,12 @@ def test_hard_cases_rag_is_deterministic_with_mock_corpus() -> None:
 
     q = "chest pain evaluation in an adult"
 
-    ctx1 = retrieve(question=q, index=index, embedder=embedder, config=cfg, safety_config=safety_cfg)
-    ctx2 = retrieve(question=q, index=index, embedder=embedder, config=cfg, safety_config=safety_cfg)
+    ctx1 = retrieve(
+        question=q, index=index, embedder=embedder, config=cfg, safety_config=safety_cfg
+    )
+    ctx2 = retrieve(
+        question=q, index=index, embedder=embedder, config=cfg, safety_config=safety_cfg
+    )
 
     assert version.index_hash == ctx1.index_hash
     assert ctx1.index_hash == ctx2.index_hash
@@ -62,5 +65,3 @@ def test_hard_cases_rag_is_deterministic_with_mock_corpus() -> None:
 
     # Ordered citation chunk IDs must be identical across runs
     assert _ordered_citation_chunk_ids(ctx1) == _ordered_citation_chunk_ids(ctx2)
-
-

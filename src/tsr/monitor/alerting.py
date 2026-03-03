@@ -121,9 +121,7 @@ class AlertSender(IAlertSender):
             "contract_id": incident.contract_id,
             "severity": incident.severity.value,
             "created_at": incident.created_at.isoformat(),
-            "escalated_at": (
-                incident.escalated_at.isoformat() if incident.escalated_at else None
-            ),
+            "escalated_at": (incident.escalated_at.isoformat() if incident.escalated_at else None),
             "acknowledged": incident.acknowledged_at is not None,
             "escalation_count": len(incident.escalation_history),
         }

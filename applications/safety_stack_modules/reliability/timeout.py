@@ -30,6 +30,7 @@ class TimeoutError(Exception):
 @dataclass
 class TimeoutPolicy:
     """Configuration for timeout behavior"""
+
     # Timeout duration in seconds
     timeout_seconds: float = 30.0
     # Whether to cancel underlying operation
@@ -72,15 +73,15 @@ def with_timeout(
             operation_name = func.__name__
 
             try:
-                return await asyncio.wait_for(
-                    func(*args, **kwargs),
-                    timeout=policy.timeout_seconds
-                )
+                return await asyncio.wait_for(func(*args, **kwargs), timeout=policy.timeout_seconds)
             except asyncio.TimeoutError:
                 if policy.on_timeout:
                     policy.on_timeout()
 
-                message = policy.error_message or f"Operation '{operation_name}' timed out after {policy.timeout_seconds}s"
+                message = (
+                    policy.error_message
+                    or f"Operation '{operation_name}' timed out after {policy.timeout_seconds}s"
+                )
                 raise TimeoutError(
                     message,
                     timeout_seconds=policy.timeout_seconds,

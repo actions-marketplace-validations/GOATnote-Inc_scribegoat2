@@ -21,7 +21,6 @@ from typing import Any, Dict, List
 from src.fhir.synthetic_patients import SyntheticPatientGenerator
 from src.fhir.terminology import CPT_CLINICAL_URGENCY
 
-
 # Extension URL prefix for augmentation metadata
 _AUG_EXT_URL = "https://goatnote.com/fhir/extensions/adversarial-augmentation"
 
@@ -50,13 +49,15 @@ def _tag_variant(
     variant_index: int,
 ) -> Dict[str, Any]:
     """Add augmentation metadata extensions to a variant bundle."""
-    bundle.setdefault("extension", []).append({
-        "url": _AUG_EXT_URL,
-        "extension": [
-            {"url": "augmentation_category", "valueString": category},
-            {"url": "variant_index", "valueString": str(variant_index)},
-        ],
-    })
+    bundle.setdefault("extension", []).append(
+        {
+            "url": _AUG_EXT_URL,
+            "extension": [
+                {"url": "augmentation_category", "valueString": category},
+                {"url": "variant_index", "valueString": str(variant_index)},
+            ],
+        }
+    )
     return bundle
 
 
@@ -80,6 +81,7 @@ def _find_all_resources(bundle: Dict[str, Any], resource_type: str) -> List[Dict
 # ---------------------------------------------------------------------------
 # Category 1: Demographic diversity
 # ---------------------------------------------------------------------------
+
 
 def _demographic_variants(
     bundle: Dict[str, Any],
@@ -136,6 +138,7 @@ def _demographic_variants(
 # Category 2: Coding edge cases
 # ---------------------------------------------------------------------------
 
+
 def _coding_variants(
     bundle: Dict[str, Any],
     rng: random.Random,
@@ -179,15 +182,18 @@ def _coding_variants(
         if patient:
             combo_code, combo_display = _COMORBIDITY_POOL[i % len(_COMORBIDITY_POOL)]
             from src.fhir.resources import build_condition
+
             comorbidity = build_condition(
                 patient_id=patient["id"],
                 icd10_code=combo_code.replace(".", ""),  # also dotless
                 display=combo_display,
             )
-            variant["entry"].append({
-                "fullUrl": f"urn:uuid:{comorbidity['id']}",
-                "resource": comorbidity,
-            })
+            variant["entry"].append(
+                {
+                    "fullUrl": f"urn:uuid:{comorbidity['id']}",
+                    "resource": comorbidity,
+                }
+            )
 
         # Swap CPT codes to adjacent urgency tier
         for procedure in _find_all_resources(variant, "Procedure"):
@@ -198,7 +204,13 @@ def _coding_variants(
                     original_info = CPT_CLINICAL_URGENCY.get(original_code)
                     if original_info:
                         # Find adjacent urgency tier
-                        urgency_order = ["immediate", "emergent", "urgent", "semi-urgent", "elective"]
+                        urgency_order = [
+                            "immediate",
+                            "emergent",
+                            "urgent",
+                            "semi-urgent",
+                            "elective",
+                        ]
                         current_urgency = original_info["urgency"]
                         if current_urgency in urgency_order:
                             idx = urgency_order.index(current_urgency)
@@ -221,6 +233,7 @@ def _coding_variants(
 # ---------------------------------------------------------------------------
 # Category 3: PA adversarial (CMS-0057-F only)
 # ---------------------------------------------------------------------------
+
 
 def _pa_adversarial_variants(
     bundle: Dict[str, Any],
@@ -261,6 +274,7 @@ def _pa_adversarial_variants(
 
         # Add denial reason as error
         from src.fhir.resources import _make_codeable_concept
+
         claim_response["error"] = [
             {
                 "code": _make_codeable_concept(
@@ -315,7 +329,9 @@ def _structural_variants(
 
         # Strip optional Encounter fields
         for encounter in _find_all_resources(variant, "Encounter"):
-            fields_to_strip = _OPTIONAL_ENCOUNTER_FIELDS[: min(i + 1, len(_OPTIONAL_ENCOUNTER_FIELDS))]
+            fields_to_strip = _OPTIONAL_ENCOUNTER_FIELDS[
+                : min(i + 1, len(_OPTIONAL_ENCOUNTER_FIELDS))
+            ]
             for field in fields_to_strip:
                 encounter.pop(field, None)
 

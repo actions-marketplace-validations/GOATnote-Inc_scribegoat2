@@ -7,7 +7,6 @@ or create additional audit entries.
 import os
 import tempfile
 
-
 from src.tsr.monitor.incidents import IncidentManager
 from src.tsr.monitor.interfaces import Severity
 from src.tsr.monitor.state_store import StateStore
@@ -52,9 +51,7 @@ class TestIdempotentAck:
         self._manager.acknowledge(incident, "dr.jones", "Second ack")
 
         entries_after = self._store.load_audit_log(contract_id="test-contract")
-        ack_count_after = len(
-            [e for e in entries_after if e["action"] == "incident_acknowledged"]
-        )
+        ack_count_after = len([e for e in entries_after if e["action"] == "incident_acknowledged"])
 
         assert ack_count_after == ack_count_before
 

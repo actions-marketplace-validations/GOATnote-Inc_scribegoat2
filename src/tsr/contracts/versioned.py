@@ -2,15 +2,18 @@
 
 Provides backward-compatible contract versioning with cryptographic attestation.
 """
+
 import hashlib
 import json
 from dataclasses import dataclass, field
-from typing import Optional
 from pathlib import Path
+from typing import Optional
+
 
 @dataclass
 class ContractVersion:
     """A specific version of a Monotonic Safety Contract."""
+
     contract_id: str
     version: str  # semver
     content_hash: str  # SHA-256 of contract YAML
@@ -23,6 +26,7 @@ class ContractVersion:
     def from_yaml(cls, path: Path) -> "ContractVersion":
         """Load contract from YAML file and compute content hash."""
         import yaml
+
         content = path.read_text()
         content_hash = hashlib.sha256(content.encode()).hexdigest()
         data = yaml.safe_load(content)
@@ -37,6 +41,7 @@ class ContractVersion:
             invariants=data.get("invariants", {}),
         )
 
+
 @dataclass
 class VersionedContract:
     """A contract with version history and attestation support.
@@ -44,6 +49,7 @@ class VersionedContract:
     Tracks all versions of a contract and provides backward compatibility
     guarantees. Each version is content-addressed by its SHA-256 hash.
     """
+
     contract_id: str
     versions: dict[str, ContractVersion] = field(default_factory=dict)
     current_version: Optional[str] = None
@@ -73,13 +79,16 @@ class VersionedContract:
         if not contract:
             raise ValueError("No current contract version to attest")
 
-        attestation_data = json.dumps({
-            "contract_id": contract.contract_id,
-            "contract_version": contract.version,
-            "content_hash": contract.content_hash,
-            "model_id": model_id,
-            "deployment_context": deployment_context,
-        }, sort_keys=True)
+        attestation_data = json.dumps(
+            {
+                "contract_id": contract.contract_id,
+                "contract_version": contract.version,
+                "content_hash": contract.content_hash,
+                "model_id": model_id,
+                "deployment_context": deployment_context,
+            },
+            sort_keys=True,
+        )
 
         attestation_hash = hashlib.sha256(attestation_data.encode()).hexdigest()
 

@@ -36,7 +36,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Ensure project root is in path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -44,6 +44,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass  # dotenv optional; env vars can be set directly
@@ -84,19 +85,26 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--models", nargs=2, required=True,
+        "--models",
+        nargs=2,
+        required=True,
         help="Two model IDs to compare (e.g., gpt-5.2 claude-opus-4.6)",
     )
     parser.add_argument(
-        "--n-trials", type=int, default=3,
+        "--n-trials",
+        type=int,
+        default=3,
         help="Trials per scenario (default: 3)",
     )
     parser.add_argument(
-        "--include-holdback", action="store_true",
+        "--include-holdback",
+        action="store_true",
         help="Include held-back scenarios for contamination detection",
     )
     parser.add_argument(
-        "--output", type=str, default=None,
+        "--output",
+        type=str,
+        default=None,
         help="Output directory (default: results/comparison_TIMESTAMP/)",
     )
     parser.add_argument("--dry-run", action="store_true", help="Validate setup only")
@@ -131,6 +139,7 @@ def validate_environment(models: list[str]) -> dict[str, bool]:
     # Check core imports
     try:
         import evaluation.bloom_eval_v2  # noqa: F401
+
         checks["bloom_eval_v2"] = True
     except ImportError:
         checks["bloom_eval_v2"] = False
@@ -165,11 +174,17 @@ def run_evaluation_for_model(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        sys.executable, "-m", "bloom_eval_v2",
-        "--model", model_id,
-        "--n-trials", str(n_trials),
-        "--scenarios", "balanced",
-        "--output-dir", str(output_dir),
+        sys.executable,
+        "-m",
+        "bloom_eval_v2",
+        "--model",
+        model_id,
+        "--n-trials",
+        str(n_trials),
+        "--scenarios",
+        "balanced",
+        "--output-dir",
+        str(output_dir),
         "--use-llm-judge",
     ]
 
@@ -182,8 +197,7 @@ def run_evaluation_for_model(
     vendor = detect_vendor(model_id)
     judge = CROSS_VENDOR_JUDGE.get(vendor, "")
     logger.info(
-        f"Running evaluation: model={model_id}, vendor={vendor}, "
-        f"judge={judge}, trials={n_trials}"
+        f"Running evaluation: model={model_id}, vendor={vendor}, judge={judge}, trials={n_trials}"
     )
 
     try:
@@ -324,7 +338,7 @@ def main() -> None:
 
     vendor_a = detect_vendor(model_a)
     vendor_b = detect_vendor(model_b)
-    print(f"\nCross-vendor judges:")
+    print("\nCross-vendor judges:")
     print(f"  {model_a} judged by: {CROSS_VENDOR_JUDGE.get(vendor_a, 'default')}")
     print(f"  {model_b} judged by: {CROSS_VENDOR_JUDGE.get(vendor_b, 'default')}")
     print("=" * 70)
@@ -342,9 +356,9 @@ def main() -> None:
         print(f"  1. Evaluate {model_a} (10 scenarios x {args.n_trials} trials)")
         print(f"  2. Evaluate {model_b} (10 scenarios x {args.n_trials} trials)")
         if args.include_holdback:
-            print(f"  3. Evaluate holdback scenarios for both")
-            print(f"  4. Run contamination detection")
-        print(f"  5. Generate comparison report")
+            print("  3. Evaluate holdback scenarios for both")
+            print("  4. Run contamination detection")
+        print("  5. Generate comparison report")
         return
 
     # Run evaluations
@@ -369,7 +383,11 @@ def main() -> None:
     # Compute comparison
     if results_a and results_b:
         comparison = compute_comparison(
-            model_a, model_b, results_a, results_b, args.n_trials,
+            model_a,
+            model_b,
+            results_a,
+            results_b,
+            args.n_trials,
         )
 
         # Generate report
@@ -384,16 +402,23 @@ def main() -> None:
         print("\n" + "=" * 70)
         print("COMPARISON COMPLETE")
         print("=" * 70)
-        print(f"\n  {model_a}: {comparison.pass_rate_a:.1%} pass rate, "
-              f"pass^{comparison.k}={comparison.pass_k_a:.1%}")
-        print(f"  {model_b}: {comparison.pass_rate_b:.1%} pass rate, "
-              f"pass^{comparison.k}={comparison.pass_k_b:.1%}")
-        print(f"\n  Difference: {comparison.pass_rate_difference:+.1%} "
-              f"(p={comparison.fisher_exact_p:.4f}, "
-              f"Cohen's h={comparison.cohens_h:.3f} [{comparison.effect_size_label}])")
+        print(
+            f"\n  {model_a}: {comparison.pass_rate_a:.1%} pass rate, "
+            f"pass^{comparison.k}={comparison.pass_k_a:.1%}"
+        )
+        print(
+            f"  {model_b}: {comparison.pass_rate_b:.1%} pass rate, "
+            f"pass^{comparison.k}={comparison.pass_k_b:.1%}"
+        )
+        print(
+            f"\n  Difference: {comparison.pass_rate_difference:+.1%} "
+            f"(p={comparison.fisher_exact_p:.4f}, "
+            f"Cohen's h={comparison.cohens_h:.3f} [{comparison.effect_size_label}])"
+        )
 
         # Tier escalation recommendations (Step 21)
         from src.metrics.comparison import recommend_tier_escalation
+
         recommendations = recommend_tier_escalation(comparison)
         if recommendations:
             print("\n  Tier escalation recommendations:")
@@ -402,10 +427,10 @@ def main() -> None:
 
         # Generate per-model clinical risk profiles
         try:
+            from evaluation.bloom_eval_v2.scenarios import ScenarioLoader
             from src.metrics.clinical_risk_profile import (
                 ClinicalRiskProfileGenerator,
             )
-            from evaluation.bloom_eval_v2.scenarios import ScenarioLoader
 
             loader = ScenarioLoader()
             scenario_lookup = {s.id: s for s in loader.get_all_scenarios()}

@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
-    from mcp.types import Tool, TextContent
+    from mcp.types import TextContent, Tool
 
     MCP_AVAILABLE = True
 except ImportError:
@@ -140,9 +140,7 @@ async def compare_trajectories(
             forbidden = contract.invariants[state.current_state].forbid_any
 
         violation = check_violation_realtime(response, state.current_state, forbidden)
-        passed = (
-            not violation.get("violated", False) if isinstance(violation, dict) else True
-        )
+        passed = not violation.get("violated", False) if isinstance(violation, dict) else True
 
         return {
             "current_state": state.current_state,
@@ -164,17 +162,14 @@ async def compare_trajectories(
         if i < len(turns_a):
             response_a = turns_a[i].get("content", "")
             # Build history up to this turn
-            idx_a = (
-                transcript_a.index(turns_a[i]) if turns_a[i] in transcript_a else 0
-            )
+            idx_a = transcript_a.index(turns_a[i]) if turns_a[i] in transcript_a else 0
             history_a = transcript_a[:idx_a]
             check_a = _check_turn(response_a, history_a)
             turn_entry["model_a"] = {
                 "state": check_a["current_state"],
                 "passed": check_a["passed"],
                 "events": check_a["events_detected"],
-                "response_preview": response_a[:200]
-                + ("..." if len(response_a) > 200 else ""),
+                "response_preview": response_a[:200] + ("..." if len(response_a) > 200 else ""),
             }
         else:
             turn_entry["model_a"] = {
@@ -187,17 +182,14 @@ async def compare_trajectories(
         # Check model B
         if i < len(turns_b):
             response_b = turns_b[i].get("content", "")
-            idx_b = (
-                transcript_b.index(turns_b[i]) if turns_b[i] in transcript_b else 0
-            )
+            idx_b = transcript_b.index(turns_b[i]) if turns_b[i] in transcript_b else 0
             history_b = transcript_b[:idx_b]
             check_b = _check_turn(response_b, history_b)
             turn_entry["model_b"] = {
                 "state": check_b["current_state"],
                 "passed": check_b["passed"],
                 "events": check_b["events_detected"],
-                "response_preview": response_b[:200]
-                + ("..." if len(response_b) > 200 else ""),
+                "response_preview": response_b[:200] + ("..." if len(response_b) > 200 else ""),
             }
         else:
             turn_entry["model_b"] = {
@@ -210,9 +202,7 @@ async def compare_trajectories(
         # Mark divergence
         a_pass = turn_entry["model_a"]["passed"]
         b_pass = turn_entry["model_b"]["passed"]
-        turn_entry["divergent"] = (
-            a_pass is not None and b_pass is not None and a_pass != b_pass
-        )
+        turn_entry["divergent"] = a_pass is not None and b_pass is not None and a_pass != b_pass
 
         comparison_table.append(turn_entry)
 
@@ -336,9 +326,7 @@ async def main():
         sys.exit(1)
 
     async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream, write_stream, app.create_initialization_options()
-        )
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 
 if __name__ == "__main__":

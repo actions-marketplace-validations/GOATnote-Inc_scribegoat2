@@ -15,9 +15,9 @@ Functions:
 
 from __future__ import annotations
 
-import math
 import logging
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -79,12 +79,14 @@ def verify_cross_vendor(
 
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
 
 try:
     from scipy.stats import fisher_exact, mannwhitneyu
+
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
@@ -146,15 +148,16 @@ class ComparisonResult:
             "k": self.k,
             "mean_violation_turn_a": (
                 round(self.mean_violation_turn_a, 2)
-                if self.mean_violation_turn_a is not None else None
+                if self.mean_violation_turn_a is not None
+                else None
             ),
             "mean_violation_turn_b": (
                 round(self.mean_violation_turn_b, 2)
-                if self.mean_violation_turn_b is not None else None
+                if self.mean_violation_turn_b is not None
+                else None
             ),
             "violation_timing_p": (
-                round(self.violation_timing_p, 6)
-                if self.violation_timing_p is not None else None
+                round(self.violation_timing_p, 6) if self.violation_timing_p is not None else None
             ),
             "saturation_a": self.saturation_a,
             "saturation_b": self.saturation_b,
@@ -272,8 +275,8 @@ def compare_pass_k(
         Tuple of (pass_k_a, pass_k_b, bootstrap_p_value)
         where p_value is P(pass_k_a - pass_k_b > 0) under null
     """
-    pass_k_a = rate_a ** k
-    pass_k_b = rate_b ** k
+    pass_k_a = rate_a**k
+    pass_k_b = rate_b**k
 
     if not NUMPY_AVAILABLE:
         logger.warning("numpy not available; returning point estimates only")
@@ -285,15 +288,18 @@ def compare_pass_k(
     boot_a = rng.binomial(n_a, rate_a, n_bootstrap) / n_a
     boot_b = rng.binomial(n_b, rate_b, n_bootstrap) / n_b
 
-    pass_k_boot_a = boot_a ** k
-    pass_k_boot_b = boot_b ** k
+    pass_k_boot_a = boot_a**k
+    pass_k_boot_b = boot_b**k
 
     # P-value: proportion of bootstraps where A > B (or vice versa)
     diff = pass_k_boot_a - pass_k_boot_b
-    p_value = float(min(
-        np.mean(diff > 0),
-        np.mean(diff < 0),
-    ) * 2)  # Two-sided
+    p_value = float(
+        min(
+            np.mean(diff > 0),
+            np.mean(diff < 0),
+        )
+        * 2
+    )  # Two-sided
 
     return pass_k_a, pass_k_b, p_value
 
@@ -387,9 +393,7 @@ def generate_comparison_summary(
     rate_b = passed_b / total_b if total_b > 0 else 0.0
 
     # Pass rate comparison
-    difference, fisher_p = compare_pass_rates(
-        passed_a, total_a, passed_b, total_b
-    )
+    difference, fisher_p = compare_pass_rates(passed_a, total_a, passed_b, total_b)
 
     # Effect size
     cohens_h = compute_effect_size(rate_a, rate_b)
@@ -500,9 +504,7 @@ def recommend_tier_escalation(
         )
 
     if not recommendations:
-        recommendations.append(
-            "Tier 1 evaluation is informative. No escalation needed."
-        )
+        recommendations.append("Tier 1 evaluation is informative. No escalation needed.")
 
     return recommendations
 
@@ -535,8 +537,10 @@ def _chi_squared_p(
     chi2 = sum(
         (obs - exp) ** 2 / exp
         for obs, exp in [
-            (pass_a, e_pa), (fail_a, e_fa),
-            (pass_b, e_pb), (fail_b, e_fb),
+            (pass_a, e_pa),
+            (fail_a, e_fa),
+            (pass_b, e_pb),
+            (fail_b, e_fb),
         ]
         if exp > 0
     )

@@ -1,33 +1,37 @@
 """
 Submit GPT-5.1 RFT Job (Python SDK)
 """
+
 import os
 import sys
+
 from openai import OpenAI
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 client = OpenAI()
 
+
 def submit_job():
     print("🚀 Submitting GPT-5.1 RFT Job...")
-    
+
     # Upload file
     print("   Uploading training data...")
     with open("rft/data/training.jsonl", "rb") as f:
         train_file = client.files.create(file=f, purpose="fine-tune")
     print(f"   Train File ID: {train_file.id}")
-    
+
     # Upload validation file (using same data for demo)
     print("   Uploading validation data...")
     with open("rft/data/training.jsonl", "rb") as f:
         val_file = client.files.create(file=f, purpose="fine-tune")
     print(f"   Validation File ID: {val_file.id}")
-    
+
     # Create Job
     print("   Creating RFT job...")
     try:
@@ -63,21 +67,19 @@ def submit_job():
         reward += 2.0
     if hallucination:
         reward -= 5.0
-    return reward"""
+    return reward""",
                     },
-                    "hyperparameters": {
-                        "reasoning_effort": "high",
-                        "n_epochs": 2
-                    }
-                }
-            }
+                    "hyperparameters": {"reasoning_effort": "high", "n_epochs": 2},
+                },
+            },
         )
         print(f"✅ Job submitted successfully: {job.id}")
         with open("rft/latest_job_id.txt", "w") as f:
             f.write(job.id)
-            
+
     except Exception as e:
         print(f"❌ Job submission failed: {e}")
+
 
 if __name__ == "__main__":
     submit_job()

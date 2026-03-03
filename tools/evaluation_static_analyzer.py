@@ -13,10 +13,10 @@ It does NOT flag:
 Usage:
     # Check entire codebase
     python tools/evaluation_static_analyzer.py
-    
+
     # Check specific files (for CI)
     python tools/evaluation_static_analyzer.py --files file1.py file2.py
-    
+
     # Generate report
     python tools/evaluation_static_analyzer.py --report report.json
 
@@ -30,14 +30,15 @@ import argparse
 import json
 import re
 import sys
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 
 @dataclass
 class Violation:
     """Represents a single policy violation."""
+
     file: str
     line_number: int
     line_content: str
@@ -49,6 +50,7 @@ class Violation:
 @dataclass
 class AnalysisReport:
     """Complete analysis report."""
+
     status: str  # "pass" or "fail"
     total_files_scanned: int
     total_violations: int
@@ -64,63 +66,55 @@ PROHIBITED_PATTERNS = [
     # ==========================================================================
     # ERROR PATTERNS - These MUST NOT exist (synthetic grading logic)
     # ==========================================================================
-    
     # Keyword-based clinical indicators for grading
     {
         "name": "keyword_clinical_indicator",
         "pattern": r"mentions_[a-z_]+\s*=\s*(True|False|any\()",
         "description": "Keyword-based clinical indicator (e.g., mentions_shock) for grading",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # Indicator dictionary for scoring
     {
         "name": "indicator_dictionary",
         "pattern": r"indicators\s*\[\s*['\"][a-z_]+['\"]\s*\]\s*=",
         "description": "Clinical indicator dictionary assignment for grading",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # Invented rubric structures
     {
         "name": "synthetic_rubric",
         "pattern": r"rubric_results\s*=\s*\[\s*\]|rubric_results\.append\(",
         "description": "Synthetic rubric result structure",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # Criterion met assignment (outside official grader)
     {
         "name": "criterion_met_synthetic",
         "pattern": r"criterion.*met.*=\s*(True|False)(?!.*rubric)",
         "description": "Synthetic criterion met/not-met logic",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # Heuristic urgency detection for grading
     {
         "name": "urgency_heuristic",
         "pattern": r"extract_urgency_indicators|urgency_score\s*=|triage_heuristic",
         "description": "Heuristic urgency detection for synthetic grading",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # Clinical keyword matching for scoring
     {
         "name": "clinical_keyword_scoring",
         "pattern": r"(shock|acs|pneumonia|sepsis|aspirin|oxygen|antibiotics|ecg|fluids)\s*in\s+\w+_?lower.*score\s*\+=",
         "description": "Clinical keyword matching for synthetic scoring",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # Score increment with clinical keyword logic
     {
         "name": "clinical_score_increment",
         "pattern": r"score\s*\+=.*if.*mentions_(shock|acs|pneumonia|sepsis|critical)",
         "description": "Score increment based on keyword detection",
-        "severity": "error"
+        "severity": "error",
     },
-    
     # ==========================================================================
     # NOTE: ESI comparison logic in system components (guardrails, council, RFT)
     # is ALLOWED because it's system behavior, not benchmark grading.
@@ -195,33 +189,35 @@ def should_exclude(filepath: str) -> bool:
 def scan_file(filepath: Path) -> List[Violation]:
     """Scan a single file for violations."""
     violations = []
-    
+
     try:
         content = filepath.read_text()
-        lines = content.split('\n')
+        lines = content.split("\n")
     except Exception as e:
         print(f"Warning: Could not read {filepath}: {e}", file=sys.stderr)
         return violations
-    
+
     for pattern_def in PROHIBITED_PATTERNS:
         pattern = re.compile(pattern_def["pattern"], re.IGNORECASE)
-        
+
         for line_num, line in enumerate(lines, 1):
             # Skip comments
             stripped = line.strip()
-            if stripped.startswith('#'):
+            if stripped.startswith("#"):
                 continue
-            
+
             if pattern.search(line):
-                violations.append(Violation(
-                    file=str(filepath),
-                    line_number=line_num,
-                    line_content=line.strip()[:100],
-                    pattern_name=pattern_def["name"],
-                    pattern_description=pattern_def["description"],
-                    severity=pattern_def["severity"]
-                ))
-    
+                violations.append(
+                    Violation(
+                        file=str(filepath),
+                        line_number=line_num,
+                        line_content=line.strip()[:100],
+                        pattern_name=pattern_def["name"],
+                        pattern_description=pattern_def["description"],
+                        severity=pattern_def["severity"],
+                    )
+                )
+
     return violations
 
 
@@ -230,36 +226,36 @@ def scan_codebase(root: Path, specific_files: Optional[List[str]] = None) -> Ana
     all_violations = []
     files_scanned = 0
     protected_modified = []
-    
+
     if specific_files:
-        files_to_scan = [Path(f) for f in specific_files if f.endswith('.py')]
+        files_to_scan = [Path(f) for f in specific_files if f.endswith(".py")]
     else:
         files_to_scan = list(root.rglob("*.py"))
-    
+
     for filepath in files_to_scan:
         filepath_str = str(filepath)
-        
+
         if should_exclude(filepath_str):
             continue
-        
+
         files_scanned += 1
-        
+
         # Check if protected file is being modified
         for protected in PROTECTED_FILES:
             if protected in filepath_str:
                 protected_modified.append(filepath_str)
-        
+
         violations = scan_file(filepath)
         all_violations.extend(violations)
-    
+
     status = "fail" if all_violations or protected_modified else "pass"
-    
+
     return AnalysisReport(
         status=status,
         total_files_scanned=files_scanned,
         total_violations=len(all_violations),
         violations=[asdict(v) for v in all_violations],
-        protected_files_modified=protected_modified
+        protected_files_modified=protected_modified,
     )
 
 
@@ -269,16 +265,16 @@ def print_report(report: AnalysisReport) -> None:
     print("EVALUATION STATIC ANALYZER REPORT")
     print("=" * 70)
     print()
-    
+
     print(f"Files scanned: {report.total_files_scanned}")
     print(f"Violations found: {report.total_violations}")
     print(f"Protected files modified: {len(report.protected_files_modified)}")
     print()
-    
+
     if report.violations:
         print("🚫 VIOLATIONS DETECTED")
         print("-" * 50)
-        
+
         for v in report.violations:
             print(f"\n  FILE: {v['file']}")
             print(f"  LINE: {v['line_number']}")
@@ -286,9 +282,9 @@ def print_report(report: AnalysisReport) -> None:
             print(f"  DESCRIPTION: {v['pattern_description']}")
             print(f"  SEVERITY: {v['severity']}")
             print(f"  CONTENT: {v['line_content']}")
-        
+
         print()
-    
+
     if report.protected_files_modified:
         print("⚠️  PROTECTED FILES MODIFIED")
         print("-" * 50)
@@ -297,9 +293,9 @@ def print_report(report: AnalysisReport) -> None:
         print()
         print("  Protected files require explicit human validation.")
         print()
-    
+
     print("=" * 70)
-    
+
     if report.status == "pass":
         print("✅ ANALYSIS PASSED - No synthetic grading logic detected")
     else:
@@ -309,41 +305,38 @@ def print_report(report: AnalysisReport) -> None:
         print("1. Remove all synthetic grading logic")
         print("2. Use official HealthBench grader only")
         print("3. See governance/EVALUATION_SAFETY_CONTRACT.md for guidance")
-    
+
     print("=" * 70)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Scan codebase for synthetic grading logic"
-    )
+    parser = argparse.ArgumentParser(description="Scan codebase for synthetic grading logic")
     parser.add_argument("--files", nargs="+", help="Specific files to scan")
     parser.add_argument("--report", help="Save JSON report to file")
     parser.add_argument("--quiet", action="store_true", help="Only output JSON")
-    
+
     args = parser.parse_args()
-    
+
     root = Path(__file__).parent.parent
-    
+
     try:
         report = scan_codebase(root, args.files)
     except Exception as e:
         print(f"Error during analysis: {e}", file=sys.stderr)
         sys.exit(2)
-    
+
     if not args.quiet:
         print_report(report)
-    
+
     if args.report:
-        with open(args.report, 'w') as f:
+        with open(args.report, "w") as f:
             json.dump(asdict(report), f, indent=2)
         if not args.quiet:
             print(f"\nJSON report saved to: {args.report}")
-    
+
     # Exit code based on status
     sys.exit(0 if report.status == "pass" else 1)
 
 
 if __name__ == "__main__":
     main()
-

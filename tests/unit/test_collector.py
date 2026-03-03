@@ -1,7 +1,8 @@
 """Unit tests for MetricCollector with dual windowing."""
 
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
 
 from src.tsr.monitor.collector import MetricCollector
 from src.tsr.monitor.interfaces import SafetyMetricEvent

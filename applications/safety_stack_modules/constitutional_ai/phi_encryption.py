@@ -21,7 +21,6 @@ import base64
 import hashlib
 import hmac
 import logging
-import os
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 AES_KEY_SIZE = 32  # 256 bits
-GCM_IV_SIZE = 12   # 96 bits (recommended for GCM)
+GCM_IV_SIZE = 12  # 96 bits (recommended for GCM)
 GCM_TAG_SIZE = 16  # 128 bits
 PBKDF2_ITERATIONS = 600000  # OWASP 2023 recommendation
 KEY_ROTATION_DAYS = 90
@@ -40,6 +39,7 @@ KEY_ROTATION_DAYS = 90
 @dataclass
 class EncryptionMetadata:
     """Metadata for encrypted data."""
+
     encrypted_at: datetime
     key_version: int
     algorithm: str = "AES-256-GCM"
@@ -82,8 +82,7 @@ class PHIEncryption:
         """Validate key length and format."""
         if len(self.key) != AES_KEY_SIZE:
             raise ValueError(
-                f"Key must be exactly {AES_KEY_SIZE} bytes (256 bits), "
-                f"got {len(self.key)} bytes"
+                f"Key must be exactly {AES_KEY_SIZE} bytes (256 bits), got {len(self.key)} bytes"
             )
 
     def encrypt_phi(self, plaintext: str) -> bytes:
@@ -109,7 +108,7 @@ class PHIEncryption:
 
         # Create cipher and encrypt
         aesgcm = AESGCM(self.key)
-        ciphertext = aesgcm.encrypt(iv, plaintext.encode('utf-8'), None)
+        ciphertext = aesgcm.encrypt(iv, plaintext.encode("utf-8"), None)
 
         # Return IV + ciphertext (GCM appends tag to ciphertext)
         return iv + ciphertext
@@ -146,7 +145,7 @@ class PHIEncryption:
         aesgcm = AESGCM(self.key)
         try:
             plaintext = aesgcm.decrypt(iv, ciphertext, None)
-            return plaintext.decode('utf-8')
+            return plaintext.decode("utf-8")
         except Exception as e:
             raise ValueError(f"Decryption failed: {e}")
 
@@ -157,7 +156,7 @@ class PHIEncryption:
         Convenient for JSON storage and logging.
         """
         encrypted = self.encrypt_phi(plaintext)
-        return base64.b64encode(encrypted).decode('ascii')
+        return base64.b64encode(encrypted).decode("ascii")
 
     def decrypt_phi_b64(self, encrypted_b64: str) -> str:
         """
@@ -180,11 +179,7 @@ class PHIEncryption:
             Hex-encoded hash (64 characters)
         """
         pepper = pepper or self.key[:16]  # Use first 16 bytes of key
-        hash_bytes = hmac.new(
-            pepper,
-            case_id.encode('utf-8'),
-            hashlib.sha256
-        ).digest()
+        hash_bytes = hmac.new(pepper, case_id.encode("utf-8"), hashlib.sha256).digest()
         return hash_bytes.hex()
 
     def needs_rotation(self) -> bool:
@@ -192,7 +187,7 @@ class PHIEncryption:
         age = datetime.utcnow() - self.key_created_at
         return age > timedelta(days=KEY_ROTATION_DAYS)
 
-    def rotate_key(self) -> 'PHIEncryption':
+    def rotate_key(self) -> "PHIEncryption":
         """
         Create a new encryption instance with rotated key.
 
@@ -210,7 +205,7 @@ class PHIEncryption:
         password: str,
         salt: Optional[bytes] = None,
         key_version: int = 1,
-    ) -> Tuple['PHIEncryption', bytes]:
+    ) -> Tuple["PHIEncryption", bytes]:
         """
         Derive encryption key from password using PBKDF2.
 
@@ -239,7 +234,7 @@ class PHIEncryption:
             salt=salt,
             iterations=PBKDF2_ITERATIONS,
         )
-        key = kdf.derive(password.encode('utf-8'))
+        key = kdf.derive(password.encode("utf-8"))
 
         return cls(key=key, key_version=key_version), salt
 
@@ -250,10 +245,10 @@ class PHIEncryption:
         WARNING: Handle with extreme care. This key provides
         access to all encrypted PHI.
         """
-        return base64.b64encode(self.key).decode('ascii')
+        return base64.b64encode(self.key).decode("ascii")
 
     @classmethod
-    def from_key_b64(cls, key_b64: str, key_version: int = 1) -> 'PHIEncryption':
+    def from_key_b64(cls, key_b64: str, key_version: int = 1) -> "PHIEncryption":
         """
         Import encryption instance from base64-encoded key.
         """
@@ -271,15 +266,15 @@ class PHIFieldEncryptor:
 
     # Fields that contain PHI and must be encrypted
     PHI_FIELDS = {
-        'chief_complaint',
-        'nursing_notes',
-        'medical_history',
-        'medications',
-        'allergies',
-        'reasoning_trace',
-        'primary_reasoning_trace',
-        'supervisor_critique',
-        'council_deliberation',
+        "chief_complaint",
+        "nursing_notes",
+        "medical_history",
+        "medications",
+        "allergies",
+        "reasoning_trace",
+        "primary_reasoning_trace",
+        "supervisor_critique",
+        "council_deliberation",
     }
 
     def __init__(self, encryption: PHIEncryption):
@@ -297,10 +292,7 @@ class PHIFieldEncryptor:
                 if isinstance(value, str):
                     encrypted[key] = self.encryption.encrypt_phi_b64(value)
                 elif isinstance(value, list):
-                    encrypted[key] = [
-                        self.encryption.encrypt_phi_b64(str(v))
-                        for v in value
-                    ]
+                    encrypted[key] = [self.encryption.encrypt_phi_b64(str(v)) for v in value]
                 else:
                     encrypted[key] = self.encryption.encrypt_phi_b64(str(value))
             else:
@@ -318,10 +310,7 @@ class PHIFieldEncryptor:
                     if isinstance(value, str):
                         decrypted[key] = self.encryption.decrypt_phi_b64(value)
                     elif isinstance(value, list):
-                        decrypted[key] = [
-                            self.encryption.decrypt_phi_b64(v)
-                            for v in value
-                        ]
+                        decrypted[key] = [self.encryption.decrypt_phi_b64(v) for v in value]
                     else:
                         decrypted[key] = value
                 except Exception as e:
@@ -353,4 +342,4 @@ def create_audit_hash_chain(
     else:
         combined = f"genesis:{current_hash}"
 
-    return hashlib.sha256(combined.encode('utf-8')).hexdigest()
+    return hashlib.sha256(combined.encode("utf-8")).hexdigest()

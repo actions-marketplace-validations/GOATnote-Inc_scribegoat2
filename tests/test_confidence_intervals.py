@@ -6,7 +6,7 @@ Run with: pytest tests/test_confidence_intervals.py -v
 Or: python tests/test_confidence_intervals.py
 """
 
-from pathlib import Path
+import sys
 
 try:
     import pytest
@@ -23,10 +23,9 @@ except ImportError:
     NUMPY_AVAILABLE = False
 
 from src.metrics.confidence_intervals import (
-    wilson_score_interval,
     bootstrap_pass_k_interval,
     compute_metrics_with_ci,
-    IntervalResult,
+    wilson_score_interval,
 )
 
 
@@ -46,9 +45,7 @@ class TestWilsonScoreInterval:
         """Test with zero successes."""
         result = wilson_score_interval(0, 100)
         assert result.value == 0.0
-        assert result.ci_lower < 0.01, (
-            f"Lower bound should be near 0: {result.ci_lower}"
-        )
+        assert result.ci_lower < 0.01, f"Lower bound should be near 0: {result.ci_lower}"
         assert result.ci_upper < 0.05, f"Upper bound should be small: {result.ci_upper}"
 
     def test_all_successes(self):
@@ -141,9 +138,7 @@ class TestBootstrapPassK:
 
         result = bootstrap_pass_k_interval(0.9, 100, k=5)
         expected = 0.9**5
-        assert abs(result.value - expected) < 0.001, (
-            f"Expected {expected}, got {result.value}"
-        )
+        assert abs(result.value - expected) < 0.001, f"Expected {expected}, got {result.value}"
         assert result.ci_lower < result.value
         assert result.ci_upper > result.value
 
@@ -163,9 +158,7 @@ class TestBootstrapPassK:
             return
 
         r1 = bootstrap_pass_k_interval(0.8, 50, k=5, seed=42)
-        r2 = bootstrap_pass_k_interval(
-            0.8, 50, k=5, seed=999
-        )  # Use more different seed
+        r2 = bootstrap_pass_k_interval(0.8, 50, k=5, seed=999)  # Use more different seed
         # Results should be similar but not identical (with high probability)
         # Allow test to pass if results happen to be identical (rare but possible)
         # The key is that same seed gives same result (tested elsewhere)

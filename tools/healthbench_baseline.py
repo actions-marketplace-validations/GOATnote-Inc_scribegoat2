@@ -18,6 +18,7 @@ You must set the OPENAI_API_KEY environment variable.
 Safety note: This is research tooling, **not** a medical device. Do not use for
 clinical decision making.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,9 +29,9 @@ import random
 import re
 import sys
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
 from openai import OpenAI
@@ -190,12 +191,15 @@ def download_healthbench_split(split: str, cache_dir: Path) -> Path:
     with requests.get(url, stream=True, timeout=30) as response:
         response.raise_for_status()
         total = int(response.headers.get("content-length") or 0)
-        with open(dest, "wb") as handle, tqdm(
-            total=total if total > 0 else None,
-            unit="B",
-            unit_scale=True,
-            desc=f"healthbench:{split}",
-        ) as pbar:
+        with (
+            open(dest, "wb") as handle,
+            tqdm(
+                total=total if total > 0 else None,
+                unit="B",
+                unit_scale=True,
+                desc=f"healthbench:{split}",
+            ) as pbar,
+        ):
             for chunk in response.iter_content(chunk_size=8192):
                 if not chunk:
                     continue
@@ -249,7 +253,9 @@ def is_triage_case(case: HealthBenchCase) -> bool:
     return any(keyword in text for keyword in TRIAGE_KEYWORDS_TEXT)
 
 
-def build_triage_subset(cases: Sequence[HealthBenchCase], max_cases: int, seed: int = 0) -> List[HealthBenchCase]:
+def build_triage_subset(
+    cases: Sequence[HealthBenchCase], max_cases: int, seed: int = 0
+) -> List[HealthBenchCase]:
     triage_cases = [case for case in cases if is_triage_case(case)]
     log.info("Filtered to %d triage-like cases", len(triage_cases))
 
@@ -470,7 +476,9 @@ def run_council_triage(client: OpenAI, model: str, case: HealthBenchCase) -> Tri
     )
 
 
-def call_real_scribegoat2_if_available(case: HealthBenchCase, *, client: OpenAI, model: str) -> TriagePrediction:
+def call_real_scribegoat2_if_available(
+    case: HealthBenchCase, *, client: OpenAI, model: str
+) -> TriagePrediction:
     if scribegoat2 is not None:
         log.info(
             "scribegoat2 is importable but integration is stubbed. "
@@ -482,7 +490,9 @@ def call_real_scribegoat2_if_available(case: HealthBenchCase, *, client: OpenAI,
 class HealthBenchTriageEvaluator:
     """Compute ESI metrics for HealthBench-style cases."""
 
-    def evaluate_suite(self, cases: Sequence[HealthBenchCase], outputs: Dict[str, TriagePrediction]) -> Dict[str, Any]:
+    def evaluate_suite(
+        self, cases: Sequence[HealthBenchCase], outputs: Dict[str, TriagePrediction]
+    ) -> Dict[str, Any]:
         rows: List[Dict[str, Any]] = []
         for case in cases:
             ground_truth = case.esi_true
@@ -496,11 +506,17 @@ class HealthBenchTriageEvaluator:
                 }
             )
 
-        eval_rows = [row for row in rows if isinstance(row["esi_true"], int) and isinstance(row["esi_pred"], int)]
+        eval_rows = [
+            row
+            for row in rows
+            if isinstance(row["esi_true"], int) and isinstance(row["esi_pred"], int)
+        ]
         total = len(eval_rows)
         metrics: Dict[str, Any] = {"n_with_ground_truth": total}
         if total == 0:
-            metrics["note"] = "No cases had both esi_true and esi_pred. Provide labels to compute accuracy."
+            metrics["note"] = (
+                "No cases had both esi_true and esi_pred. Provide labels to compute accuracy."
+            )
             return metrics
 
         correct = sum(1 for row in eval_rows if row["esi_true"] == row["esi_pred"])
@@ -530,7 +546,9 @@ class HealthBenchTriageEvaluator:
         return metrics
 
 
-def run_eval_for_mode(mode: str, client: OpenAI, model: str, cases: Sequence[HealthBenchCase]) -> Dict[str, TriagePrediction]:
+def run_eval_for_mode(
+    mode: str, client: OpenAI, model: str, cases: Sequence[HealthBenchCase]
+) -> Dict[str, TriagePrediction]:
     outputs: Dict[str, TriagePrediction] = {}
     for idx, case in enumerate(cases, start=1):
         log.info("Triage %s | case %d/%d | prompt_id=%s", mode, idx, len(cases), case.prompt_id)
@@ -648,7 +666,9 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     for mode in modes:
         log.info("=== Running mode: %s ===", mode)
-        outputs = run_eval_for_mode(mode=mode, client=client, model=args.openai_model, cases=triage_cases)
+        outputs = run_eval_for_mode(
+            mode=mode, client=client, model=args.openai_model, cases=triage_cases
+        )
 
         preds_path = args.output_dir / f"triage_predictions_{mode}.jsonl"
         save_predictions(outputs, preds_path)

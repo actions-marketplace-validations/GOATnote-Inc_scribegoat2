@@ -63,9 +63,7 @@ class CIGateway:
         if contract is None:
             raise ValueError(f"Contract {contract_id} not found")
         if contract.status != ContractStatus.ACTIVE:
-            raise ValueError(
-                f"Contract {contract_id} is {contract.status.value}, not ACTIVE"
-            )
+            raise ValueError(f"Contract {contract_id} is {contract.status.value}, not ACTIVE")
 
         # Queue evaluation
         eval_request = {

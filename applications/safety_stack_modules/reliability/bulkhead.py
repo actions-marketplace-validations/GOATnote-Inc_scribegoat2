@@ -31,6 +31,7 @@ class BulkheadError(Exception):
 @dataclass
 class BulkheadStats:
     """Statistics for bulkhead"""
+
     active_count: int = 0
     queued_count: int = 0
     total_accepted: int = 0
@@ -113,10 +114,7 @@ class Bulkhead:
             self._stats.queued_count += 1
 
         try:
-            await asyncio.wait_for(
-                self._semaphore.acquire(),
-                timeout=self.queue_timeout
-            )
+            await asyncio.wait_for(self._semaphore.acquire(), timeout=self.queue_timeout)
 
             with self._lock:
                 self._stats.queued_count -= 1
@@ -223,6 +221,7 @@ def with_bulkhead(
         async def call_external_api():
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         bulkhead_name = name or func.__name__
         bulkhead = get_bulkhead(
@@ -272,9 +271,7 @@ class BulkheadGroup:
         queue_timeout: float = 30.0,
     ):
         """Add a bulkhead to the group"""
-        self._bulkheads[name] = Bulkhead(
-            name, max_concurrent, max_queue, queue_timeout
-        )
+        self._bulkheads[name] = Bulkhead(name, max_concurrent, max_queue, queue_timeout)
 
     def get(self, name: str) -> Optional[Bulkhead]:
         """Get a bulkhead by name"""
@@ -304,7 +301,4 @@ class BulkheadGroup:
 
     def status(self) -> dict:
         """Get status of all bulkheads"""
-        return {
-            name: bh.to_dict()
-            for name, bh in self._bulkheads.items()
-        }
+        return {name: bh.to_dict() for name, bh in self._bulkheads.items()}

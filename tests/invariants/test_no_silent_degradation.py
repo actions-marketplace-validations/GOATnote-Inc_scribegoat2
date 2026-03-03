@@ -8,7 +8,6 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 
-
 from src.tsr.monitor.circuit_breaker import CircuitBreaker
 from src.tsr.monitor.config import MonitorConfig
 from src.tsr.monitor.escalation import EscalationManager
@@ -32,9 +31,7 @@ class TestNoSilentDegradation:
         self._breaker = CircuitBreaker(self._store)
         # Set contract to CLOSED first
         self._store.save_breaker_state("test-contract", BreakerState.CLOSED)
-        self._escalation = EscalationManager(
-            self._config, self._incidents, self._breaker
-        )
+        self._escalation = EscalationManager(self._config, self._incidents, self._breaker)
 
     def teardown_method(self) -> None:
         self._store.close()

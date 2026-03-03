@@ -21,7 +21,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 def _load(path: str) -> Any:
@@ -169,7 +169,9 @@ def main() -> None:
     # Observability sanity: these fields are present but may be constant.
     conf_vals = [float(diag_by_id[pid].get("confidence_score", 0.0)) for pid in join_ids]
     unc_vals = [float(diag_by_id[pid].get("uncertainty_score", 0.0)) for pid in join_ids]
-    cu_vals_all = [float(diag_by_id[pid].get("clinical_uncertainty_score", 0.0)) for pid in join_ids]
+    cu_vals_all = [
+        float(diag_by_id[pid].get("clinical_uncertainty_score", 0.0)) for pid in join_ids
+    ]
 
     # Primary routing telemetry we can trust to vary in this run.
     non_abstained_cu = [
@@ -246,12 +248,25 @@ def main() -> None:
                 by_bucket_counts[bucket][name] += 1
 
         _mark("low_score_non_abstained", (score <= thr) and (not is_abstained))
-        _mark("low_score_non_abstained_emergency", (score <= thr) and (not is_abstained) and has_emerg)
-        _mark("low_score_non_abstained_hallucination", (score <= thr) and (not is_abstained) and has_hall)
-        _mark("low_score_non_abstained_medication", (score <= thr) and (not is_abstained) and has_med)
-        _mark("high_clinical_uncertainty_non_abstained_top10p", (not is_abstained) and (cu >= p90_cu))
-        _mark("high_clinical_uncertainty_non_abstained_top5p", (not is_abstained) and (cu >= p95_cu))
-        _mark("high_clinical_uncertainty_non_abstained_top1p", (not is_abstained) and (cu >= p99_cu))
+        _mark(
+            "low_score_non_abstained_emergency", (score <= thr) and (not is_abstained) and has_emerg
+        )
+        _mark(
+            "low_score_non_abstained_hallucination",
+            (score <= thr) and (not is_abstained) and has_hall,
+        )
+        _mark(
+            "low_score_non_abstained_medication", (score <= thr) and (not is_abstained) and has_med
+        )
+        _mark(
+            "high_clinical_uncertainty_non_abstained_top10p", (not is_abstained) and (cu >= p90_cu)
+        )
+        _mark(
+            "high_clinical_uncertainty_non_abstained_top5p", (not is_abstained) and (cu >= p95_cu)
+        )
+        _mark(
+            "high_clinical_uncertainty_non_abstained_top1p", (not is_abstained) and (cu >= p99_cu)
+        )
         _mark("abstained", is_abstained)
         _mark("zero_score_non_abstained", (score == 0.0) and (not is_abstained))
 
@@ -327,10 +342,7 @@ def main() -> None:
             }
             for s in slice_defs
         ],
-        "by_score_bucket": [
-            {"bucket": b, **by_bucket_counts[b]}
-            for b in buckets
-        ],
+        "by_score_bucket": [{"bucket": b, **by_bucket_counts[b]} for b in buckets],
     }
 
     out_json = Path(args.out_json)
@@ -369,12 +381,22 @@ def main() -> None:
     md.append("")
     md.append("## Observability sanity (non‑interpretive)")
     md.append("")
-    md.append("- This report uses `clinical_uncertainty_score` (varies across cases) and safety correction flags.")
-    md.append("- The fields `confidence_score` and `uncertainty_score` are included here only as a constancy check.")
+    md.append(
+        "- This report uses `clinical_uncertainty_score` (varies across cases) and safety correction flags."
+    )
+    md.append(
+        "- The fields `confidence_score` and `uncertainty_score` are included here only as a constancy check."
+    )
     md.append("")
-    md.append(f"- `confidence_score` unique values: {out['observability_sanity']['confidence_score_unique_values']}")
-    md.append(f"- `uncertainty_score` unique values: {out['observability_sanity']['uncertainty_score_unique_values']}")
-    md.append(f"- `clinical_uncertainty_score` unique count: {out['observability_sanity']['clinical_uncertainty_score_unique_count']}")
+    md.append(
+        f"- `confidence_score` unique values: {out['observability_sanity']['confidence_score_unique_values']}"
+    )
+    md.append(
+        f"- `uncertainty_score` unique values: {out['observability_sanity']['uncertainty_score_unique_values']}"
+    )
+    md.append(
+        f"- `clinical_uncertainty_score` unique count: {out['observability_sanity']['clinical_uncertainty_score_unique_count']}"
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -391,27 +413,52 @@ def main() -> None:
     md.append("| slice | definition | count | prompt_ids_path |")
     md.append("|---|---|---:|---|")
     for s in slice_defs:
-        md.append(f"| `{s.name}` | {s.description} | {len(queues[s.name])} | `{out_paths[s.name]}` |")
+        md.append(
+            f"| `{s.name}` | {s.description} | {len(queues[s.name])} | `{out_paths[s.name]}` |"
+        )
     md.append("")
     md.append("### By score bucket (counts; extractive)")
     md.append("")
     md.append("| score bucket | " + " | ".join(f"`{s.name}`" for s in slice_defs) + " |")
     md.append("|---|" + "|".join(["---:"] * len(slice_defs)) + "|")
     for b in buckets:
-        md.append("| " + b + " | " + " | ".join(str(by_bucket_counts[b][s.name]) for s in slice_defs) + " |")
+        md.append(
+            "| "
+            + b
+            + " | "
+            + " | ".join(str(by_bucket_counts[b][s.name]) for s in slice_defs)
+            + " |"
+        )
     md.append("")
     md.append("### Top safety corrections per slice (counts; extractive)")
     md.append("")
-    md.append("For each slice below, the lists show the top safety correction rule identifiers observed in `diag.safety_corrections_applied` across cases in that slice.")
+    md.append(
+        "For each slice below, the lists show the top safety correction rule identifiers observed in `diag.safety_corrections_applied` across cases in that slice."
+    )
     md.append("")
     for s in slice_defs:
         name = s.name
         md.append(f"#### `{name}`")
         md.append("")
-        md.append(f"- Top rules (all): " + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_all[name], 10)) or "(none)"))
-        md.append(f"- Emergency rules: " + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_emergency[name], 10)) or "(none)"))
-        md.append(f"- Hallucination-related rules: " + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_halluc[name], 10)) or "(none)"))
-        md.append(f"- Medication-safety rules: " + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_med[name], 10)) or "(none)"))
+        md.append(
+            "- Top rules (all): "
+            + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_all[name], 10)) or "(none)")
+        )
+        md.append(
+            "- Emergency rules: "
+            + (
+                ", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_emergency[name], 10))
+                or "(none)"
+            )
+        )
+        md.append(
+            "- Hallucination-related rules: "
+            + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_halluc[name], 10)) or "(none)")
+        )
+        md.append(
+            "- Medication-safety rules: "
+            + (", ".join(f"`{r}`×{c}" for r, c in _top(slice_rules_med[name], 10)) or "(none)")
+        )
         md.append("")
     md.append("---")
     md.append("")
@@ -439,5 +486,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

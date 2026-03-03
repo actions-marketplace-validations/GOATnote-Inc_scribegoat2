@@ -19,9 +19,7 @@ def test_asyncio_plugin_loaded():
     # Verify the version meets our minimum
     version = getattr(pytest_asyncio, "__version__", "0.0.0")
     major, minor = (int(x) for x in version.split(".")[:2])
-    assert (major, minor) >= (0, 23), (
-        f"pytest-asyncio {version} is below minimum 0.23.0"
-    )
+    assert (major, minor) >= (0, 23), f"pytest-asyncio {version} is below minimum 0.23.0"
 
 
 async def test_async_actually_runs():

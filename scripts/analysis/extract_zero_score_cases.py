@@ -32,7 +32,9 @@ def _index_by_prompt_id(items: List[Dict[str, Any]], label: str) -> Dict[str, Di
     return out
 
 
-def _extract_score_fields(graded_item: Dict[str, Any]) -> Tuple[float, int, int, List[Dict[str, int]]]:
+def _extract_score_fields(
+    graded_item: Dict[str, Any],
+) -> Tuple[float, int, int, List[Dict[str, int]]]:
     grade = graded_item.get("grade")
     if not isinstance(grade, dict):
         raise ValueError("graded_item.grade missing or not a dict")
@@ -101,7 +103,9 @@ def write_zero_score_markdown(
     lines: List[str] = []
     lines.append("# GPT-5.2 Zero-Score Cases (1000-case run)")
     lines.append("")
-    lines.append("This file is **purely extractive** (no grading, no reinterpretation, no relabeling).")
+    lines.append(
+        "This file is **purely extractive** (no grading, no reinterpretation, no relabeling)."
+    )
     lines.append("")
     lines.append(f"**Generated (UTC):** {now}")
     lines.append("")
@@ -139,7 +143,9 @@ def write_zero_score_markdown(
 
         # Prompt and model output live in graded/council artifacts (verbatim strings).
         prompt_obj = it.get("prompt")
-        response_text = _safe_get_str(council_it, "response_text") or _safe_get_str(it, "response_text") or ""
+        response_text = (
+            _safe_get_str(council_it, "response_text") or _safe_get_str(it, "response_text") or ""
+        )
 
         # Verdict-like text available in artifact: grader justification (verbatim).
         grade = it.get("grade", {})
@@ -234,5 +240,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

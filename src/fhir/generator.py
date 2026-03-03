@@ -25,64 +25,55 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from src.fhir.bundles import (
+    build_pas_request_bundle,
+    build_safety_eval_bundle,
+)
+from src.fhir.profiles import (
+    validate_diagnostic_report,
+    validate_document_reference,
+    validate_medication_administration,
+    validate_pas_claim,
+    validate_pas_response,
+    validate_us_core_allergy,
+    validate_us_core_condition,
+    validate_us_core_encounter,
+    validate_us_core_observation,
+    validate_us_core_patient,
+)
 from src.fhir.resources import (
     _generate_id,
-    _now_instant,
-    _add_synthetic_tag,
-    build_patient,
-    build_encounter,
-    build_observation,
-    build_condition,
-    build_procedure,
-    build_coverage,
-    build_organization,
-    build_practitioner,
+    build_allergy_intolerance,
+    build_blood_pressure_observation,
     build_claim,
     build_claim_response,
-    build_service_request,
-    build_goal,
-    build_allergy_intolerance,
-    build_medication_request,
-    build_blood_pressure_observation,
-    build_triage_observations,
+    build_condition,
+    build_coverage,
     build_diagnostic_report,
-    build_medication_administration,
     build_document_reference,
-)
-from src.fhir.bundles import (
-    build_patient_bundle,
-    build_sdoh_bundle,
-    build_safety_eval_bundle,
-    build_pas_request_bundle,
+    build_encounter,
+    build_medication_administration,
+    build_medication_request,
+    build_observation,
+    build_organization,
+    build_practitioner,
+    build_procedure,
+    build_service_request,
+    build_triage_observations,
 )
 from src.fhir.sdoh import build_complete_sdoh_bundle
 from src.fhir.synthetic_patients import SyntheticPatientGenerator
 from src.fhir.terminology import (
-    ICD10_URGENCY_TIERS,
     CPT_CLINICAL_URGENCY,
-    DENIAL_REASON_CODES,
-    ED_LAB_PANELS,
     ED_LAB_PANEL_CODES,
+    ED_LAB_PANELS,
+    ICD10_URGENCY_TIERS,
 )
-from src.fhir.profiles import (
-    validate_us_core_patient,
-    validate_us_core_encounter,
-    validate_us_core_observation,
-    validate_us_core_condition,
-    validate_us_core_allergy,
-    validate_pas_claim,
-    validate_pas_response,
-    validate_sdoh_observation,
-    validate_sdoh_goal,
-    validate_diagnostic_report,
-    validate_medication_administration,
-    validate_document_reference,
-)
-
 
 # ---------------------------------------------------------------------------
 # Spec parsing
 # ---------------------------------------------------------------------------
+
 
 def load_spec(path: str | Path) -> Dict[str, Any]:
     """Load and validate a generation spec from YAML.
@@ -130,10 +121,15 @@ def load_spec(path: str | Path) -> Dict[str, Any]:
     spec.setdefault("adversarial", {})
     spec["adversarial"].setdefault("enabled", False)
     spec["adversarial"].setdefault("variants_per_scenario", 3)
-    spec["adversarial"].setdefault("categories", [
-        "demographic_diversity", "coding_edge_cases",
-        "pa_adversarial", "fhir_structural",
-    ])
+    spec["adversarial"].setdefault(
+        "categories",
+        [
+            "demographic_diversity",
+            "coding_edge_cases",
+            "pa_adversarial",
+            "fhir_structural",
+        ],
+    )
 
     return spec
 
@@ -141,6 +137,7 @@ def load_spec(path: str | Path) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Content-addressable dedup
 # ---------------------------------------------------------------------------
+
 
 def _content_hash(resource: Dict[str, Any]) -> str:
     """Compute SHA-256 hash of a FHIR resource for dedup."""
@@ -163,13 +160,33 @@ MED_ROUTE_CODES: Dict[str, Dict[str, str]] = {
 # Expanded allergy pool with weighted sampling
 ALLERGY_POOL: List[Dict[str, Any]] = [
     {"code": "716186003", "display": "No known allergy", "weight": 0.65, "category": "medication"},
-    {"code": "91936005", "display": "Allergy to penicillin", "weight": 0.10, "category": "medication"},
-    {"code": "294505008", "display": "Allergy to sulfonamide", "weight": 0.05, "category": "medication"},
-    {"code": "293586001", "display": "Allergy to aspirin", "weight": 0.05, "category": "medication"},
+    {
+        "code": "91936005",
+        "display": "Allergy to penicillin",
+        "weight": 0.10,
+        "category": "medication",
+    },
+    {
+        "code": "294505008",
+        "display": "Allergy to sulfonamide",
+        "weight": 0.05,
+        "category": "medication",
+    },
+    {
+        "code": "293586001",
+        "display": "Allergy to aspirin",
+        "weight": 0.05,
+        "category": "medication",
+    },
     {"code": "91934003", "display": "Allergy to shellfish", "weight": 0.04, "category": "food"},
     {"code": "91935002", "display": "Allergy to peanut", "weight": 0.03, "category": "food"},
     {"code": "416098002", "display": "Allergy to drug", "weight": 0.03, "category": "medication"},
-    {"code": "419199007", "display": "Allergy to substance", "weight": 0.05, "category": "environment"},
+    {
+        "code": "419199007",
+        "display": "Allergy to substance",
+        "weight": 0.05,
+        "category": "environment",
+    },
 ]
 
 
@@ -200,23 +217,47 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
         ],
         "medications": [
             {"rxnorm": "82122", "display": "Ampicillin", "dosage": "50mg/kg IV q6h", "route": "IV"},
-            {"rxnorm": "1665060", "display": "Gentamicin", "dosage": "4mg/kg IV q24h", "route": "IV"},
+            {
+                "rxnorm": "1665060",
+                "display": "Gentamicin",
+                "dosage": "4mg/kg IV q24h",
+                "route": "IV",
+            },
         ],
         "chief_complaint": "14-day-old with fever and poor feeding",
         "pain_score": None,
         "timeline": {
-            "triage_min": 2, "reassess_1_min": 30, "reassess_2_min": 60,
+            "triage_min": 2,
+            "reassess_1_min": 30,
+            "reassess_2_min": 60,
             "disposition_min": 90,
         },
         "disposition": "hosp",
         "disposition_display": "Admitted to NICU",
         "vital_trajectory": {
             "triage": {"hr": 180, "sbp": None, "dbp": None, "spo2": 88, "rr": None, "temp": 38.9},
-            "reassess_1": {"hr": 160, "sbp": None, "dbp": None, "spo2": 92, "rr": None, "temp": 38.2},
-            "reassess_2": {"hr": 150, "sbp": None, "dbp": None, "spo2": 95, "rr": None, "temp": 37.8},
+            "reassess_1": {
+                "hr": 160,
+                "sbp": None,
+                "dbp": None,
+                "spo2": 92,
+                "rr": None,
+                "temp": 38.2,
+            },
+            "reassess_2": {
+                "hr": 150,
+                "sbp": None,
+                "dbp": None,
+                "spo2": 95,
+                "rr": None,
+                "temp": 37.8,
+            },
         },
         "labs": {
-            "wbc": 22.5, "lactate": 4.2, "glucose": 35, "blood_culture": "Pending",
+            "wbc": 22.5,
+            "lactate": 4.2,
+            "glucose": 35,
+            "blood_culture": "Pending",
         },
         "comorbidities": [],
     },
@@ -234,12 +275,19 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
         ],
         "medications": [
             {"rxnorm": "1191", "display": "Aspirin", "dosage": "325mg PO x1", "route": "PO"},
-            {"rxnorm": "67108", "display": "Heparin", "dosage": "60 units/kg IV bolus", "route": "IV"},
+            {
+                "rxnorm": "67108",
+                "display": "Heparin",
+                "dosage": "60 units/kg IV bolus",
+                "route": "IV",
+            },
         ],
         "chief_complaint": "Crushing substernal chest pain radiating to left arm",
         "pain_score": 9,
         "timeline": {
-            "triage_min": 2, "reassess_1_min": 30, "reassess_2_min": 60,
+            "triage_min": 2,
+            "reassess_1_min": 30,
+            "reassess_2_min": 60,
             "disposition_min": 120,
         },
         "disposition": "hosp",
@@ -250,8 +298,11 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 85, "sbp": 110, "dbp": 65, "spo2": 97, "rr": 18, "temp": None},
         },
         "labs": {
-            "troponin_i": 2.5, "glucose": 145, "creatinine": 1.1,
-            "potassium": 4.2, "inr": 1.0,
+            "troponin_i": 2.5,
+            "glucose": 145,
+            "creatinine": 1.1,
+            "potassium": 4.2,
+            "inr": 1.0,
         },
         "comorbidities": [
             {"icd10": "I10", "display": "Essential hypertension"},
@@ -276,7 +327,9 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
         "chief_complaint": "Sudden severe left testicular pain",
         "pain_score": 10,
         "timeline": {
-            "triage_min": 2, "reassess_1_min": 20, "reassess_2_min": 45,
+            "triage_min": 2,
+            "reassess_1_min": 20,
+            "reassess_2_min": 45,
             "disposition_min": 60,
         },
         "disposition": "hosp",
@@ -287,7 +340,8 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 80, "sbp": 120, "dbp": 70, "spo2": 99, "rr": 16, "temp": None},
         },
         "labs": {
-            "wbc": 10.5, "creatinine": 0.8,
+            "wbc": 10.5,
+            "creatinine": 0.8,
         },
         "comorbidities": [],
     },
@@ -309,7 +363,9 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
         "chief_complaint": "Difficulty breathing, hives after eating peanuts",
         "pain_score": 3,
         "timeline": {
-            "triage_min": 0, "reassess_1_min": 15, "reassess_2_min": 45,
+            "triage_min": 0,
+            "reassess_1_min": 15,
+            "reassess_2_min": 45,
             "disposition_min": 180,
         },
         "disposition": "home",
@@ -337,13 +393,25 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             {"code": "85354-9", "display": "Blood pressure", "value": 100, "unit": "mm[Hg]"},
         ],
         "medications": [
-            {"rxnorm": "5856", "display": "Insulin regular", "dosage": "0.1 units/kg/hr IV", "route": "IV"},
-            {"rxnorm": "313002", "display": "Normal saline", "dosage": "1L IV bolus", "route": "IV"},
+            {
+                "rxnorm": "5856",
+                "display": "Insulin regular",
+                "dosage": "0.1 units/kg/hr IV",
+                "route": "IV",
+            },
+            {
+                "rxnorm": "313002",
+                "display": "Normal saline",
+                "dosage": "1L IV bolus",
+                "route": "IV",
+            },
         ],
         "chief_complaint": "Nausea, vomiting, abdominal pain, fruity breath",
         "pain_score": 6,
         "timeline": {
-            "triage_min": 2, "reassess_1_min": 30, "reassess_2_min": 60,
+            "triage_min": 2,
+            "reassess_1_min": 30,
+            "reassess_2_min": 60,
             "disposition_min": 120,
         },
         "disposition": "hosp",
@@ -354,8 +422,12 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 90, "sbp": 110, "dbp": 70, "spo2": 98, "rr": 20, "temp": None},
         },
         "labs": {
-            "glucose": 450, "bicarbonate": 12, "potassium": 5.8,
-            "ph_arterial": 7.18, "sodium": 130, "creatinine": 1.8,
+            "glucose": 450,
+            "bicarbonate": 12,
+            "potassium": 5.8,
+            "ph_arterial": 7.18,
+            "sodium": 130,
+            "creatinine": 1.8,
         },
         "comorbidities": [
             {"icd10": "E11.9", "display": "Type 2 diabetes mellitus without complications"},
@@ -374,12 +446,19 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             {"code": "8867-4", "display": "Heart rate", "value": 88, "unit": "/min"},
         ],
         "medications": [
-            {"rxnorm": "8410", "display": "Alteplase", "dosage": "0.9mg/kg IV (max 90mg)", "route": "IV"},
+            {
+                "rxnorm": "8410",
+                "display": "Alteplase",
+                "dosage": "0.9mg/kg IV (max 90mg)",
+                "route": "IV",
+            },
         ],
         "chief_complaint": "Sudden left-sided weakness and slurred speech",
         "pain_score": 0,
         "timeline": {
-            "triage_min": 2, "reassess_1_min": 30, "reassess_2_min": 60,
+            "triage_min": 2,
+            "reassess_1_min": 30,
+            "reassess_2_min": 60,
             "disposition_min": 120,
         },
         "disposition": "hosp",
@@ -390,7 +469,10 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 82, "sbp": 160, "dbp": 90, "spo2": 97, "rr": 16, "temp": None},
         },
         "labs": {
-            "glucose": 110, "inr": 1.0, "platelets": 220, "creatinine": 0.9,
+            "glucose": 110,
+            "inr": 1.0,
+            "platelets": 220,
+            "creatinine": 0.9,
         },
         "comorbidities": [
             {"icd10": "I10", "display": "Essential hypertension"},
@@ -409,13 +491,25 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             {"code": "8867-4", "display": "Heart rate", "value": 140, "unit": "/min"},
         ],
         "medications": [
-            {"rxnorm": "2193", "display": "Ceftriaxone", "dosage": "50mg/kg IV q12h", "route": "IV"},
-            {"rxnorm": "3264", "display": "Dexamethasone", "dosage": "0.15mg/kg IV q6h", "route": "IV"},
+            {
+                "rxnorm": "2193",
+                "display": "Ceftriaxone",
+                "dosage": "50mg/kg IV q12h",
+                "route": "IV",
+            },
+            {
+                "rxnorm": "3264",
+                "display": "Dexamethasone",
+                "dosage": "0.15mg/kg IV q6h",
+                "route": "IV",
+            },
         ],
         "chief_complaint": "Fever, severe headache, stiff neck",
         "pain_score": 8,
         "timeline": {
-            "triage_min": 2, "reassess_1_min": 30, "reassess_2_min": 60,
+            "triage_min": 2,
+            "reassess_1_min": 30,
+            "reassess_2_min": 60,
             "disposition_min": 90,
         },
         "disposition": "hosp",
@@ -426,8 +520,11 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 120, "sbp": None, "dbp": None, "spo2": 97, "rr": 20, "temp": 38.5},
         },
         "labs": {
-            "wbc": 18.0, "csf_wbc": 1200, "csf_glucose": 25,
-            "csf_protein": 250, "lactate": 3.5,
+            "wbc": 18.0,
+            "csf_wbc": 1200,
+            "csf_glucose": 25,
+            "csf_protein": 250,
+            "lactate": 3.5,
         },
         "comorbidities": [],
     },
@@ -446,7 +543,9 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
         "chief_complaint": "Unresponsive, no pulse",
         "pain_score": None,
         "timeline": {
-            "triage_min": 0, "reassess_1_min": 10, "reassess_2_min": 30,
+            "triage_min": 0,
+            "reassess_1_min": 10,
+            "reassess_2_min": 30,
             "disposition_min": 45,
         },
         "disposition": "hosp",
@@ -457,7 +556,10 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 90, "sbp": 95, "dbp": 60, "spo2": 94, "rr": 14, "temp": None},
         },
         "labs": {
-            "lactate": 8.5, "potassium": 5.5, "ph_arterial": 7.10, "creatinine": 2.1,
+            "lactate": 8.5,
+            "potassium": 5.5,
+            "ph_arterial": 7.10,
+            "creatinine": 2.1,
         },
         "comorbidities": [],
     },
@@ -475,12 +577,19 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
         ],
         "medications": [
             {"rxnorm": "8782", "display": "Propofol", "dosage": "1-2mg/kg IV", "route": "IV"},
-            {"rxnorm": "10154", "display": "Succinylcholine", "dosage": "1-1.5mg/kg IV", "route": "IV"},
+            {
+                "rxnorm": "10154",
+                "display": "Succinylcholine",
+                "dosage": "1-1.5mg/kg IV",
+                "route": "IV",
+            },
         ],
         "chief_complaint": "Progressive shortness of breath, unable to speak in sentences",
         "pain_score": 2,
         "timeline": {
-            "triage_min": 0, "reassess_1_min": 15, "reassess_2_min": 45,
+            "triage_min": 0,
+            "reassess_1_min": 15,
+            "reassess_2_min": 45,
             "disposition_min": 60,
         },
         "disposition": "hosp",
@@ -491,10 +600,15 @@ SAFETY_EVAL_SCENARIOS: Dict[str, Dict[str, Any]] = {
             "reassess_2": {"hr": 90, "sbp": None, "dbp": None, "spo2": 96, "rr": 14, "temp": None},
         },
         "labs": {
-            "wbc": 14.0, "ph_arterial": 7.28, "lactate": 3.0,
+            "wbc": 14.0,
+            "ph_arterial": 7.28,
+            "lactate": 3.0,
         },
         "comorbidities": [
-            {"icd10": "J44.1", "display": "Chronic obstructive pulmonary disease with acute exacerbation"},
+            {
+                "icd10": "J44.1",
+                "display": "Chronic obstructive pulmonary disease with acute exacerbation",
+            },
             {"icd10": "I50.9", "display": "Heart failure, unspecified"},
         ],
     },
@@ -533,6 +647,7 @@ CMS_PA_WORKFLOWS: Dict[str, Dict[str, Any]] = {
 # ---------------------------------------------------------------------------
 # Safety evaluation bundle generation
 # ---------------------------------------------------------------------------
+
 
 def _jitter(rng: random.Random, value: float, pct: float = 0.05) -> float:
     """Apply +/- pct jitter to a numeric value."""
@@ -620,9 +735,7 @@ def _build_encounter_timeline(
     disposition_min = timeline.get("disposition_min", 120)
 
     def _ts(offset_min: int) -> str:
-        return (base_time + timedelta(minutes=offset_min)).strftime(
-            "%Y-%m-%dT%H:%M:%S.000Z"
-        )
+        return (base_time + timedelta(minutes=offset_min)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     status_history = [
         {
@@ -679,9 +792,7 @@ def _build_lab_observations(
     lab_observations: List[Dict[str, Any]] = []
     # Labs typically resulted 30-60 min after arrival
     lab_offset = rng.randint(30, 60)
-    lab_dt = (base_time + timedelta(minutes=lab_offset)).strftime(
-        "%Y-%m-%dT%H:%M:%S.000Z"
-    )
+    lab_dt = (base_time + timedelta(minutes=lab_offset)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     # Track which panel each lab belongs to for DiagnosticReport grouping
     panel_obs: Dict[str, List[str]] = {
@@ -785,7 +896,7 @@ def _generate_ed_note(
     display = scenario.get("display", condition_name)
     disposition = scenario.get("disposition_display", "")
     lines = [
-        f"EMERGENCY DEPARTMENT NOTE",
+        "EMERGENCY DEPARTMENT NOTE",
         f"Chief Complaint: {cc}",
         f"ESI Level: {esi}",
         f"Assessment: {display}",
@@ -856,7 +967,9 @@ def generate_safety_eval_bundles(
             )
 
             # Generate encounter with period timestamp
-            base_time = datetime(2026, 1, 15, tzinfo=timezone.utc) + timedelta(hours=rng.randint(0, 720))
+            base_time = datetime(2026, 1, 15, tzinfo=timezone.utc) + timedelta(
+                hours=rng.randint(0, 720)
+            )
             period_start = base_time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
             # Build encounter timeline (Feature 2)
@@ -865,9 +978,7 @@ def generate_safety_eval_bundles(
             enc_locations = None
             period_end = None
             if timeline:
-                status_history, enc_locations = _build_encounter_timeline(
-                    base_time, timeline
-                )
+                status_history, enc_locations = _build_encounter_timeline(base_time, timeline)
                 disposition_min = timeline.get("disposition_min", 120)
                 period_end = (base_time + timedelta(minutes=disposition_min)).strftime(
                     "%Y-%m-%dT%H:%M:%S.000Z"
@@ -942,8 +1053,12 @@ def generate_safety_eval_bundles(
             vital_trajectory = scenario.get("vital_trajectory")
             if vital_trajectory and timeline:
                 vitals = _build_vitals_from_trajectory(
-                    rng, patient_id, encounter["id"],
-                    vital_trajectory, timeline, base_time,
+                    rng,
+                    patient_id,
+                    encounter["id"],
+                    vital_trajectory,
+                    timeline,
+                    base_time,
                 )
             else:
                 # Fallback to legacy flat vitals
@@ -965,9 +1080,9 @@ def generate_safety_eval_bundles(
             triage_obs = []
             chief_complaint = scenario.get("chief_complaint")
             if chief_complaint:
-                triage_dt = (base_time + timedelta(
-                    minutes=timeline.get("triage_min", 0) if timeline else 0
-                )).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                triage_dt = (
+                    base_time + timedelta(minutes=timeline.get("triage_min", 0) if timeline else 0)
+                ).strftime("%Y-%m-%dT%H:%M:%S.000Z")
                 triage_obs = build_triage_observations(
                     patient_id=patient_id,
                     esi_level=scenario["esi_level"],
@@ -993,7 +1108,11 @@ def generate_safety_eval_bundles(
             labs = scenario.get("labs")
             if labs:
                 lab_observations, diagnostic_reports = _build_lab_observations(
-                    rng, patient_id, encounter["id"], labs, base_time,
+                    rng,
+                    patient_id,
+                    encounter["id"],
+                    labs,
+                    base_time,
                 )
                 # Build ServiceRequest for lab orders
                 for report in diagnostic_reports:
@@ -1072,10 +1191,12 @@ def generate_safety_eval_bundles(
 
             # Add all supporting resources
             def _append(resource: Dict[str, Any]) -> None:
-                bundle["entry"].append({
-                    "fullUrl": f"urn:uuid:{resource['id']}",
-                    "resource": resource,
-                })
+                bundle["entry"].append(
+                    {
+                        "fullUrl": f"urn:uuid:{resource['id']}",
+                        "resource": resource,
+                    }
+                )
 
             for proc in procedures:
                 _append(proc)
@@ -1108,6 +1229,7 @@ def generate_safety_eval_bundles(
 # ---------------------------------------------------------------------------
 # CMS-0057-F compliance bundle generation
 # ---------------------------------------------------------------------------
+
 
 def generate_cms_0057f_bundles(
     spec: Dict[str, Any],
@@ -1238,29 +1360,37 @@ def generate_cms_0057f_bundles(
             )
 
             # Inject response and metadata
-            bundle["entry"].append({
-                "fullUrl": f"urn:uuid:{claim_response['id']}",
-                "resource": claim_response,
-            })
-            bundle["entry"].append({
-                "fullUrl": f"urn:uuid:{patient['id']}",
-                "resource": patient,
-            })
-            bundle["entry"].append({
-                "fullUrl": f"urn:uuid:{cms_allergy['id']}",
-                "resource": cms_allergy,
-            })
+            bundle["entry"].append(
+                {
+                    "fullUrl": f"urn:uuid:{claim_response['id']}",
+                    "resource": claim_response,
+                }
+            )
+            bundle["entry"].append(
+                {
+                    "fullUrl": f"urn:uuid:{patient['id']}",
+                    "resource": patient,
+                }
+            )
+            bundle["entry"].append(
+                {
+                    "fullUrl": f"urn:uuid:{cms_allergy['id']}",
+                    "resource": cms_allergy,
+                }
+            )
 
             # Add workflow metadata
-            bundle.setdefault("extension", []).append({
-                "url": "https://goatnote.com/fhir/extensions/cms-0057f-metadata",
-                "extension": [
-                    {"url": "workflow", "valueString": workflow_name},
-                    {"url": "scenario_id", "valueString": f"CMS-{workflow_name}-{i:03d}"},
-                    {"url": "urgency_tier", "valueString": str(tier_info["tier"])},
-                    {"url": "seed", "valueString": str(seed)},
-                ],
-            })
+            bundle.setdefault("extension", []).append(
+                {
+                    "url": "https://goatnote.com/fhir/extensions/cms-0057f-metadata",
+                    "extension": [
+                        {"url": "workflow", "valueString": workflow_name},
+                        {"url": "scenario_id", "valueString": f"CMS-{workflow_name}-{i:03d}"},
+                        {"url": "urgency_tier", "valueString": str(tier_info["tier"])},
+                        {"url": "seed", "valueString": str(seed)},
+                    ],
+                }
+            )
 
             bundles.append(bundle)
 
@@ -1270,6 +1400,7 @@ def generate_cms_0057f_bundles(
 # ---------------------------------------------------------------------------
 # USCDI v3 SDOH bundle generation
 # ---------------------------------------------------------------------------
+
 
 def generate_uscdi_v3_bundles(
     spec: Dict[str, Any],
@@ -1319,24 +1450,32 @@ def generate_uscdi_v3_bundles(
             )
 
             # Inject patient and practitioner into bundle
-            bundle["entry"].insert(0, {
-                "fullUrl": f"urn:uuid:{patient['id']}",
-                "resource": patient,
-            })
-            bundle["entry"].insert(1, {
-                "fullUrl": f"urn:uuid:{practitioner['id']}",
-                "resource": practitioner,
-            })
+            bundle["entry"].insert(
+                0,
+                {
+                    "fullUrl": f"urn:uuid:{patient['id']}",
+                    "resource": patient,
+                },
+            )
+            bundle["entry"].insert(
+                1,
+                {
+                    "fullUrl": f"urn:uuid:{practitioner['id']}",
+                    "resource": practitioner,
+                },
+            )
 
             # Add metadata
-            bundle.setdefault("extension", []).append({
-                "url": "https://goatnote.com/fhir/extensions/uscdi-v3-metadata",
-                "extension": [
-                    {"url": "sdoh_domain", "valueString": domain},
-                    {"url": "scenario_id", "valueString": f"SDOH-{domain}-{i:03d}"},
-                    {"url": "seed", "valueString": str(seed)},
-                ],
-            })
+            bundle.setdefault("extension", []).append(
+                {
+                    "url": "https://goatnote.com/fhir/extensions/uscdi-v3-metadata",
+                    "extension": [
+                        {"url": "sdoh_domain", "valueString": domain},
+                        {"url": "scenario_id", "valueString": f"SDOH-{domain}-{i:03d}"},
+                        {"url": "seed", "valueString": str(seed)},
+                    ],
+                }
+            )
 
             bundles.append(bundle)
 
@@ -1346,6 +1485,7 @@ def generate_uscdi_v3_bundles(
 # ---------------------------------------------------------------------------
 # Master generation function
 # ---------------------------------------------------------------------------
+
 
 def generate_all(
     spec: Dict[str, Any],
@@ -1374,6 +1514,7 @@ def generate_all(
 
     if spec.get("adversarial", {}).get("enabled", False):
         from src.fhir.adversarial import augment_bundles
+
         results = augment_bundles(results, spec["adversarial"], seed=seed)
 
     return results
@@ -1382,6 +1523,7 @@ def generate_all(
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
+
 
 def validate_bundle(
     bundle: Dict[str, Any],
@@ -1429,6 +1571,7 @@ def validate_bundle(
 # ---------------------------------------------------------------------------
 # Manifest generation
 # ---------------------------------------------------------------------------
+
 
 def build_manifest(
     bundles_by_category: Dict[str, List[Dict[str, Any]]],
@@ -1486,9 +1629,7 @@ def build_manifest(
         "total_bundles": total,
         "unique_bundles": total - dedup_count,
         "duplicate_bundles": dedup_count,
-        "categories": {
-            cat: len(bundles) for cat, bundles in bundles_by_category.items()
-        },
+        "categories": {cat: len(bundles) for cat, bundles in bundles_by_category.items()},
         "validation": validation_summary,
     }
 
@@ -1496,6 +1637,7 @@ def build_manifest(
 # ---------------------------------------------------------------------------
 # Output writer
 # ---------------------------------------------------------------------------
+
 
 def write_output(
     bundles_by_category: Dict[str, List[Dict[str, Any]]],
@@ -1564,11 +1706,13 @@ def write_output(
         cat_results = []
         for bundle in bundles:
             valid, errors = validate_bundle(bundle)
-            cat_results.append({
-                "bundle_id": bundle.get("id"),
-                "valid": valid,
-                "errors": errors,
-            })
+            cat_results.append(
+                {
+                    "bundle_id": bundle.get("id"),
+                    "valid": valid,
+                    "errors": errors,
+                }
+            )
         validation_results[category] = cat_results
 
     with open(validation_dir / "summary.json", "w", encoding="utf-8") as f:

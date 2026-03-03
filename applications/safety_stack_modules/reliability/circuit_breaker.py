@@ -14,7 +14,7 @@ Designed for healthcare system resilience
 import asyncio
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from functools import wraps
@@ -23,9 +23,10 @@ from typing import Any, Callable, Optional, Type
 
 class CircuitState(Enum):
     """Circuit breaker states"""
-    CLOSED = "closed"       # Normal operation
-    OPEN = "open"           # Blocking requests
-    HALF_OPEN = "half_open" # Testing recovery
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Blocking requests
+    HALF_OPEN = "half_open"  # Testing recovery
 
 
 class CircuitBreakerError(Exception):
@@ -40,6 +41,7 @@ class CircuitBreakerError(Exception):
 @dataclass
 class CircuitStats:
     """Statistics for circuit breaker"""
+
     total_calls: int = 0
     successful_calls: int = 0
     failed_calls: int = 0
@@ -87,8 +89,12 @@ class CircuitStats:
             "failure_rate": round(self.failure_rate, 4),
             "consecutive_failures": self.consecutive_failures,
             "consecutive_successes": self.consecutive_successes,
-            "last_failure_time": self.last_failure_time.isoformat() if self.last_failure_time else None,
-            "last_success_time": self.last_success_time.isoformat() if self.last_success_time else None,
+            "last_failure_time": self.last_failure_time.isoformat()
+            if self.last_failure_time
+            else None,
+            "last_success_time": self.last_success_time.isoformat()
+            if self.last_success_time
+            else None,
         }
 
 
@@ -350,6 +356,7 @@ def circuit_breaker(
         async def call_service():
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         cb_name = name or func.__name__
         cb = get_circuit_breaker(

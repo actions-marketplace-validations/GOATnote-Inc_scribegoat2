@@ -13,12 +13,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
-
 
 MISREAD_PATTERNS = [
     "misread",
@@ -137,7 +135,9 @@ def _classify_zero_case(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate GPT-5.2 failure taxonomy (objective; no grading).")
+    parser = argparse.ArgumentParser(
+        description="Generate GPT-5.2 failure taxonomy (objective; no grading)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -213,7 +213,8 @@ def main() -> None:
         "category_counts": dict(counts),
         "category_percentages": percentages,
         "classifications": [
-            {"prompt_id": c.prompt_id, "category": c.category, "details": c.details} for c in classifications
+            {"prompt_id": c.prompt_id, "category": c.category, "details": c.details}
+            for c in classifications
         ],
     }
 
@@ -234,15 +235,19 @@ def main() -> None:
     md_lines.append(f"- `abstention.count`: {abst.get('count')}")
     md_lines.append(f"- `abstention.rate`: {abst.get('rate')}")
     md_lines.append(f"- `error_prevention.zero_score_rate`: {err.get('zero_score_rate')}")
-    md_lines.append(f"- `error_prevention.zero_score_after_abstention`: {err.get('zero_score_after_abstention')}")
-    md_lines.append(f"- `error_prevention.catastrophic_prevented`: {err.get('catastrophic_prevented')}")
+    md_lines.append(
+        f"- `error_prevention.zero_score_after_abstention`: {err.get('zero_score_after_abstention')}"
+    )
+    md_lines.append(
+        f"- `error_prevention.catastrophic_prevented`: {err.get('catastrophic_prevented')}"
+    )
     md_lines.append("")
     md_lines.append("---")
     md_lines.append("")
     md_lines.append("## Taxonomy (all zero-score cases classified)")
     md_lines.append("")
-    md_lines.append(f"| Metric | Count |")
-    md_lines.append(f"|---|---:|")
+    md_lines.append("| Metric | Count |")
+    md_lines.append("|---|---:|")
     md_lines.append(f"| Total zero-score cases | {len(classifications)} |")
     md_lines.append(f"| Abstained zeros | {abstained_zeros} |")
     md_lines.append(f"| Content failures (non‑abstained zeros) | {content_failures} |")
@@ -257,7 +262,9 @@ def main() -> None:
         "SAFETY_NEUTRALIZATION": "≥3 safety corrections applied (diagnostics count threshold)",
     }
     for cat, cnt in counts.most_common():
-        md_lines.append(f"| **{cat}** | {cnt} | {percentages.get(cat, 0.0)}% | {defs.get(cat, '')} |")
+        md_lines.append(
+            f"| **{cat}** | {cnt} | {percentages.get(cat, 0.0)}% | {defs.get(cat, '')} |"
+        )
     md_lines.append("")
     md_lines.append("---")
     md_lines.append("")
@@ -265,7 +272,9 @@ def main() -> None:
     md_lines.append("")
     md_lines.append("```")
     md_lines.append("IF safety_corrections_count >= 3: → SAFETY_NEUTRALIZATION")
-    md_lines.append("ELIF response_len > 6000 AND criteria_met_rate < 30%: → OVERLONG_UNDER_SPECIFIC")
+    md_lines.append(
+        "ELIF response_len > 6000 AND criteria_met_rate < 30%: → OVERLONG_UNDER_SPECIFIC"
+    )
     md_lines.append("ELIF response_len < 500: → STRUCTURE_MISS")
     md_lines.append("ELIF justification matches misread/off-topic patterns: → MIS_INTERPRETATION")
     md_lines.append("ELSE: → CONTENT_GAP")
@@ -299,5 +308,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

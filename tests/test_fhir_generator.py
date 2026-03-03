@@ -8,21 +8,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.fhir.generator import (
-    generate_safety_eval_bundles,
-    generate_cms_0057f_bundles,
-    generate_uscdi_v3_bundles,
-    generate_all,
-    validate_bundle,
-    build_manifest,
-    write_output,
-    _content_hash,
     SAFETY_EVAL_SCENARIOS,
-    CMS_PA_WORKFLOWS,
+    _content_hash,
+    generate_all,
+    generate_cms_0057f_bundles,
+    generate_safety_eval_bundles,
+    generate_uscdi_v3_bundles,
+    validate_bundle,
+    write_output,
 )
 from src.fhir.profiles import (
-    validate_us_core_patient,
-    validate_us_core_encounter,
-    validate_us_core_condition,
     validate_us_core_allergy,
 )
 from src.fhir.resources import (
@@ -61,8 +56,12 @@ class TestSafetyEvalBundles:
         assert len(b1) == len(b2)
         for a, b in zip(b1, b2):
             # Patient resources should be identical (deterministic from seed)
-            patients_a = [e["resource"] for e in a["entry"] if e["resource"]["resourceType"] == "Patient"]
-            patients_b = [e["resource"] for e in b["entry"] if e["resource"]["resourceType"] == "Patient"]
+            patients_a = [
+                e["resource"] for e in a["entry"] if e["resource"]["resourceType"] == "Patient"
+            ]
+            patients_b = [
+                e["resource"] for e in b["entry"] if e["resource"]["resourceType"] == "Patient"
+            ]
             assert len(patients_a) == len(patients_b)
             for pa, pb in zip(patients_a, patients_b):
                 assert pa["id"] == pb["id"]
@@ -78,9 +77,7 @@ class TestSafetyEvalBundles:
         bundles = generate_safety_eval_bundles(spec, seed=42)
 
         for bundle in bundles:
-            resource_types = [
-                e["resource"]["resourceType"] for e in bundle["entry"]
-            ]
+            resource_types = [e["resource"]["resourceType"] for e in bundle["entry"]]
             assert "Patient" in resource_types
 
     def test_bundles_have_encounter(self):
@@ -92,9 +89,7 @@ class TestSafetyEvalBundles:
         bundles = generate_safety_eval_bundles(spec, seed=42)
 
         for bundle in bundles:
-            resource_types = [
-                e["resource"]["resourceType"] for e in bundle["entry"]
-            ]
+            resource_types = [e["resource"]["resourceType"] for e in bundle["entry"]]
             assert "Encounter" in resource_types
 
     def test_bundles_have_condition(self):
@@ -106,9 +101,7 @@ class TestSafetyEvalBundles:
         bundles = generate_safety_eval_bundles(spec, seed=42)
 
         for bundle in bundles:
-            resource_types = [
-                e["resource"]["resourceType"] for e in bundle["entry"]
-            ]
+            resource_types = [e["resource"]["resourceType"] for e in bundle["entry"]]
             assert "Condition" in resource_types
 
     def test_bundles_have_metadata(self):
@@ -408,9 +401,7 @@ class TestClinicalRealism:
     def _get_resources_by_type(self, bundle, resource_type):
         """Extract resources of a given type from a bundle."""
         return [
-            e["resource"]
-            for e in bundle["entry"]
-            if e["resource"]["resourceType"] == resource_type
+            e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == resource_type
         ]
 
     def test_safety_eval_bundles_have_vitals(self):
@@ -426,7 +417,8 @@ class TestClinicalRealism:
 
             observations = self._get_resources_by_type(bundle, "Observation")
             vital_obs = [
-                o for o in observations
+                o
+                for o in observations
                 if any(
                     c.get("coding", [{}])[0].get("code") == "vital-signs"
                     for c in o.get("category", [])

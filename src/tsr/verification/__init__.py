@@ -13,12 +13,12 @@ with timeout enforcement and fail-closed semantics.
   adversarial, evidence compilation)
 """
 
-from src.tsr.verification.engine import VerificationEngine, VerificationContext
+from src.tsr.verification.engine import VerificationContext, VerificationEngine
 from src.tsr.verification.orchestrator import (
+    SafetyMargin,
+    VerificationOutcome,
     VerificationProtocol,
     VerificationResult,
-    VerificationOutcome,
-    SafetyMargin,
 )
 
 __all__ = [

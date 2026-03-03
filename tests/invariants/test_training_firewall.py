@@ -29,9 +29,7 @@ class TestTrainingFirewall:
 
         # Event metadata must not contain training pipeline references
         metadata_str = str(event.metadata)
-        assert (
-            "training" not in metadata_str.lower() or "firewall" in metadata_str.lower()
-        )
+        assert "training" not in metadata_str.lower() or "firewall" in metadata_str.lower()
         assert "finetune" not in metadata_str.lower()
 
     def test_evaluation_results_dir_is_separate(self) -> None:

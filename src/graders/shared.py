@@ -4,12 +4,13 @@ Shared HealthBench grading utilities.
 Extracted from scripts/graders/ to eliminate duplication.
 Used by grade_healthbench_results.py and grade_official_healthbench.py.
 """
-import json
+
 import asyncio
+import json
 import re
 from typing import Dict, List
-from openai import AsyncOpenAI
 
+from openai import AsyncOpenAI
 
 # Grading template from HealthBench
 GRADER_TEMPLATE = """
@@ -79,7 +80,7 @@ async def grade_rubric_item(
     question: str,
     answer: str,
     rubric_item: Dict,
-    model: str = "gpt-4.1-2025-04-14"
+    model: str = "gpt-4.1-2025-04-14",
 ) -> Dict:
     """
     Grade a single rubric item using GPT-4.1.
@@ -101,9 +102,9 @@ async def grade_rubric_item(
     rubric_str = f"[{rubric_item['points']}] {rubric_item['criterion']}"
 
     # Build grader prompt
-    grader_prompt = GRADER_TEMPLATE.replace(
-        "<<conversation>>", convo_str
-    ).replace("<<rubric_item>>", rubric_str)
+    grader_prompt = GRADER_TEMPLATE.replace("<<conversation>>", convo_str).replace(
+        "<<rubric_item>>", rubric_str
+    )
 
     # Call grader
     while True:
@@ -112,7 +113,7 @@ async def grade_rubric_item(
                 model=model,
                 messages=[{"role": "user", "content": grader_prompt}],
                 max_completion_tokens=2048,
-                temperature=0.0
+                temperature=0.0,
             )
 
             grading_response = response.choices[0].message.content
@@ -140,17 +141,15 @@ def calculate_score(rubric_items: List[Dict], grading_results: List[Dict]) -> fl
     Returns:
         Overall score (0.0 to 1.0)
     """
-    total_possible_points = sum(
-        rubric['points'] for rubric in rubric_items if rubric['points'] > 0
-    )
+    total_possible_points = sum(rubric["points"] for rubric in rubric_items if rubric["points"] > 0)
 
     if total_possible_points == 0:
         return None
 
     achieved_points = sum(
-        rubric['points']
+        rubric["points"]
         for rubric, result in zip(rubric_items, grading_results)
-        if result['criteria_met']
+        if result["criteria_met"]
     )
 
     return achieved_points / total_possible_points

@@ -68,14 +68,23 @@ def _extract_vitals(case: JSONDict) -> Dict[str, Optional[float]]:
 def _concat_case_text(case: JSONDict) -> str:
     """Lowercased free text from the case (complaint + notes)."""
     parts: List[str] = []
-    for key in ("chief_complaint", "presenting_complaint", "nursing_note", "hpi", "history", "notes"):
+    for key in (
+        "chief_complaint",
+        "presenting_complaint",
+        "nursing_note",
+        "hpi",
+        "history",
+        "notes",
+    ):
         v = case.get(key)
         if isinstance(v, str):
             parts.append(v)
     return " ".join(parts).lower()
 
 
-def _has_level1_features(vitals: Dict[str, Optional[float]], text: str, age: Optional[float]) -> bool:
+def _has_level1_features(
+    vitals: Dict[str, Optional[float]], text: str, age: Optional[float]
+) -> bool:
     """
     Very crude "possible ESI-1" flags:
     - Profound hypotension, tachy/brady, RR extremes, or severe hypoxia
@@ -97,7 +106,7 @@ def _has_level1_features(vitals: Dict[str, Optional[float]], text: str, age: Opt
         return True
     if spo2 is not None and spo2 < 88:
         return True
-    
+
     # Combined shock criterion: hypotension + compensatory tachycardia
     # This catches shock before SBP drops below 80
     if sbp is not None and hr is not None:
@@ -124,7 +133,7 @@ def _has_level1_features(vitals: Dict[str, Optional[float]], text: str, age: Opt
         "code stroke",
         "acute stroke",
     ]
-    
+
     # Stroke with focal neuro deficits = ESI-1 (time-critical intervention)
     # Per AHA/ASA Stroke Guidelines 2019 and SAFETY_MODEL.md G-ESI-007
     stroke_symptoms = [
@@ -140,14 +149,16 @@ def _has_level1_features(vitals: Dict[str, Optional[float]], text: str, age: Opt
         "hemiplegia",
     ]
     stroke_onset_keywords = ["minute", "hour", "ago", "sudden", "acute", "new onset", "woke up"]
-    
+
     if any(s in text for s in stroke_symptoms):
         if any(o in text for o in stroke_onset_keywords):
             return True  # Acute stroke presentation = ESI-1
     return any(k in text for k in critical_keywords)
 
 
-def _has_level2_features(vitals: Dict[str, Optional[float]], text: str, age: Optional[float]) -> bool:
+def _has_level2_features(
+    vitals: Dict[str, Optional[float]], text: str, age: Optional[float]
+) -> bool:
     """
     High-risk but not quite "crashing":
     - Moderately abnormal vitals
@@ -233,7 +244,9 @@ def _remove_vital_patterns(text: str) -> str:
     return cleaned
 
 
-def _sanitize_hallucinated_objective_facts(case: JSONDict, output: JSONDict) -> Tuple[List[SafetyFlag], JSONDict]:
+def _sanitize_hallucinated_objective_facts(
+    case: JSONDict, output: JSONDict
+) -> Tuple[List[SafetyFlag], JSONDict]:
     """
     Zero-tolerance policy for fabricated vitals when the case did not provide any.
     This is intentionally narrow and easy to reason about.
@@ -284,7 +297,10 @@ def _check_medication_safety(case: JSONDict, output: JSONDict) -> Tuple[List[Saf
     reasoning_lower = reasoning.lower()
 
     # Rule 1: Beta-blockers in cocaine chest pain
-    if "cocaine" in text and any(x in reasoning_lower for x in ["beta blocker", "metoprolol", "labetalol", "atenolol", "propranolol", "esmolol"]):
+    if "cocaine" in text and any(
+        x in reasoning_lower
+        for x in ["beta blocker", "metoprolol", "labetalol", "atenolol", "propranolol", "esmolol"]
+    ):
         flags.append(
             SafetyFlag(
                 code="unsafe_medication_beta_blocker_cocaine",
@@ -300,22 +316,24 @@ def _check_medication_safety(case: JSONDict, output: JSONDict) -> Tuple[List[Saf
     return flags, output
 
 
-def _check_canadian_ct_head_rule(case: JSONDict, output: JSONDict) -> Tuple[List[SafetyFlag], JSONDict]:
+def _check_canadian_ct_head_rule(
+    case: JSONDict, output: JSONDict
+) -> Tuple[List[SafetyFlag], JSONDict]:
     """
     Canadian CT Head Rule (CCHR) Exclusion Criteria Guardrail.
-    
+
     The CCHR is validated for minor head injury (GCS 13-15) but explicitly
     EXCLUDES patients where clinical exam cannot reliably exclude intracranial injury:
-    
+
     1. Alcohol or drug intoxication - altered sensorium confounds exam
     2. Dangerous mechanism:
        - Pedestrian struck by motor vehicle
        - Occupant ejected from vehicle
        - Fall from height > 3 feet or > 5 stairs
-    
+
     When these exclusion criteria are present, imaging is mandatory regardless
     of clinical reassurance. This guardrail prevents undertriage.
-    
+
     Reference: Stiell IG et al. Lancet 2001; 357:1391-96
     """
     flags: List[SafetyFlag] = []
@@ -325,44 +343,75 @@ def _check_canadian_ct_head_rule(case: JSONDict, output: JSONDict) -> Tuple[List
 
     text = _concat_case_text(case)
     reasoning_lower = reasoning.lower()
-    
+
     # Check for head trauma context
     head_trauma_keywords = [
-        "head injury", "head trauma", "hit head", "struck head",
-        "head lac", "scalp lac", "fell and hit head", "blow to head",
-        "mva", "motor vehicle", "collision", "accident"
+        "head injury",
+        "head trauma",
+        "hit head",
+        "struck head",
+        "head lac",
+        "scalp lac",
+        "fell and hit head",
+        "blow to head",
+        "mva",
+        "motor vehicle",
+        "collision",
+        "accident",
     ]
     has_head_trauma = any(k in text for k in head_trauma_keywords)
-    
+
     if not has_head_trauma:
         return flags, output
-    
+
     # CCHR Exclusion Criterion 1: Intoxication
     intoxication_keywords = [
-        "intoxicated", "intoxication", "etoh", "alcohol",
-        "drunk", "inebriated", "blood alcohol", "bac",
-        "drugs", "drug intoxication", "altered by substance"
+        "intoxicated",
+        "intoxication",
+        "etoh",
+        "alcohol",
+        "drunk",
+        "inebriated",
+        "blood alcohol",
+        "bac",
+        "drugs",
+        "drug intoxication",
+        "altered by substance",
     ]
     is_intoxicated = any(k in text for k in intoxication_keywords)
-    
+
     # CCHR Exclusion Criterion 2: Dangerous Mechanism
     dangerous_mechanism_keywords = [
-        "pedestrian struck", "pedestrian vs", "ped vs",
-        "struck by car", "struck by vehicle", "hit by car",
-        "ejected", "rollover", "high speed",
-        "fall from height", "fall from", "fell off"
+        "pedestrian struck",
+        "pedestrian vs",
+        "ped vs",
+        "struck by car",
+        "struck by vehicle",
+        "hit by car",
+        "ejected",
+        "rollover",
+        "high speed",
+        "fall from height",
+        "fall from",
+        "fell off",
     ]
     has_dangerous_mechanism = any(k in text for k in dangerous_mechanism_keywords)
-    
+
     # Check if model is recommending against imaging when exclusion criteria present
     imaging_decline_phrases = [
-        "no ct needed", "ct not indicated", "imaging not necessary",
-        "observation only", "discharge without imaging", "low risk",
-        "does not require imaging", "clinical observation",
-        "no imaging required", "reassurance"
+        "no ct needed",
+        "ct not indicated",
+        "imaging not necessary",
+        "observation only",
+        "discharge without imaging",
+        "low risk",
+        "does not require imaging",
+        "clinical observation",
+        "no imaging required",
+        "reassurance",
     ]
     recommends_against_imaging = any(p in reasoning_lower for p in imaging_decline_phrases)
-    
+
     if is_intoxicated and recommends_against_imaging:
         flags.append(
             SafetyFlag(
@@ -379,7 +428,7 @@ def _check_canadian_ct_head_rule(case: JSONDict, output: JSONDict) -> Tuple[List
         metadata["cchr_exclusion_triggered"] = "intoxication"
         metadata["mandatory_imaging"] = True
         metadata["requires_physician_review"] = True
-    
+
     if has_dangerous_mechanism and recommends_against_imaging:
         flags.append(
             SafetyFlag(

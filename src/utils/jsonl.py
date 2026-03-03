@@ -1,4 +1,5 @@
 """JSONL read/write utilities for ScribeGoat2."""
+
 import json
 from pathlib import Path
 from typing import Any, Dict, List

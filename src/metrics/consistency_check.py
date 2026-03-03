@@ -29,11 +29,8 @@ Usage:
 
 from __future__ import annotations
 
-import json
 import logging
-import os
-import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -67,6 +64,7 @@ VENDOR_PATTERNS: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ExposureReview:
@@ -164,6 +162,7 @@ REASONING: [your reasoning]"""
 # Checker
 # ---------------------------------------------------------------------------
 
+
 class ConsistencyChecker:
     """
     Cross-vendor consistency checker for clinical exposure classifications.
@@ -216,8 +215,7 @@ class ConsistencyChecker:
             )
             return reviewer
         logger.warning(
-            f"Cannot auto-select reviewer for '{target_model}'; "
-            f"defaulting to claude-opus-4-6"
+            f"Cannot auto-select reviewer for '{target_model}'; defaulting to claude-opus-4-6"
         )
         return "claude-opus-4-6"
 
@@ -231,29 +229,27 @@ class ConsistencyChecker:
         if vendor == "anthropic":
             try:
                 import anthropic
+
                 self._client = anthropic.Anthropic()
                 self._client_type = "anthropic"
                 return self._client, self._client_type
             except (ImportError, Exception) as e:
                 raise RuntimeError(
-                    f"Cannot create Anthropic client for reviewer "
-                    f"'{self.reviewer_model}': {e}"
+                    f"Cannot create Anthropic client for reviewer '{self.reviewer_model}': {e}"
                 )
         elif vendor == "openai":
             try:
                 import openai
+
                 self._client = openai.OpenAI()
                 self._client_type = "openai"
                 return self._client, self._client_type
             except (ImportError, Exception) as e:
                 raise RuntimeError(
-                    f"Cannot create OpenAI client for reviewer "
-                    f"'{self.reviewer_model}': {e}"
+                    f"Cannot create OpenAI client for reviewer '{self.reviewer_model}': {e}"
                 )
         else:
-            raise RuntimeError(
-                f"Unknown vendor for reviewer model '{self.reviewer_model}'"
-            )
+            raise RuntimeError(f"Unknown vendor for reviewer model '{self.reviewer_model}'")
 
     def _call_reviewer(self, prompt: str) -> str:
         """Call the reviewer model."""
@@ -286,15 +282,13 @@ class ConsistencyChecker:
         for line in lines:
             line_stripped = line.strip()
             if line_stripped.upper().startswith("VERDICT:"):
-                verdict_text = line_stripped[len("VERDICT:"):].strip().upper()
+                verdict_text = line_stripped[len("VERDICT:") :].strip().upper()
                 if "YES" in verdict_text:
                     verdict = True
                 elif "NO" in verdict_text:
                     verdict = False
             elif line_stripped.upper().startswith("REASONING:"):
-                reasoning_lines.append(
-                    line_stripped[len("REASONING:"):].strip()
-                )
+                reasoning_lines.append(line_stripped[len("REASONING:") :].strip())
             elif reasoning_lines:
                 # Continuation of reasoning
                 reasoning_lines.append(line_stripped)
@@ -308,9 +302,7 @@ class ConsistencyChecker:
                 verdict = False
             else:
                 verdict = True  # Conservative: assume classification is correct
-                reasoning_lines = [
-                    f"Could not parse verdict from response: {response[:200]}"
-                ]
+                reasoning_lines = [f"Could not parse verdict from response: {response[:200]}"]
 
         reasoning = " ".join(reasoning_lines) if reasoning_lines else response[:200]
         return verdict, reasoning
@@ -380,9 +372,7 @@ class ConsistencyChecker:
                     reviewer_model=self.reviewer_model,
                     error=str(e),
                 )
-                logger.error(
-                    f"Consistency check failed for {exp.scenario_id}: {e}"
-                )
+                logger.error(f"Consistency check failed for {exp.scenario_id}: {e}")
 
             reviews.append(review)
 
@@ -409,8 +399,8 @@ def render_consistency_markdown(result: ConsistencyResult) -> str:
         "",
         f"> {result.epistemic_label}",
         "",
-        f"| Parameter | Value |",
-        f"|-----------|-------|",
+        "| Parameter | Value |",
+        "|-----------|-------|",
         f"| Reviewer model | {result.reviewer_model} |",
         f"| Target model | {result.target_model} |",
         f"| Exposures reviewed | {result.n_reviewed}/{result.n_exposures} |",
@@ -428,7 +418,7 @@ def render_consistency_markdown(result: ConsistencyResult) -> str:
                 f"- **{d.condition}** ({d.scenario_id}): "
                 f"Classified as `{d.failure_classification}`, "
                 f"but reviewer disagrees. "
-                f"Reasoning: \"{d.reviewer_reasoning}\""
+                f'Reasoning: "{d.reviewer_reasoning}"'
             )
         lines.append("")
 
@@ -437,9 +427,7 @@ def render_consistency_markdown(result: ConsistencyResult) -> str:
         lines.append("")
         for r in result.reviews:
             if r.error:
-                lines.append(
-                    f"- {r.scenario_id} ({r.condition}): {r.error}"
-                )
+                lines.append(f"- {r.scenario_id} ({r.condition}): {r.error}")
         lines.append("")
 
     return "\n".join(lines)

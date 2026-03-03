@@ -15,7 +15,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
-    from mcp.types import Tool, TextContent
+    from mcp.types import TextContent, Tool
 
     MCP_AVAILABLE = True
 except ImportError:
@@ -60,9 +60,7 @@ async def validate_context(fhir_context: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-async def apply_context(
-    current_state: str, fhir_context: Dict[str, Any]
-) -> Dict[str, Any]:
+async def apply_context(current_state: str, fhir_context: Dict[str, Any]) -> Dict[str, Any]:
     """Apply FHIR context to potentially transition state.
 
     NOTE: Advisory only — contract invariants take precedence.
@@ -219,9 +217,7 @@ async def main():
         sys.exit(1)
 
     async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream, write_stream, app.create_initialization_options()
-        )
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 
 if __name__ == "__main__":

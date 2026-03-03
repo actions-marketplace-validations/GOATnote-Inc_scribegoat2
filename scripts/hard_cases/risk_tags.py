@@ -90,5 +90,3 @@ def derive_hard_case_risk_tags(diag: dict[str, Any]) -> HardCaseRiskTags:
         routing_confidence_proxy=routing_confidence_proxy,
         clinical_uncertainty_score=clinical_uncertainty_score,
     )
-
-

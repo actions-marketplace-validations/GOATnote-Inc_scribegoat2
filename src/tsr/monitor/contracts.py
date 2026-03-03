@@ -116,9 +116,7 @@ class ContractEngine:
         if contract is None:
             raise ValueError(f"Contract {key} not found")
         if contract.status != ContractStatus.DRAFT:
-            raise ValueError(
-                f"Contract {key} is {contract.status.value}, expected DRAFT"
-            )
+            raise ValueError(f"Contract {key} is {contract.status.value}, expected DRAFT")
 
         contract.status = ContractStatus.ACTIVE
         contract.activated_at = datetime.utcnow()
@@ -199,9 +197,7 @@ class ContractEngine:
         Returns:
             List of contracts with ACTIVE status.
         """
-        return [
-            c for c in self._contracts.values() if c.status == ContractStatus.ACTIVE
-        ]
+        return [c for c in self._contracts.values() if c.status == ContractStatus.ACTIVE]
 
     def get_contract(
         self, contract_id: str, version: Optional[str] = None
@@ -245,9 +241,7 @@ class ContractEngine:
         # Judge cross-family check
         if contract.judge and contract.target_model_family:
             if contract.judge.model_family == contract.target_model_family:
-                errors.append(
-                    "Judge family matches target family. Cross-family required."
-                )
+                errors.append("Judge family matches target family. Cross-family required.")
 
         # Threshold validation
         thresholds = contract.thresholds
@@ -331,11 +325,7 @@ def _parse_threshold_value(value: Any) -> Optional[float]:
     if isinstance(value, str):
         # Strip comparison operators
         cleaned = (
-            value.replace(">=", "")
-            .replace("<=", "")
-            .replace(">", "")
-            .replace("<", "")
-            .strip()
+            value.replace(">=", "").replace("<=", "").replace(">", "").replace("<", "").strip()
         )
         try:
             return float(cleaned)

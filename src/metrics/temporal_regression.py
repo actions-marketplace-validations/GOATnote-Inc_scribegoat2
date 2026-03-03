@@ -38,10 +38,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +71,13 @@ class ConditionDiff:
     current_rate_ci_upper: float
 
     # Delta
-    rate_delta: float           # current_rate - baseline_rate
-    absolute_delta: int         # current_failures - baseline_failures
+    rate_delta: float  # current_rate - baseline_rate
+    absolute_delta: int  # current_failures - baseline_failures
 
     # Classification
-    change_type: str            # regression, improvement, stable, new_failure, resolved
-    ci_overlapping: bool        # Whether CIs overlap (change may not be significant)
-    underpowered: bool          # Whether either profile has N < 10
+    change_type: str  # regression, improvement, stable, new_failure, resolved
+    ci_overlapping: bool  # Whether CIs overlap (change may not be significant)
+    underpowered: bool  # Whether either profile has N < 10
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -228,12 +228,8 @@ class TemporalRegressionTracker:
         current = self._normalize(current_profile)
 
         # Index per-condition data by scenario_id
-        b_by_id = {
-            c["scenario_id"]: c for c in baseline.get("per_condition", [])
-        }
-        c_by_id = {
-            c["scenario_id"]: c for c in current.get("per_condition", [])
-        }
+        b_by_id = {c["scenario_id"]: c for c in baseline.get("per_condition", [])}
+        c_by_id = {c["scenario_id"]: c for c in current.get("per_condition", [])}
 
         # Coverage alignment
         b_ids = set(b_by_id.keys())
@@ -274,14 +270,11 @@ class TemporalRegressionTracker:
                 f"Underpowered comparisons (N<10 in either profile): "
                 f"{names}. Rate changes may not be statistically meaningful."
             )
-        overlapping_regressions = [
-            d for d in regressions if d.ci_overlapping
-        ]
+        overlapping_regressions = [d for d in regressions if d.ci_overlapping]
         if overlapping_regressions:
             names = ", ".join(d.condition for d in overlapping_regressions)
             warnings.append(
-                f"Regressions with overlapping CIs (may not be "
-                f"statistically significant): {names}."
+                f"Regressions with overlapping CIs (may not be statistically significant): {names}."
             )
 
         # Aggregate deltas
@@ -334,9 +327,7 @@ class TemporalRegressionTracker:
             return profile.to_dict()
         if isinstance(profile, dict):
             return profile
-        raise TypeError(
-            f"Expected RiskProfile or dict, got {type(profile).__name__}"
-        )
+        raise TypeError(f"Expected RiskProfile or dict, got {type(profile).__name__}")
 
     @staticmethod
     def _diff_condition(
@@ -437,15 +428,13 @@ class TemporalRegressionTracker:
 # Markdown renderer
 # ---------------------------------------------------------------------------
 
+
 def _render_regression_markdown(d: RegressionDiff) -> str:
     """Render a RegressionDiff as Markdown."""
     lines: list[str] = []
 
     # Header
-    lines.append(
-        f"# Safety Regression Report: "
-        f"{d.baseline_model} → {d.current_model}"
-    )
+    lines.append(f"# Safety Regression Report: {d.baseline_model} → {d.current_model}")
     lines.append("")
     lines.append(f"**Generated:** {d.timestamp}  ")
     lines.append(f"**Tracker version:** {d.tracker_version}  ")
@@ -458,16 +447,9 @@ def _render_regression_markdown(d: RegressionDiff) -> str:
     lines.append("| | Baseline | Current |")
     lines.append("|--|----------|---------|")
     lines.append(f"| Model | {d.baseline_model} | {d.current_model} |")
-    lines.append(
-        f"| Timestamp | {d.baseline_timestamp} | {d.current_timestamp} |"
-    )
-    lines.append(
-        f"| Profile ID | {d.baseline_profile_id} | {d.current_profile_id} |"
-    )
-    lines.append(
-        f"| Failure rate | {d.baseline_overall_rate:.1%} | "
-        f"{d.current_overall_rate:.1%} |"
-    )
+    lines.append(f"| Timestamp | {d.baseline_timestamp} | {d.current_timestamp} |")
+    lines.append(f"| Profile ID | {d.baseline_profile_id} | {d.current_profile_id} |")
+    lines.append(f"| Failure rate | {d.baseline_overall_rate:.1%} | {d.current_overall_rate:.1%} |")
     lines.append(
         f"| Hard-floor violations | {d.baseline_hard_floor_violations} | "
         f"{d.current_hard_floor_violations} |"
@@ -475,15 +457,19 @@ def _render_regression_markdown(d: RegressionDiff) -> str:
     lines.append("")
 
     # Aggregate delta
-    direction = "REGRESSION" if d.overall_rate_delta > 0 else "IMPROVEMENT" if d.overall_rate_delta < 0 else "STABLE"
-    lines.append(f"**Overall direction:** {direction} "
-                 f"({d.overall_rate_delta:+.1%} failure rate change)")
+    direction = (
+        "REGRESSION"
+        if d.overall_rate_delta > 0
+        else "IMPROVEMENT"
+        if d.overall_rate_delta < 0
+        else "STABLE"
+    )
+    lines.append(
+        f"**Overall direction:** {direction} ({d.overall_rate_delta:+.1%} failure rate change)"
+    )
     if d.hard_floor_delta != 0:
         hf_dir = "increase" if d.hard_floor_delta > 0 else "decrease"
-        lines.append(
-            f"**Hard-floor change:** {d.hard_floor_delta:+d} "
-            f"({hf_dir})"
-        )
+        lines.append(f"**Hard-floor change:** {d.hard_floor_delta:+d} ({hf_dir})")
     lines.append("")
 
     # Warnings
@@ -503,20 +489,16 @@ def _render_regression_markdown(d: RegressionDiff) -> str:
             f"(of {d.scenarios_in_common + len(d.scenarios_only_baseline) + len(d.scenarios_only_current)} total)"
         )
         if d.scenarios_only_baseline:
-            lines.append(
-                f"- **Baseline only:** {', '.join(d.scenarios_only_baseline)}"
-            )
+            lines.append(f"- **Baseline only:** {', '.join(d.scenarios_only_baseline)}")
         if d.scenarios_only_current:
-            lines.append(
-                f"- **Current only:** {', '.join(d.scenarios_only_current)}"
-            )
+            lines.append(f"- **Current only:** {', '.join(d.scenarios_only_current)}")
         lines.append("")
 
     # Change summary
     lines.append("## Change Summary")
     lines.append("")
-    lines.append(f"| Category | Count |")
-    lines.append(f"|----------|-------|")
+    lines.append("| Category | Count |")
+    lines.append("|----------|-------|")
     lines.append(f"| Regressions | {len(d.regressions)} |")
     lines.append(f"| Improvements | {len(d.improvements)} |")
     lines.append(f"| New failures | {len(d.new_failures)} |")
@@ -556,12 +538,8 @@ def _render_regression_markdown(d: RegressionDiff) -> str:
     if d.condition_diffs:
         lines.append("## Per-Condition Diff")
         lines.append("")
-        lines.append(
-            "| Condition | ESI | Baseline | Current | Delta | Type | Sig |"
-        )
-        lines.append(
-            "|-----------|-----|----------|---------|-------|------|-----|"
-        )
+        lines.append("| Condition | ESI | Baseline | Current | Delta | Type | Sig |")
+        lines.append("|-----------|-----|----------|---------|-------|------|-----|")
         for cd in d.condition_diffs:
             sig = "No*" if cd.ci_overlapping else "Yes"
             up = " **" if cd.underpowered else ""

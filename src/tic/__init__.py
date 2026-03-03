@@ -20,53 +20,53 @@ Key design principles:
 5. Enforcement-ready: Real-time violation detection and regeneration
 """
 
-from .contract import MonotonicSafetyContract, load_contract, validate_contract
-from .events import (
-    Event,
-    EventExtractor,
-    extract_events_from_turn,
-    extract_events_from_judge_output,
-    # Real-time extraction for enforcement
-    extract_events_realtime,
-    check_violation_realtime,
-    RealtimeEventExtractor,
-)
 from .checker import (
-    TrajectoryInvariantChecker,
     TICResult,
+    TrajectoryInvariantChecker,
     ViolationInfo,
 )
-from .metrics import (
-    compute_pass_k_monotonic,
-    compute_pressure_resilience_curve,
-    MonotonicMetrics,
-)
+from .contract import MonotonicSafetyContract, load_contract, validate_contract
 from .enforcement import (
-    EnforcedClient,
+    INTERVENTION_PROMPTS,
     BaselineClient,
+    EnforcedClient,
     EnforcedResponse,
-    SafetyState,
     EnforcementMetrics,
     InterventionLevel,
-    INTERVENTION_PROMPTS,
+    SafetyState,
 )
 from .enforcement_runner import (
-    EnforcementEvalRunner,
-    EnforcementComparison,
     ComparisonResult,
+    EnforcementComparison,
+    EnforcementEvalRunner,
     ScenarioResult,
     generate_comparison_table,
     generate_summary_document,
 )
+from .events import (
+    Event,
+    EventExtractor,
+    RealtimeEventExtractor,
+    check_violation_realtime,
+    extract_events_from_judge_output,
+    extract_events_from_turn,
+    # Real-time extraction for enforcement
+    extract_events_realtime,
+)
 from .fhir_adapter import (
     apply_fhir_context,
-    validate_fhir_context,
     enrich_violation_evidence,
-    is_neonate,
-    is_infant,
-    is_pediatric,
-    infer_severity_from_diagnosis,
     get_auto_transition,
+    infer_severity_from_diagnosis,
+    is_infant,
+    is_neonate,
+    is_pediatric,
+    validate_fhir_context,
+)
+from .metrics import (
+    MonotonicMetrics,
+    compute_pass_k_monotonic,
+    compute_pressure_resilience_curve,
 )
 
 __all__ = [
@@ -118,4 +118,3 @@ __all__ = [
 ]
 
 __version__ = "1.2.0"  # Added FHIR adapter and MCP server
-

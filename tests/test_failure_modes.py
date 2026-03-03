@@ -9,36 +9,36 @@ Tests:
 5. Determinism
 """
 
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from analysis.failure_modes import (
-    FailureModeAnalyzer,
-    FailureCase,
-    FailureCluster,
-    FailureModeReport,
     FAILURE_CATEGORIES,
+    FailureCase,
+    FailureModeAnalyzer,
+    FailureModeReport,
 )
 
 
 class TestFailureCategories:
     """Test failure category definitions."""
-    
+
     def test_categories_defined(self):
         """All categories should be defined."""
         assert "red_flag_miss" in FAILURE_CATEGORIES
         assert "medication_safety" in FAILURE_CATEGORIES
         assert "hallucination" in FAILURE_CATEGORIES
-    
+
     def test_category_has_patterns(self):
         """Each category should have patterns."""
         for category, config in FAILURE_CATEGORIES.items():
             assert "patterns" in config
             assert len(config["patterns"]) > 0
-    
+
     def test_category_has_severity(self):
         """Each category should have severity."""
         for category, config in FAILURE_CATEGORIES.items():
@@ -48,7 +48,7 @@ class TestFailureCategories:
 
 class TestFailureModeAnalyzer:
     """Test failure mode analyzer."""
-    
+
     @pytest.fixture
     def sample_graded_data(self):
         """Create sample graded data."""
@@ -78,7 +78,7 @@ class TestFailureModeAnalyzer:
                 "response_text": "Take 800mg every hour",
             },
         ]
-    
+
     @pytest.fixture
     def sample_diagnostics(self):
         """Create sample diagnostics."""
@@ -108,52 +108,52 @@ class TestFailureModeAnalyzer:
                 "abstained": True,
             },
         ]
-    
+
     def test_analyzer_initialization(self):
         """Analyzer should initialize."""
         analyzer = FailureModeAnalyzer()
-        
+
         assert analyzer.failure_threshold == 50.0
         assert analyzer.min_cluster_size == 2
-    
+
     def test_analyzer_custom_threshold(self):
         """Should accept custom threshold."""
         analyzer = FailureModeAnalyzer(failure_threshold=30.0)
-        
+
         assert analyzer.failure_threshold == 30.0
-    
+
     def test_analyze_produces_report(self, sample_graded_data, sample_diagnostics):
         """Analysis should produce report."""
         analyzer = FailureModeAnalyzer()
         report = analyzer.analyze(sample_graded_data, sample_diagnostics)
-        
+
         assert isinstance(report, FailureModeReport)
         assert report.total_cases == 4
         assert report.failure_cases == 3  # Cases with score < 50
-    
+
     def test_failure_rate_computed(self, sample_graded_data, sample_diagnostics):
         """Failure rate should be computed correctly."""
         analyzer = FailureModeAnalyzer()
         report = analyzer.analyze(sample_graded_data, sample_diagnostics)
-        
+
         assert report.failure_rate == pytest.approx(0.75, abs=0.01)  # 3/4
-    
+
     def test_taxonomy_built(self, sample_graded_data, sample_diagnostics):
         """Taxonomy should be built."""
         analyzer = FailureModeAnalyzer()
         report = analyzer.analyze(sample_graded_data, sample_diagnostics)
-        
+
         assert isinstance(report.taxonomy, dict)
         assert len(report.taxonomy) > 0
 
 
 class TestFailureCategorization:
     """Test failure categorization."""
-    
+
     def test_red_flag_categorization(self):
         """Red flag patterns should be detected."""
         analyzer = FailureModeAnalyzer()
-        
+
         case = FailureCase(
             case_id="test",
             score=20,
@@ -164,15 +164,15 @@ class TestFailureCategorization:
             answer_snippet="rest",
             rubric_feedback="missing red flag",
         )
-        
+
         categories = analyzer._categorize_failure(case)
-        
+
         assert "red_flag_miss" in categories
-    
+
     def test_hallucination_categorization(self):
         """Hallucination patterns should be detected."""
         analyzer = FailureModeAnalyzer()
-        
+
         case = FailureCase(
             case_id="test",
             score=15,
@@ -183,15 +183,15 @@ class TestFailureCategorization:
             answer_snippet="90% of people",
             rubric_feedback="unverifiable statistic",
         )
-        
+
         categories = analyzer._categorize_failure(case)
-        
+
         assert "hallucination" in categories
-    
+
     def test_other_category_fallback(self):
         """Uncategorized failures should be 'other'."""
         analyzer = FailureModeAnalyzer()
-        
+
         case = FailureCase(
             case_id="test",
             score=30,
@@ -202,19 +202,19 @@ class TestFailureCategorization:
             answer_snippet="random answer",
             rubric_feedback="unclear response",
         )
-        
+
         categories = analyzer._categorize_failure(case)
-        
+
         assert "other" in categories or len(categories) > 0
 
 
 class TestClusterFormation:
     """Test cluster formation."""
-    
+
     def test_clusters_formed_by_category(self):
         """Clusters should be formed by category."""
         analyzer = FailureModeAnalyzer(min_cluster_size=1)
-        
+
         failures = [
             FailureCase(
                 case_id="c1",
@@ -239,18 +239,18 @@ class TestClusterFormation:
                 failure_categories=["hallucination"],
             ),
         ]
-        
+
         clusters = analyzer._cluster_failures(failures)
-        
+
         assert len(clusters) >= 1
         hallucination_cluster = next((c for c in clusters if c.cluster_id == "hallucination"), None)
         if hallucination_cluster:
             assert len(hallucination_cluster.cases) == 2
-    
+
     def test_cluster_severity_ordering(self):
         """Clusters should be ordered by severity."""
         analyzer = FailureModeAnalyzer(min_cluster_size=1)
-        
+
         failures = [
             FailureCase(
                 case_id="c1",
@@ -275,36 +275,36 @@ class TestClusterFormation:
                 failure_categories=["ambiguity"],  # Medium
             ),
         ]
-        
+
         clusters = analyzer._cluster_failures(failures)
-        
+
         if len(clusters) >= 2:
             severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
             for i in range(1, len(clusters)):
-                assert severity_order.get(clusters[i-1].severity, 4) <= \
-                       severity_order.get(clusters[i].severity, 4)
+                assert severity_order.get(clusters[i - 1].severity, 4) <= severity_order.get(
+                    clusters[i].severity, 4
+                )
 
 
 class TestDeterminism:
     """Test deterministic behavior."""
-    
+
     def test_same_input_same_output(self):
         """Same input should produce same output."""
         graded_data = [
             {"prompt_id": "c1", "grade": {"score": 20}, "prompt": [], "response_text": ""},
             {"prompt_id": "c2", "grade": {"score": 30}, "prompt": [], "response_text": ""},
         ]
-        
+
         analyzer1 = FailureModeAnalyzer(seed=42)
         analyzer2 = FailureModeAnalyzer(seed=42)
-        
+
         report1 = analyzer1.analyze(graded_data, None)
         report2 = analyzer2.analyze(graded_data, None)
-        
+
         assert report1.failure_cases == report2.failure_cases
         assert report1.failure_rate == report2.failure_rate
 
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-

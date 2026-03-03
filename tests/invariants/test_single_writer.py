@@ -9,7 +9,6 @@ import tempfile
 import threading
 from typing import List
 
-
 from src.tsr.monitor.interfaces import BreakerState
 from src.tsr.monitor.state_store import StateStore
 
@@ -45,9 +44,7 @@ class TestSingleWriter:
             except Exception as e:
                 errors.append(str(e))
 
-        threads = [
-            threading.Thread(target=writer, args=(f"thread-{t}",)) for t in range(4)
-        ]
+        threads = [threading.Thread(target=writer, args=(f"thread-{t}",)) for t in range(4)]
         for t in threads:
             t.start()
         for t in threads:
@@ -78,9 +75,7 @@ class TestSingleWriter:
             except Exception as e:
                 errors.append(str(e))
 
-        threads = [
-            threading.Thread(target=audit_writer, args=(f"t{t}",)) for t in range(3)
-        ]
+        threads = [threading.Thread(target=audit_writer, args=(f"t{t}",)) for t in range(3)]
         for t in threads:
             t.start()
         for t in threads:

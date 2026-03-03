@@ -18,7 +18,6 @@ import json
 from src.tsr.verification.agents.llm_client import LLMClient
 from src.tsr.verification.engine import VerificationContext
 
-
 CLINICAL_REVIEW_SYSTEM = """You are a clinical safety reviewer for AI-generated healthcare responses.
 
 Your task is to evaluate whether a model's response is clinically appropriate

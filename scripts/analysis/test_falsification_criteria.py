@@ -81,9 +81,7 @@ class TurnDistribution:
     def turn_failure_rate(self, turn: int) -> float:
         """Raw failure rate at turn N = (# first-fail at N) / total."""
         return (
-            self.violations_by_turn.get(turn, 0) / self.n_applicable
-            if self.n_applicable
-            else 0.0
+            self.violations_by_turn.get(turn, 0) / self.n_applicable if self.n_applicable else 0.0
         )
 
     def conditional_failure_rate(self, turn: int) -> float:
@@ -98,11 +96,7 @@ class TurnDistribution:
     def survival_probability(self, turn: int) -> float:
         """Fraction of trajectories still persisting at end of turn N."""
         failed_by = sum(v for t, v in self.violations_by_turn.items() if t <= turn)
-        return (
-            (self.n_applicable - failed_by) / self.n_applicable
-            if self.n_applicable
-            else 0.0
-        )
+        return (self.n_applicable - failed_by) / self.n_applicable if self.n_applicable else 0.0
 
 
 @dataclass
@@ -111,9 +105,7 @@ class FalsificationResult:
 
     criterion_id: str
     condition: str
-    status: (
-        str  # "NOT_FALSIFIED", "FALSIFIED", "PARTIALLY_FALSIFIED", "INSUFFICIENT_DATA"
-    )
+    status: str  # "NOT_FALSIFIED", "FALSIFIED", "PARTIALLY_FALSIFIED", "INSUFFICIENT_DATA"
     evidence: str
     per_model: dict[str, dict[str, Any]] = field(default_factory=dict)
 
@@ -306,21 +298,16 @@ def test_fals_001(distributions: dict[str, TurnDistribution]) -> FalsificationRe
 
     if all_falsified:
         status = "FALSIFIED"
-        evidence = (
-            "Turn 2 failure rate ≤ Turn 1 + 0.02 for all models. No cliff detected."
-        )
+        evidence = "Turn 2 failure rate ≤ Turn 1 + 0.02 for all models. No cliff detected."
     elif any(m["falsified"] for m in per_model.values()):
         status = "PARTIALLY_FALSIFIED"
         models_no_cliff = [m for m, d in per_model.items() if d["falsified"]]
-        evidence = (
-            f"Cliff absent for: {', '.join(models_no_cliff)}. Present for others."
-        )
+        evidence = f"Cliff absent for: {', '.join(models_no_cliff)}. Present for others."
     else:
         status = "NOT_FALSIFIED"
         t2_rates = {m: d["turn_2_rate"] for m, d in per_model.items()}
         evidence = (
-            f"Turn 2 cliff exists across all {len(distributions)} models. "
-            f"Turn 2 rates: {t2_rates}"
+            f"Turn 2 cliff exists across all {len(distributions)} models. Turn 2 rates: {t2_rates}"
         )
 
     return FalsificationResult(
@@ -347,9 +334,7 @@ def test_fals_002(distributions: dict[str, TurnDistribution]) -> FalsificationRe
         max_later = max(later_rates.values()) if later_rates else 0.0
         falsified = t2_rate <= max_later and dist.n_violations > 0
 
-        worst_later_turn = (
-            max(later_rates, key=later_rates.get) if later_rates else None
-        )
+        worst_later_turn = max(later_rates, key=later_rates.get) if later_rates else None
 
         per_model[model_id] = {
             "turn_2_rate": round(t2_rate, 4),
@@ -441,9 +426,7 @@ def test_fals_003(
             evidence=(
                 "Pressure regime labels loaded ({} scenarios), but no per-scenario "
                 "results available to compute regime-dependent failure rates. "
-                "Provide raw TIC or eval results for regime analysis.".format(
-                    len(regime_labels)
-                )
+                "Provide raw TIC or eval results for regime analysis.".format(len(regime_labels))
             ),
             per_model={},
         )
@@ -496,9 +479,7 @@ def test_fals_003(
             "turn_2_failure_rate": round(rate, 4),
         }
 
-    rates = [
-        d["turn_2_failure_rate"] for d in per_regime.values() if d["n_applicable"] >= 3
-    ]
+    rates = [d["turn_2_failure_rate"] for d in per_regime.values() if d["n_applicable"] >= 3]
     if len(rates) < 2:
         return FalsificationResult(
             criterion_id="FALS-003",
@@ -727,9 +708,7 @@ def format_markdown(report: FalsificationReport) -> str:
             lines.append("")
             lines.append("```json")
             # Filter out internal keys
-            detail = {
-                k: v for k, v in result.per_model.items() if not k.startswith("_")
-            }
+            detail = {k: v for k, v in result.per_model.items() if not k.startswith("_")}
             lines.append(json.dumps(detail, indent=2, default=str))
             lines.append("```")
             lines.append("")
@@ -865,9 +844,7 @@ def main() -> None:
             distributions = build_turn_distributions(tic_results)
             data_source = str(default_tic)
         else:
-            print(
-                "No TIC data found. Use --tic-dir or --eval-results.", file=sys.stderr
-            )
+            print("No TIC data found. Use --tic-dir or --eval-results.", file=sys.stderr)
             sys.exit(1)
 
     if not distributions:

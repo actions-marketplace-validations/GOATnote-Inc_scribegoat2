@@ -155,9 +155,7 @@ class MetricCollector(IMetricCollector):
     def _prune_time_window(self, window: WindowedMetrics) -> None:
         """Remove events outside the time window."""
         cutoff = datetime.utcnow().timestamp() - window.time_window_seconds
-        while (
-            window.time_events and window.time_events[0].timestamp.timestamp() < cutoff
-        ):
+        while window.time_events and window.time_events[0].timestamp.timestamp() < cutoff:
             window.time_events.popleft()
 
     @staticmethod

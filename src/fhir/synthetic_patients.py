@@ -18,31 +18,89 @@ import random
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.fhir.resources import build_patient, _generate_id
-
+from src.fhir.resources import build_patient
 
 # ---------------------------------------------------------------------------
 # Name pools (curated, zero PHI — no real patient names)
 # ---------------------------------------------------------------------------
 
 GIVEN_NAMES_MALE = [
-    "James", "Robert", "Michael", "David", "Carlos", "Wei", "Jamal",
-    "Ahmed", "Ravi", "Tomasz", "Kenji", "Alejandro", "Dmitri", "Kwame",
-    "Chen", "Marcus", "Elijah", "Mateo", "Aiden", "Noah",
+    "James",
+    "Robert",
+    "Michael",
+    "David",
+    "Carlos",
+    "Wei",
+    "Jamal",
+    "Ahmed",
+    "Ravi",
+    "Tomasz",
+    "Kenji",
+    "Alejandro",
+    "Dmitri",
+    "Kwame",
+    "Chen",
+    "Marcus",
+    "Elijah",
+    "Mateo",
+    "Aiden",
+    "Noah",
 ]
 
 GIVEN_NAMES_FEMALE = [
-    "Maria", "Patricia", "Linda", "Jennifer", "Fatima", "Mei", "Aisha",
-    "Priya", "Olga", "Yuki", "Guadalupe", "Amara", "Sofia", "Zara",
-    "Ling", "Keisha", "Isabella", "Olivia", "Emma", "Ava",
+    "Maria",
+    "Patricia",
+    "Linda",
+    "Jennifer",
+    "Fatima",
+    "Mei",
+    "Aisha",
+    "Priya",
+    "Olga",
+    "Yuki",
+    "Guadalupe",
+    "Amara",
+    "Sofia",
+    "Zara",
+    "Ling",
+    "Keisha",
+    "Isabella",
+    "Olivia",
+    "Emma",
+    "Ava",
 ]
 
 FAMILY_NAMES = [
-    "Smith", "Garcia", "Johnson", "Williams", "Brown", "Jones", "Chen",
-    "Kumar", "Patel", "Kim", "Nguyen", "Ali", "Rodriguez", "Martinez",
-    "Hernandez", "Davis", "Wilson", "Anderson", "Thomas", "Jackson",
-    "Kowalski", "Nakamura", "Okafor", "Petrov", "Santos", "Ibrahim",
-    "Park", "Johansson", "O'Brien", "Washington",
+    "Smith",
+    "Garcia",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Chen",
+    "Kumar",
+    "Patel",
+    "Kim",
+    "Nguyen",
+    "Ali",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Davis",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Jackson",
+    "Kowalski",
+    "Nakamura",
+    "Okafor",
+    "Petrov",
+    "Santos",
+    "Ibrahim",
+    "Park",
+    "Johansson",
+    "O'Brien",
+    "Washington",
 ]
 
 # ---------------------------------------------------------------------------
@@ -50,9 +108,16 @@ FAMILY_NAMES = [
 # ---------------------------------------------------------------------------
 
 STREET_NAMES = [
-    "Oak Street", "Maple Avenue", "Cedar Lane", "Elm Drive",
-    "Pine Court", "Birch Road", "Walnut Way", "Spruce Boulevard",
-    "Willow Path", "Ash Circle",
+    "Oak Street",
+    "Maple Avenue",
+    "Cedar Lane",
+    "Elm Drive",
+    "Pine Court",
+    "Birch Road",
+    "Walnut Way",
+    "Spruce Boulevard",
+    "Willow Path",
+    "Ash Circle",
 ]
 
 CITIES_BY_STATE = {
@@ -69,8 +134,16 @@ CITIES_BY_STATE = {
 }
 
 ZIP_PREFIXES = {
-    "CA": "9", "TX": "7", "NY": "1", "FL": "3", "IL": "6",
-    "PA": "1", "OH": "4", "GA": "3", "NC": "2", "MI": "4",
+    "CA": "9",
+    "TX": "7",
+    "NY": "1",
+    "FL": "3",
+    "IL": "6",
+    "PA": "1",
+    "OH": "4",
+    "GA": "3",
+    "NC": "2",
+    "MI": "4",
 }
 
 # ---------------------------------------------------------------------------
@@ -111,8 +184,10 @@ LANGUAGE_DISTRIBUTION: List[Tuple[str, str, float]] = [
 
 INSURANCE_TYPES = {
     "commercial": [
-        "Blue Cross Blue Shield", "UnitedHealth Synthetic",
-        "Aetna Synthetic Plan", "Cigna Synthetic Group",
+        "Blue Cross Blue Shield",
+        "UnitedHealth Synthetic",
+        "Aetna Synthetic Plan",
+        "Cigna Synthetic Group",
     ],
     "medicare": ["CMS Medicare Synthetic"],
     "medicaid": ["State Medicaid Synthetic"],
@@ -149,9 +224,7 @@ class SyntheticPatientGenerator:
         h = hashlib.sha256(f"mrn-{self.seed}-{index}".encode()).hexdigest()
         return f"SYN-{h[:8].upper()}"
 
-    def _sample_weighted(
-        self, distribution: List[Tuple[str, str, float]]
-    ) -> Tuple[str, str]:
+    def _sample_weighted(self, distribution: List[Tuple[str, str, float]]) -> Tuple[str, str]:
         """Sample from a weighted distribution."""
         codes = [d[0] for d in distribution]
         displays = [d[1] for d in distribution]
@@ -159,16 +232,14 @@ class SyntheticPatientGenerator:
         idx = self.rng.choices(range(len(codes)), weights=weights, k=1)[0]
         return codes[idx], displays[idx]
 
-    def _sample_age(
-        self, age_group: str = "adult"
-    ) -> Tuple[int, str]:
+    def _sample_age(self, age_group: str = "adult") -> Tuple[int, str]:
         """Sample an age and compute birth date.
 
         Returns:
             (age_years, birth_date_str) where age is approximate
         """
         age_ranges = {
-            "neonatal": (0, 0),      # 0-28 days
+            "neonatal": (0, 0),  # 0-28 days
             "infant": (0, 1),
             "child": (2, 11),
             "adolescent": (12, 17),
@@ -278,9 +349,7 @@ class SyntheticPatientGenerator:
 
         # Race and ethnicity
         race_code, race_display = self._sample_weighted(RACE_DISTRIBUTION)
-        ethnicity_code, ethnicity_display = self._sample_weighted(
-            ETHNICITY_DISTRIBUTION
-        )
+        ethnicity_code, ethnicity_display = self._sample_weighted(ETHNICITY_DISTRIBUTION)
 
         # Telecom and language
         telecom = self._sample_telecom(given, family)
@@ -327,8 +396,13 @@ class SyntheticPatientGenerator:
         """
         if age_groups is None:
             age_groups = [
-                "neonatal", "infant", "child", "adolescent",
-                "adult", "young_old", "old",
+                "neonatal",
+                "infant",
+                "child",
+                "adolescent",
+                "adult",
+                "young_old",
+                "old",
             ]
 
         if insurance_types is None:

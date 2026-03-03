@@ -34,7 +34,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -67,6 +67,7 @@ def _truncate_to_word_boundary(text: str, max_len: int) -> str:
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ClinicalExposure:
     """A single observed failure mapped to its clinical consequence."""
@@ -75,15 +76,15 @@ class ClinicalExposure:
     condition: str
     esi_level: int
     failure_turn: int
-    failure_classification: str   # CAPITULATION, OVER_ESCALATION, etc.
-    harm_class: str               # action_hazard, information_hazard, omission_hazard
-    severity_band: str            # critical, high, moderate
-    time_to_harm_hours: str       # "0.5-2", "6-12", etc.
-    mortality_if_delayed: str     # "10-15%", "1-2%", etc.
-    morbidity_if_delayed: str     # "Seizures, hearing loss..."
-    model_response_excerpt: str   # First 300 chars of the failing response
-    clinical_basis: str           # Guideline reference
-    is_hard_floor: bool           # Clinically actionable failure
+    failure_classification: str  # CAPITULATION, OVER_ESCALATION, etc.
+    harm_class: str  # action_hazard, information_hazard, omission_hazard
+    severity_band: str  # critical, high, moderate
+    time_to_harm_hours: str  # "0.5-2", "6-12", etc.
+    mortality_if_delayed: str  # "10-15%", "1-2%", etc.
+    morbidity_if_delayed: str  # "Seizures, hearing loss..."
+    model_response_excerpt: str  # First 300 chars of the failing response
+    clinical_basis: str  # Guideline reference
+    is_hard_floor: bool  # Clinically actionable failure
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -108,16 +109,13 @@ class ConditionRisk:
     ci_method: str
     failures_by_turn: dict[int, int]
     dominant_failure_mode: Optional[str]
-    underpowered: bool                    # True if n < 10
+    underpowered: bool  # True if n < 10
 
     @property
     def clinical_consequence_statement(self) -> str:
         """Human-readable clinical consequence."""
         if self.n_failures == 0:
-            return (
-                f"No failures observed for {self.condition} "
-                f"(N={self.n_trajectories})."
-            )
+            return f"No failures observed for {self.condition} (N={self.n_trajectories})."
         # Build consequence with explicit handling for missing params
         parts = [
             f"{self.failure_rate:.0%} of trajectories for {self.condition} "
@@ -137,14 +135,10 @@ class ConditionRisk:
             )
         elif self.mortality_if_delayed:
             parts.append(
-                f" with {self.mortality_if_delayed} mortality risk "
-                f"(time-to-harm not documented)"
+                f" with {self.mortality_if_delayed} mortality risk (time-to-harm not documented)"
             )
         else:
-            parts.append(
-                " (clinical parameters not documented — "
-                "cannot quantify exposure)"
-            )
+            parts.append(" (clinical parameters not documented — cannot quantify exposure)")
         parts.append(".")
         return "".join(parts)
 
@@ -243,6 +237,7 @@ class RiskProfile:
 # Generator
 # ---------------------------------------------------------------------------
 
+
 class ClinicalRiskProfileGenerator:
     """
     Generates a clinical risk profile from evaluation results.
@@ -288,7 +283,11 @@ class ClinicalRiskProfileGenerator:
     ) -> dict[str, dict[str, Any]]:
         """Load failure taxonomy mapping from YAML."""
         if path is None:
-            path = Path(__file__).parent.parent.parent / "configs" / "configs/failure_taxonomy_mapping.yaml"
+            path = (
+                Path(__file__).parent.parent.parent
+                / "configs"
+                / "configs/failure_taxonomy_mapping.yaml"
+            )
 
         if not path.exists():
             logger.warning(f"Taxonomy mapping not found at {path}")
@@ -315,12 +314,8 @@ class ClinicalRiskProfileGenerator:
         model_ids = {r.model_id for r in self.results if r.model_id}
         model_id = next(iter(model_ids)) if model_ids else "unknown"
 
-        escalation_results = [
-            r for r in self.results if r.scenario_type == "escalation"
-        ]
-        defer_results = [
-            r for r in self.results if r.scenario_type == "defer"
-        ]
+        escalation_results = [r for r in self.results if r.scenario_type == "escalation"]
+        defer_results = [r for r in self.results if r.scenario_type == "defer"]
 
         # Build clinical exposures for every failure
         exposures = self._build_clinical_exposures()
@@ -331,9 +326,7 @@ class ClinicalRiskProfileGenerator:
         ci = wilson_score_interval(n_failures, n_total)
 
         # Critical severity failures
-        critical_failures = [
-            e for e in exposures if e.severity_band == "critical"
-        ]
+        critical_failures = [e for e in exposures if e.severity_band == "critical"]
 
         # Hard floor violations
         hard_floor = [e for e in exposures if e.is_hard_floor]
@@ -345,14 +338,13 @@ class ClinicalRiskProfileGenerator:
         per_condition = self._compute_per_condition_risk()
 
         # Conditions with any failure
-        conditions_with_failures = sorted({
-            e.condition for e in exposures
-        })
+        conditions_with_failures = sorted({e.condition for e in exposures})
 
         # Scope statement
         esc_conditions = [
-            s.condition for sid, s in self.scenarios.items()
-            if hasattr(s, 'scenario_type') and s.scenario_type.value == "escalation"
+            s.condition
+            for sid, s in self.scenarios.items()
+            if hasattr(s, "scenario_type") and s.scenario_type.value == "escalation"
         ]
         scope = (
             f"This profile covers {len(esc_conditions)} escalation conditions "
@@ -366,10 +358,7 @@ class ClinicalRiskProfileGenerator:
         hash_input = f"{model_id}:{n_total}:{n_failures}:{self.seed}"
         profile_id = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
 
-        hard_floor_rate = (
-            len(hard_floor) / len(escalation_results)
-            if escalation_results else 0.0
-        )
+        hard_floor_rate = len(hard_floor) / len(escalation_results) if escalation_results else 0.0
 
         return RiskProfile(
             profile_id=profile_id,
@@ -420,7 +409,7 @@ class ClinicalRiskProfileGenerator:
             if result.turn_results and failure_turn > 0:
                 for tr in result.turn_results:
                     if tr.turn_number == failure_turn and tr.failed:
-                        raw = (tr.response_text or "")
+                        raw = tr.response_text or ""
                         response_excerpt = _truncate_to_word_boundary(raw, 300)
                         failure_classification = tr.classification.value
                         break
@@ -445,21 +434,23 @@ class ClinicalRiskProfileGenerator:
                 mortality=mortality,
             )
 
-            exposures.append(ClinicalExposure(
-                scenario_id=result.scenario_id,
-                condition=condition,
-                esi_level=esi,
-                failure_turn=failure_turn,
-                failure_classification=failure_classification,
-                harm_class=harm_class,
-                severity_band=severity_band,
-                time_to_harm_hours=time_to_harm,
-                mortality_if_delayed=mortality,
-                morbidity_if_delayed=morbidity,
-                model_response_excerpt=response_excerpt,
-                clinical_basis=clinical_basis,
-                is_hard_floor=is_hard_floor,
-            ))
+            exposures.append(
+                ClinicalExposure(
+                    scenario_id=result.scenario_id,
+                    condition=condition,
+                    esi_level=esi,
+                    failure_turn=failure_turn,
+                    failure_classification=failure_classification,
+                    harm_class=harm_class,
+                    severity_band=severity_band,
+                    time_to_harm_hours=time_to_harm,
+                    mortality_if_delayed=mortality,
+                    morbidity_if_delayed=morbidity,
+                    model_response_excerpt=response_excerpt,
+                    clinical_basis=clinical_basis,
+                    is_hard_floor=is_hard_floor,
+                )
+            )
 
         return exposures
 
@@ -538,38 +529,37 @@ class ClinicalRiskProfileGenerator:
                     t = r.first_failure_turn
                     turn_counts[t] = turn_counts.get(t, 0) + 1
                     # Get the classification at the failure turn
-                    for tr in (r.turn_results or []):
+                    for tr in r.turn_results or []:
                         if tr.turn_number == t and tr.failed:
                             mode = tr.classification.value
                             failure_modes[mode] = failure_modes.get(mode, 0) + 1
 
-            dominant = (
-                max(failure_modes, key=failure_modes.get)
-                if failure_modes else None
-            )
+            dominant = max(failure_modes, key=failure_modes.get) if failure_modes else None
 
             time_to_harm = getattr(scenario, "time_to_harm_hours", None) or ""
             mortality = getattr(scenario, "mortality_if_delayed", None) or ""
             morbidity = getattr(scenario, "morbidity_if_delayed", None) or ""
 
-            conditions.append(ConditionRisk(
-                scenario_id=sid,
-                condition=getattr(scenario, "condition", sid),
-                esi_level=getattr(scenario, "esi_level", 0),
-                time_to_harm_hours=time_to_harm,
-                mortality_if_delayed=mortality,
-                morbidity_if_delayed=morbidity,
-                clinical_basis=tax.get("clinical_basis", ""),
-                n_trajectories=n_total,
-                n_failures=n_fail,
-                failure_rate=ci.value,
-                failure_rate_ci_lower=ci.ci_lower,
-                failure_rate_ci_upper=ci.ci_upper,
-                ci_method=ci.method,
-                failures_by_turn=turn_counts,
-                dominant_failure_mode=dominant,
-                underpowered=n_total < 10,
-            ))
+            conditions.append(
+                ConditionRisk(
+                    scenario_id=sid,
+                    condition=getattr(scenario, "condition", sid),
+                    esi_level=getattr(scenario, "esi_level", 0),
+                    time_to_harm_hours=time_to_harm,
+                    mortality_if_delayed=mortality,
+                    morbidity_if_delayed=morbidity,
+                    clinical_basis=tax.get("clinical_basis", ""),
+                    n_trajectories=n_total,
+                    n_failures=n_fail,
+                    failure_rate=ci.value,
+                    failure_rate_ci_lower=ci.ci_lower,
+                    failure_rate_ci_upper=ci.ci_upper,
+                    ci_method=ci.method,
+                    failures_by_turn=turn_counts,
+                    dominant_failure_mode=dominant,
+                    underpowered=n_total < 10,
+                )
+            )
 
         return conditions
 
@@ -599,6 +589,7 @@ class ClinicalRiskProfileGenerator:
 # Markdown renderer
 # ---------------------------------------------------------------------------
 
+
 def _render_markdown(p: RiskProfile) -> str:
     """Render a RiskProfile as Markdown."""
     lines: list[str] = []
@@ -615,8 +606,8 @@ def _render_markdown(p: RiskProfile) -> str:
     # Aggregate risk
     lines.append("## Aggregate Risk")
     lines.append("")
-    lines.append(f"| Metric | Value |")
-    lines.append(f"|--------|-------|")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
     lines.append(f"| Total trajectories | {p.n_trajectories} |")
     lines.append(f"| Escalation scenarios | {p.n_escalation} |")
     lines.append(f"| Defer scenarios | {p.n_defer} |")
@@ -660,8 +651,7 @@ def _render_markdown(p: RiskProfile) -> str:
     for c in p.per_condition:
         underpowered = " *" if c.underpowered else ""
         rate_str = (
-            f"{c.failure_rate:.0%} [{c.failure_rate_ci_lower:.0%}, "
-            f"{c.failure_rate_ci_upper:.0%}]"
+            f"{c.failure_rate:.0%} [{c.failure_rate_ci_lower:.0%}, {c.failure_rate_ci_upper:.0%}]"
         )
         mode_str = c.dominant_failure_mode or "N/A"
         tth_str = f"{c.time_to_harm_hours}h" if c.time_to_harm_hours else "N/A"
@@ -700,8 +690,7 @@ def _render_markdown(p: RiskProfile) -> str:
             f"initial correct emergency recommendation."
         )
         lines.append("")
-        lines.append(f"**Conditions with Turn 2 failures:** "
-                     f"{', '.join(p.turn_2_conditions)}")
+        lines.append(f"**Conditions with Turn 2 failures:** {', '.join(p.turn_2_conditions)}")
         lines.append("")
 
     # Detailed clinical exposures
@@ -726,13 +715,14 @@ def _render_markdown(p: RiskProfile) -> str:
             basis = e.clinical_basis if e.clinical_basis else "Not documented"
             lines.append(f"- **Guideline basis:** {basis}")
             if e.model_response_excerpt:
-                lines.append(f"- **Response excerpt:** \"{e.model_response_excerpt}\"")
+                lines.append(f'- **Response excerpt:** "{e.model_response_excerpt}"')
             lines.append("")
 
     # Consistency check (if present)
     if p.consistency_check is not None:
         try:
             from src.metrics.consistency_check import render_consistency_markdown
+
             # consistency_check stores a ConsistencyResult.to_dict()
             # but we also support a pre-rendered markdown string
             if isinstance(p.consistency_check, str):
@@ -749,12 +739,10 @@ def _render_markdown(p: RiskProfile) -> str:
                 if label:
                     lines.append(f"> {label}")
                     lines.append("")
-                lines.append(f"| Parameter | Value |")
-                lines.append(f"|-----------|-------|")
+                lines.append("| Parameter | Value |")
+                lines.append("|-----------|-------|")
                 lines.append(f"| Reviewer model | {reviewer} |")
-                lines.append(
-                    f"| Exposures reviewed | {n_rev}/{n_exp} |"
-                )
+                lines.append(f"| Exposures reviewed | {n_rev}/{n_exp} |")
                 lines.append(f"| Agreement rate | {rate:.0%} |")
                 disag = p.consistency_check.get("n_disagreed", 0)
                 lines.append(f"| Disagreements | {disag} |")
@@ -767,7 +755,7 @@ def _render_markdown(p: RiskProfile) -> str:
                             f"({rev.get('scenario_id')}): "
                             f"Reviewer disagrees with "
                             f"`{rev.get('failure_classification')}`. "
-                            f"Reasoning: \"{rev.get('reviewer_reasoning')}\""
+                            f'Reasoning: "{rev.get("reviewer_reasoning")}"'
                         )
                 lines.append("")
         except ImportError:
@@ -776,8 +764,8 @@ def _render_markdown(p: RiskProfile) -> str:
     # Calibration
     lines.append("## Calibration Metadata")
     lines.append("")
-    lines.append(f"| Parameter | Value |")
-    lines.append(f"|-----------|-------|")
+    lines.append("| Parameter | Value |")
+    lines.append("|-----------|-------|")
     lines.append(f"| Judge model | {p.judge_model} |")
     lines.append(f"| Cross-vendor judge | {'Yes' if p.cross_vendor else 'No'} |")
     lines.append(f"| Seed | {p.seed} |")

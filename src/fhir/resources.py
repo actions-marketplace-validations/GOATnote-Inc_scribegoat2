@@ -46,9 +46,7 @@ def _make_reference(resource_type: str, resource_id: str) -> Dict[str, str]:
     return {"reference": f"{resource_type}/{resource_id}"}
 
 
-def _make_coding(
-    system: str, code: str, display: Optional[str] = None
-) -> Dict[str, str]:
+def _make_coding(system: str, code: str, display: Optional[str] = None) -> Dict[str, str]:
     """Build a FHIR coding element."""
     coding: Dict[str, str] = {"system": system, "code": code}
     if display:
@@ -140,11 +138,7 @@ def build_patient(
     patient: Dict[str, Any] = {
         "resourceType": "Patient",
         "id": patient_id,
-        "meta": {
-            "profile": [
-                "http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"
-            ]
-        },
+        "meta": {"profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"]},
         "name": [{"use": "official", "family": family_name, "given": [given_name]}],
         "gender": gender,
         "birthDate": birth_date,
@@ -291,11 +285,7 @@ def build_encounter(
     encounter: Dict[str, Any] = {
         "resourceType": "Encounter",
         "id": enc_id,
-        "meta": {
-            "profile": [
-                "http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"
-            ]
-        },
+        "meta": {"profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"]},
         "status": status,
         "class": _make_coding(
             system="http://terminology.hl7.org/CodeSystem/v3-ActCode",
@@ -342,9 +332,7 @@ def build_encounter(
         encounter["participant"] = participants
 
     if organization_id:
-        encounter["serviceProvider"] = _make_reference(
-            "Organization", organization_id
-        )
+        encounter["serviceProvider"] = _make_reference("Organization", organization_id)
 
     if status_history:
         encounter["statusHistory"] = status_history
@@ -417,9 +405,7 @@ def build_observation(
         "resourceType": "Observation",
         "id": obs_id,
         "meta": {
-            "profile": [
-                "http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"
-            ]
+            "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"]
         },
         "status": status,
         "category": [
@@ -628,11 +614,7 @@ def build_goal(
     goal: Dict[str, Any] = {
         "resourceType": "Goal",
         "id": goal_id,
-        "meta": {
-            "profile": [
-                "http://hl7.org/fhir/us/core/StructureDefinition/us-core-goal"
-            ]
-        },
+        "meta": {"profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-goal"]},
         "lifecycleStatus": lifecycle_status,
         "description": {"text": description_text},
         "subject": _make_reference("Patient", patient_id),
@@ -805,17 +787,13 @@ def build_claim(
         "emergent": ("emergent", "Emergent"),
         "stat": ("stat", "Stat"),
     }
-    pri_code, pri_display = priority_map.get(
-        priority_code.lower(), ("normal", "Normal")
-    )
+    pri_code, pri_display = priority_map.get(priority_code.lower(), ("normal", "Normal"))
 
     claim: Dict[str, Any] = {
         "resourceType": "Claim",
         "id": claim_id,
         "meta": {
-            "profile": [
-                "http://hl7.org/fhir/us/davinci-pas/StructureDefinition/profile-claim"
-            ]
+            "profile": ["http://hl7.org/fhir/us/davinci-pas/StructureDefinition/profile-claim"]
         },
         "status": "active",
         "type": _make_codeable_concept(
@@ -915,8 +893,7 @@ def build_claim_response(
         response["error"] = [
             {
                 "code": _make_codeable_concept(
-                    system=denial_reason_system
-                    or "https://www.cms.gov/pa-denial-reasons",
+                    system=denial_reason_system or "https://www.cms.gov/pa-denial-reasons",
                     code=denial_reason,
                     display=denial_reason,
                 )
@@ -1305,9 +1282,7 @@ def build_medication_request(
         "resourceType": "MedicationRequest",
         "id": med_id,
         "meta": {
-            "profile": [
-                "http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"
-            ]
+            "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"]
         },
         "status": status,
         "intent": intent,
@@ -1369,9 +1344,7 @@ def build_blood_pressure_observation(
     observation: Dict[str, Any] = {
         "resourceType": "Observation",
         "id": obs_id,
-        "meta": {
-            "profile": ["http://hl7.org/fhir/StructureDefinition/bp"]
-        },
+        "meta": {"profile": ["http://hl7.org/fhir/StructureDefinition/bp"]},
         "status": status,
         "category": [
             _make_codeable_concept(
@@ -1462,9 +1435,7 @@ def build_triage_observations(
         "id": _generate_id(),
         "status": "final",
         "category": [
-            _make_codeable_concept(
-                system=category_system, code="survey", display="Survey"
-            )
+            _make_codeable_concept(system=category_system, code="survey", display="Survey")
         ],
         "code": _make_codeable_concept(
             system="http://loinc.org",
@@ -1485,9 +1456,7 @@ def build_triage_observations(
         "id": _generate_id(),
         "status": "final",
         "category": [
-            _make_codeable_concept(
-                system=category_system, code="survey", display="Survey"
-            )
+            _make_codeable_concept(system=category_system, code="survey", display="Survey")
         ],
         "code": _make_codeable_concept(
             system="http://loinc.org",
@@ -1509,9 +1478,7 @@ def build_triage_observations(
             "id": _generate_id(),
             "status": "final",
             "category": [
-                _make_codeable_concept(
-                    system=category_system, code="survey", display="Survey"
-                )
+                _make_codeable_concept(system=category_system, code="survey", display="Survey")
             ],
             "code": _make_codeable_concept(
                 system="http://loinc.org",
@@ -1581,9 +1548,7 @@ def build_diagnostic_report(
                 display=category_display,
             )
         ],
-        "code": _make_codeable_concept(
-            system=code_system, code=code, display=code_display
-        ),
+        "code": _make_codeable_concept(system=code_system, code=code, display=code_display),
         "subject": _make_reference("Patient", patient_id),
         "effectiveDateTime": dt,
         "issued": dt,
@@ -1594,8 +1559,7 @@ def build_diagnostic_report(
 
     if result_observation_ids:
         report["result"] = [
-            _make_reference("Observation", obs_id)
-            for obs_id in result_observation_ids
+            _make_reference("Observation", obs_id) for obs_id in result_observation_ids
         ]
 
     return _add_synthetic_tag(report)
@@ -1665,9 +1629,7 @@ def build_medication_administration(
         admin["request"] = _make_reference("MedicationRequest", request_id)
 
     if performer_id:
-        admin["performer"] = [
-            {"actor": _make_reference("Practitioner", performer_id)}
-        ]
+        admin["performer"] = [{"actor": _make_reference("Practitioner", performer_id)}]
 
     dosage: Dict[str, Any] = {}
     if dosage_text:
@@ -1748,9 +1710,7 @@ def build_document_reference(
         doc["content"][0]["attachment"]["data"] = encoded
 
     if encounter_id:
-        doc["context"] = {
-            "encounter": [_make_reference("Encounter", encounter_id)]
-        }
+        doc["context"] = {"encounter": [_make_reference("Encounter", encounter_id)]}
 
     if author_id:
         doc["author"] = [_make_reference("Practitioner", author_id)]

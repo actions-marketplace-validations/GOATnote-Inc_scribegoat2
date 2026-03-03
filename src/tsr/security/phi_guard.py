@@ -3,16 +3,20 @@
 Ensures no Protected Health Information leaks into safety logs or audit trails.
 Runs on every log entry before emission. Zero PHI persistence by design.
 """
+
 import re
 from dataclasses import dataclass
+
 
 @dataclass
 class PHIDetection:
     """A detected PHI instance."""
+
     pattern_type: str  # "ssn", "mrn", "dob", "name", "phone", "email", "address"
     start: int
     end: int
     confidence: float
+
 
 class PHIGuard:
     """Runtime PHI detection guard.
@@ -44,12 +48,14 @@ class PHIGuard:
         detections = []
         for pattern_type, pattern in self.PATTERNS.items():
             for match in pattern.finditer(text):
-                detections.append(PHIDetection(
-                    pattern_type=pattern_type,
-                    start=match.start(),
-                    end=match.end(),
-                    confidence=0.9,
-                ))
+                detections.append(
+                    PHIDetection(
+                        pattern_type=pattern_type,
+                        start=match.start(),
+                        end=match.end(),
+                        confidence=0.9,
+                    )
+                )
         return detections
 
     def contains_phi(self, text: str) -> bool:
@@ -61,7 +67,7 @@ class PHIGuard:
         detections = sorted(self.scan(text), key=lambda d: d.start, reverse=True)
         result = text
         for d in detections:
-            result = result[:d.start] + f"[REDACTED_{d.pattern_type.upper()}]" + result[d.end:]
+            result = result[: d.start] + f"[REDACTED_{d.pattern_type.upper()}]" + result[d.end :]
         return result
 
     def guard_log_entry(self, entry: dict) -> dict:

@@ -14,7 +14,7 @@ import json
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, List, Tuple
 
 
 @dataclass(frozen=True)
@@ -140,7 +140,9 @@ def generate_markdown(
     shade_rows.append("Legend: darker = more cases in bin (density only; counts shown below)")
     shade_rows.append("")
     # Header row
-    shade_rows.append("uncertainty_bin \\ corrections_count → " + " ".join(str(c) for c in corr_bins))
+    shade_rows.append(
+        "uncertainty_bin \\ corrections_count → " + " ".join(str(c) for c in corr_bins)
+    )
     for i in range(rows):
         shades = " ".join(_ascii_shade(counts[i][j] / max_cell) for j in range(cols))
         shade_rows.append(f"{uncertainty_bins.label(i)}  {shades}")
@@ -152,7 +154,9 @@ def generate_markdown(
     lines: List[str] = []
     lines.append("# Confidence / Uncertainty Heatmap (Diagnostics-Only)")
     lines.append("")
-    lines.append("This report is generated **only** from diagnostics fields in a committed `*_diag.json` artifact.")
+    lines.append(
+        "This report is generated **only** from diagnostics fields in a committed `*_diag.json` artifact."
+    )
     lines.append("")
     lines.append(f"**Generated (UTC):** {now}")
     lines.append(f"**Input:** `{diag_path}`")
@@ -205,7 +209,9 @@ def generate_markdown(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate confidence/uncertainty heatmap from *_diag.json only.")
+    parser = argparse.ArgumentParser(
+        description="Generate confidence/uncertainty heatmap from *_diag.json only."
+    )
     parser.add_argument(
         "--diag",
         default="results/gpt52_thinking_1000_default_council_1000_diag.json",
@@ -234,5 +240,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

@@ -16,20 +16,14 @@ Usage:
     result = await run_full_ensemble_pipeline(case_data)
 """
 
-import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from constitutional_ai.audit import AuditLogger
-from constitutional_ai.decision_fusion import DecisionFusion, FusionMethod
-from constitutional_ai.override import ConstitutionalOverride, OverrideResult
 from constitutional_ai.council.orchestrator import run_council_deliberation
-from constitutional_ai.schemas import (
-    AuditDecisionType,
-    ESILevel,
-    TriageDecision,
-)
+from constitutional_ai.decision_fusion import DecisionFusion
+from constitutional_ai.override import ConstitutionalOverride
 
 logger = logging.getLogger(__name__)
 
@@ -145,37 +139,47 @@ class ConstitutionalAIIntegration:
 
         # Enhance result with Constitutional AI review
         enhanced_result = council_result.copy()
-        enhanced_result.update({
-            # Constitutional AI metadata
-            "constitutional_ai_enabled": True,
-            "constitutional_override": {
-                "triggered": override_result.override_triggered,
-                "original_esi": override_result.original_esi,
-                "revised_esi": override_result.revised_esi,
-                "max_severity": override_result.max_severity,
-                "violated_principles": [v.principle_name for v in override_result.violated_principles],
-                "supervisor_reasoning": override_result.supervisor_reasoning,
-                "supervisor_confidence": override_result.supervisor_confidence,
-            },
-            "decision_fusion": {
-                "method": fusion_result.method.value,
-                "gpt_esi": fusion_result.gpt_esi,
-                "claude_esi": fusion_result.claude_esi,
-                "reasoning_similarity": fusion_result.reasoning_similarity,
-                "agreement_level": fusion_result.agreement_level.value,
-                "council_required": fusion_result.council_required,
-            },
-            "council_deliberation": {
-                "invoked": council_deliberation is not None,
-                "rounds": council_deliberation.deliberation_rounds if council_deliberation else 0,
-                "consensus": council_deliberation.consensus_reached if council_deliberation else None,
-            } if self.enable_council else None,
-            # Final decision (may differ from council's original)
-            "final_esi": final_esi,
-            "constitutional_final_esi": final_esi,
-            "pre_constitutional_esi": council_esi,
-            "constitutional_latency_ms": constitutional_latency_ms,
-        })
+        enhanced_result.update(
+            {
+                # Constitutional AI metadata
+                "constitutional_ai_enabled": True,
+                "constitutional_override": {
+                    "triggered": override_result.override_triggered,
+                    "original_esi": override_result.original_esi,
+                    "revised_esi": override_result.revised_esi,
+                    "max_severity": override_result.max_severity,
+                    "violated_principles": [
+                        v.principle_name for v in override_result.violated_principles
+                    ],
+                    "supervisor_reasoning": override_result.supervisor_reasoning,
+                    "supervisor_confidence": override_result.supervisor_confidence,
+                },
+                "decision_fusion": {
+                    "method": fusion_result.method.value,
+                    "gpt_esi": fusion_result.gpt_esi,
+                    "claude_esi": fusion_result.claude_esi,
+                    "reasoning_similarity": fusion_result.reasoning_similarity,
+                    "agreement_level": fusion_result.agreement_level.value,
+                    "council_required": fusion_result.council_required,
+                },
+                "council_deliberation": {
+                    "invoked": council_deliberation is not None,
+                    "rounds": council_deliberation.deliberation_rounds
+                    if council_deliberation
+                    else 0,
+                    "consensus": council_deliberation.consensus_reached
+                    if council_deliberation
+                    else None,
+                }
+                if self.enable_council
+                else None,
+                # Final decision (may differ from council's original)
+                "final_esi": final_esi,
+                "constitutional_final_esi": final_esi,
+                "pre_constitutional_esi": council_esi,
+                "constitutional_latency_ms": constitutional_latency_ms,
+            }
+        )
 
         # Audit logging
         if self.enable_audit and final_esi != council_esi:

@@ -12,6 +12,7 @@ Usage:
     python scripts/build_whitepaper_md.py          # Write WHITEPAPER_FULL.md
     python scripts/build_whitepaper_md.py --check   # Verify committed file is up to date
 """
+
 from __future__ import annotations
 
 import argparse
@@ -145,11 +146,7 @@ def render_claim_reference(claim_id: str, claims: dict) -> str:
     access_date = get_latest_access_date(claim)
     date_str = f" | Last verified: {access_date}" if access_date else ""
 
-    return (
-        f"> **[{badge}]** {assertion}\n"
-        f"> {evidence_summary}\n"
-        f"> *Evidence: {sources}{date_str}*"
-    )
+    return f"> **[{badge}]** {assertion}\n> {evidence_summary}\n> *Evidence: {sources}{date_str}*"
 
 
 def resolve_claim_references(text: str, claims: dict) -> tuple[str, set[str]]:
@@ -235,13 +232,11 @@ def generate_epistemic_map(claims: dict) -> str:
     lines.append("")
     lines.append("## Summary")
     lines.append("")
-    lines.append(f"| Status | Count |")
-    lines.append(f"|--------|-------|")
+    lines.append("| Status | Count |")
+    lines.append("|--------|-------|")
     for status in STATUS_ORDER:
         if counts.get(status, 0) > 0:
-            lines.append(
-                f"| {status_labels.get(status, status)} | {counts[status]} |"
-            )
+            lines.append(f"| {status_labels.get(status, status)} | {counts[status]} |")
     lines.append(f"| **Total** | **{total}** |")
     lines.append("")
 
@@ -336,9 +331,7 @@ def build() -> tuple[str, list[str]]:
     orphaned = set(claims.keys()) - all_referenced
     if orphaned:
         for o in sorted(orphaned):
-            warnings.append(
-                f"  ORPHAN: {o} has YAML but is not referenced in any section"
-            )
+            warnings.append(f"  ORPHAN: {o} has YAML but is not referenced in any section")
 
     # 6. Check staleness
     stale = check_staleness(claims)
@@ -382,10 +375,7 @@ def main() -> None:
 
     if args.check:
         if not OUTPUT_FILE.exists():
-            print(
-                f"ERROR: {OUTPUT_FILE} does not exist. "
-                "Run without --check to generate it."
-            )
+            print(f"ERROR: {OUTPUT_FILE} does not exist. Run without --check to generate it.")
             sys.exit(1)
         committed = OUTPUT_FILE.read_text()
         if committed == generated:

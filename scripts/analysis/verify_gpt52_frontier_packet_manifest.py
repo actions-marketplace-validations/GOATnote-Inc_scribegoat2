@@ -34,7 +34,9 @@ def _write_json(path: Path, obj: Any) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Verify/regenerate GPT-5.2 frontier packet SHA256 manifest.")
+    parser = argparse.ArgumentParser(
+        description="Verify/regenerate GPT-5.2 frontier packet SHA256 manifest."
+    )
     parser.add_argument(
         "--manifest",
         default="docs/research/GPT52_FRONTIER_PACKET_SHA256_MANIFEST.json",
@@ -53,7 +55,7 @@ def main() -> None:
         raise SystemExit(f"manifest not found: {manifest_path}")
 
     m = _load(manifest_path)
-    files = (m.get("files") or {})
+    files = m.get("files") or {}
     if not isinstance(files, dict):
         raise SystemExit("manifest files must be an object mapping path->sha256")
 
@@ -99,5 +101,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

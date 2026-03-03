@@ -3,12 +3,11 @@
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
 
-from src.fhir.cli import cli, _find_presets, _print_presets
+from src.fhir.cli import _find_presets, _print_presets, cli
 
 
 class TestListPresets:
@@ -70,11 +69,16 @@ class TestGenerateCommand:
         """Generate with quickstart preset produces valid output."""
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-            ])
+            result = runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                ],
+            )
             assert result.exit_code == 0
             assert "Generated" in result.output
             assert (Path(tmpdir) / "manifest.json").exists()
@@ -83,12 +87,18 @@ class TestGenerateCommand:
         """--seed flag overrides spec seed."""
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-                "--seed", "99",
-            ])
+            result = runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                    "--seed",
+                    "99",
+                ],
+            )
             assert result.exit_code == 0
             assert "Seed: 99" in result.output
 
@@ -96,23 +106,34 @@ class TestGenerateCommand:
         """--use-case flag overrides spec use_case."""
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-                "--use-case", "safety_eval",
-            ])
+            result = runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                    "--use-case",
+                    "safety_eval",
+                ],
+            )
             assert result.exit_code == 0
             assert "Use case: safety_eval" in result.output
 
     def test_generate_nonexistent_spec(self):
         """Missing spec file produces error, not traceback."""
         runner = CliRunner()
-        result = runner.invoke(cli, [
-            "generate",
-            "--spec", "/tmp/does_not_exist_fhir_spec.yaml",
-            "--output", "/tmp/out",
-        ])
+        result = runner.invoke(
+            cli,
+            [
+                "generate",
+                "--spec",
+                "/tmp/does_not_exist_fhir_spec.yaml",
+                "--output",
+                "/tmp/out",
+            ],
+        )
         assert result.exit_code != 0
 
     def test_generate_invalid_yaml(self):
@@ -121,11 +142,16 @@ class TestGenerateCommand:
         with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False) as f:
             f.write("use_case: [bad yaml: {\n")
             f.flush()
-            result = runner.invoke(cli, [
-                "generate",
-                "--spec", f.name,
-                "--output", "/tmp/out",
-            ])
+            result = runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    f.name,
+                    "--output",
+                    "/tmp/out",
+                ],
+            )
         assert result.exit_code != 0
         assert "Invalid YAML" in result.output
 
@@ -135,11 +161,16 @@ class TestGenerateCommand:
         with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False) as f:
             f.write("- just\n- a\n- list\n")
             f.flush()
-            result = runner.invoke(cli, [
-                "generate",
-                "--spec", f.name,
-                "--output", "/tmp/out",
-            ])
+            result = runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    f.name,
+                    "--output",
+                    "/tmp/out",
+                ],
+            )
         assert result.exit_code != 0
         assert "YAML mapping" in result.output
 
@@ -147,11 +178,16 @@ class TestGenerateCommand:
         """Generated output directory contains bundle JSON files."""
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-            ])
+            runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                ],
+            )
             bundle_files = list(Path(tmpdir).rglob("bundles/**/*.json"))
             assert len(bundle_files) > 0
 
@@ -159,11 +195,16 @@ class TestGenerateCommand:
         """manifest.json is valid JSON with expected keys."""
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-            ])
+            runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                ],
+            )
             with open(Path(tmpdir) / "manifest.json") as f:
                 manifest = json.load(f)
             assert "total_bundles" in manifest
@@ -179,11 +220,16 @@ class TestValidateCommand:
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
             # Generate first
-            runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-            ])
+            runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                ],
+            )
             # Then validate
             result = runner.invoke(cli, ["validate", "--input", tmpdir])
             assert result.exit_code == 0
@@ -205,11 +251,16 @@ class TestStatsCommand:
         """Stats prints manifest info when available."""
         runner = CliRunner()
         with tempfile.TemporaryDirectory() as tmpdir:
-            runner.invoke(cli, [
-                "generate",
-                "--spec", "configs/fhir-gen/quickstart.yaml",
-                "--output", tmpdir,
-            ])
+            runner.invoke(
+                cli,
+                [
+                    "generate",
+                    "--spec",
+                    "configs/fhir-gen/quickstart.yaml",
+                    "--output",
+                    tmpdir,
+                ],
+            )
             result = runner.invoke(cli, ["stats", "--input", tmpdir])
             assert result.exit_code == 0
             assert "Seed:" in result.output

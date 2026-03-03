@@ -7,7 +7,6 @@ and independent circuit breakers.
 import os
 import tempfile
 
-
 from src.tsr.monitor.circuit_breaker import CircuitBreaker
 from src.tsr.monitor.collector import MetricCollector
 from src.tsr.monitor.incidents import IncidentManager

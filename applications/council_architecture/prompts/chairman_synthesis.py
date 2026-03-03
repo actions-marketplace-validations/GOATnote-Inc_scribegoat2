@@ -47,10 +47,7 @@ CRITICAL GUIDELINES:
 """
 
 
-def format_chairman_prompt(
-    member_assessments: list[dict],
-    peer_rankings: list[dict]
-) -> str:
+def format_chairman_prompt(member_assessments: list[dict], peer_rankings: list[dict]) -> str:
     """
     Format chairman synthesis prompt with council assessments
 
@@ -61,13 +58,15 @@ def format_chairman_prompt(
     Returns: formatted prompt string
     """
     # Format member assessments
-    assessments_str = "\n\n".join([
-        f"**Member {a['member_id']}** ({a['persona']}):\n"
-        f"ESI Level: {a['esi_pred']}\n"  # Changed from 'esi_level'
-        f"Rationale: {a['reasoning']}\n"  # Changed from 'rationale'
-        f"Confidence: {a['confidence']}"
-        for a in member_assessments
-    ])
+    assessments_str = "\n\n".join(
+        [
+            f"**Member {a['member_id']}** ({a['persona']}):\n"
+            f"ESI Level: {a['esi_pred']}\n"  # Changed from 'esi_level'
+            f"Rationale: {a['reasoning']}\n"  # Changed from 'rationale'
+            f"Confidence: {a['confidence']}"
+            for a in member_assessments
+        ]
+    )
 
     # Format peer rankings (optional, from peer critique layer)
     peer_summary = ""
@@ -75,15 +74,14 @@ def format_chairman_prompt(
         # New peer critique format: list of {head_name, rankings} dicts
         peer_summary = "\n\n**Peer Critique Summary:**\n"
         for critique in peer_rankings:
-            head = critique.get('head_name', 'Unknown')
-            rankings = critique.get('rankings', {})
+            head = critique.get("head_name", "Unknown")
+            rankings = critique.get("rankings", {})
             peer_summary += f"\n{head}'s rankings:\n"
             for opinion_label, rank_data in rankings.items():
-                rank = rank_data.get('rank', 'N/A')
-                justification = rank_data.get('justification', '')[:150]
+                rank = rank_data.get("rank", "N/A")
+                justification = rank_data.get("justification", "")[:150]
                 peer_summary += f"  - {opinion_label}: Rank {rank}/5 - {justification}\n"
 
     return CHAIRMAN_SYNTHESIS_PROMPT.format(
-        member_assessments=assessments_str,
-        peer_rankings=peer_summary
+        member_assessments=assessments_str, peer_rankings=peer_summary
     )

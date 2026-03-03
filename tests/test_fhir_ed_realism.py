@@ -6,7 +6,6 @@ MedicationAdministration, DocumentReference, and comorbidities.
 
 import base64
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -16,25 +15,27 @@ from src.fhir.generator import (
     generate_safety_eval_bundles,
     validate_bundle,
 )
-from src.fhir.resources import (
-    build_blood_pressure_observation,
-    build_condition,
-    build_diagnostic_report,
-    build_document_reference,
-    build_encounter,
-    build_medication_administration,
-    build_observation,
-    build_triage_observations,
-)
 from src.fhir.profiles import (
     validate_diagnostic_report as validate_diag_report,
+)
+from src.fhir.profiles import (
     validate_document_reference as validate_doc_ref,
+)
+from src.fhir.profiles import (
     validate_medication_administration as validate_med_admin,
+)
+from src.fhir.profiles import (
     validate_us_core_encounter,
     validate_us_core_observation,
 )
-from src.fhir.terminology import ED_LAB_PANELS, ED_LAB_PANEL_CODES
-
+from src.fhir.resources import (
+    build_blood_pressure_observation,
+    build_diagnostic_report,
+    build_document_reference,
+    build_medication_administration,
+    build_triage_observations,
+)
+from src.fhir.terminology import ED_LAB_PANELS
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -57,9 +58,7 @@ def _generate_bundles(conditions=None, count=None):
 def _get_resources(bundle, resource_type):
     """Extract resources of a given type from a bundle."""
     return [
-        e["resource"]
-        for e in bundle["entry"]
-        if e["resource"]["resourceType"] == resource_type
+        e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == resource_type
     ]
 
 
@@ -82,9 +81,7 @@ class TestComponentBloodPressure:
 
     def test_bp_has_components(self):
         """BP observation has systolic and diastolic components."""
-        bp = build_blood_pressure_observation(
-            patient_id="test-p1", systolic=120.0, diastolic=80.0
-        )
+        bp = build_blood_pressure_observation(patient_id="test-p1", systolic=120.0, diastolic=80.0)
         assert bp["resourceType"] == "Observation"
         assert len(bp["component"]) == 2
         codes = [c["code"]["coding"][0]["code"] for c in bp["component"]]
@@ -93,30 +90,22 @@ class TestComponentBloodPressure:
 
     def test_bp_no_top_level_value(self):
         """BP observation has no top-level valueQuantity."""
-        bp = build_blood_pressure_observation(
-            patient_id="test-p1", systolic=120.0, diastolic=80.0
-        )
+        bp = build_blood_pressure_observation(patient_id="test-p1", systolic=120.0, diastolic=80.0)
         assert "valueQuantity" not in bp
 
     def test_bp_panel_code(self):
         """BP observation uses LOINC 85354-9 panel code."""
-        bp = build_blood_pressure_observation(
-            patient_id="test-p1", systolic=120.0, diastolic=80.0
-        )
+        bp = build_blood_pressure_observation(patient_id="test-p1", systolic=120.0, diastolic=80.0)
         assert bp["code"]["coding"][0]["code"] == "85354-9"
 
     def test_bp_profile(self):
         """BP observation references the FHIR BP profile."""
-        bp = build_blood_pressure_observation(
-            patient_id="test-p1", systolic=120.0, diastolic=80.0
-        )
+        bp = build_blood_pressure_observation(patient_id="test-p1", systolic=120.0, diastolic=80.0)
         assert "http://hl7.org/fhir/StructureDefinition/bp" in bp["meta"]["profile"]
 
     def test_bp_passes_observation_validation(self):
         """BP observation passes US Core Observation validation."""
-        bp = build_blood_pressure_observation(
-            patient_id="test-p1", systolic=120.0, diastolic=80.0
-        )
+        bp = build_blood_pressure_observation(patient_id="test-p1", systolic=120.0, diastolic=80.0)
         valid, errors = validate_us_core_observation(bp)
         assert valid, f"BP validation failed: {errors}"
 
@@ -125,10 +114,7 @@ class TestComponentBloodPressure:
         bundles = _generate_bundles(["stemi"], count=1)
         for bundle in bundles:
             observations = _get_resources(bundle, "Observation")
-            bp_obs = [
-                o for o in observations
-                if o["code"]["coding"][0]["code"] == "85354-9"
-            ]
+            bp_obs = [o for o in observations if o["code"]["coding"][0]["code"] == "85354-9"]
             assert len(bp_obs) >= 1, "STEMI bundle should have BP observations"
             for bp in bp_obs:
                 assert "component" in bp
@@ -210,21 +196,25 @@ class TestTriageData:
     def test_triage_observations_count(self):
         """Triage returns 2 observations (no pain) or 3 (with pain)."""
         obs = build_triage_observations(
-            patient_id="p1", esi_level=2,
+            patient_id="p1",
+            esi_level=2,
             chief_complaint_text="Chest pain",
         )
         assert len(obs) == 2
 
         obs_with_pain = build_triage_observations(
-            patient_id="p1", esi_level=1,
-            chief_complaint_text="Chest pain", pain_score=8,
+            patient_id="p1",
+            esi_level=1,
+            chief_complaint_text="Chest pain",
+            pain_score=8,
         )
         assert len(obs_with_pain) == 3
 
     def test_esi_observation(self):
         """ESI observation has correct LOINC and valueInteger."""
         obs = build_triage_observations(
-            patient_id="p1", esi_level=2,
+            patient_id="p1",
+            esi_level=2,
             chief_complaint_text="Test",
         )
         esi = obs[0]
@@ -235,7 +225,8 @@ class TestTriageData:
     def test_chief_complaint_observation(self):
         """Chief complaint observation has correct LOINC and valueString."""
         obs = build_triage_observations(
-            patient_id="p1", esi_level=2,
+            patient_id="p1",
+            esi_level=2,
             chief_complaint_text="Crushing chest pain",
         )
         cc = obs[1]
@@ -246,16 +237,10 @@ class TestTriageData:
         """Generated bundles contain triage observations."""
         bundles = _generate_bundles(["stemi"], count=1)
         observations = _get_resources(bundles[0], "Observation")
-        esi_obs = [
-            o for o in observations
-            if o["code"]["coding"][0]["code"] == "75636-1"
-        ]
+        esi_obs = [o for o in observations if o["code"]["coding"][0]["code"] == "75636-1"]
         assert len(esi_obs) >= 1, "Bundle should have ESI observation"
 
-        cc_obs = [
-            o for o in observations
-            if o["code"]["coding"][0]["code"] == "8661-1"
-        ]
+        cc_obs = [o for o in observations if o["code"]["coding"][0]["code"] == "8661-1"]
         assert len(cc_obs) >= 1, "Bundle should have chief complaint observation"
 
     def test_all_scenarios_have_chief_complaint(self):
@@ -277,27 +262,25 @@ class TestSerialVitals:
         bundles = _generate_bundles(["stemi"], count=1)
         observations = _get_resources(bundles[0], "Observation")
         vital_obs = [
-            o for o in observations
+            o
+            for o in observations
             if any(
-                c.get("coding", [{}])[0].get("code") == "vital-signs"
-                for c in o.get("category", [])
+                c.get("coding", [{}])[0].get("code") == "vital-signs" for c in o.get("category", [])
             )
         ]
         # STEMI should have 3 phases × (HR + BP + SpO2 + RR) = 12 vitals
         # (temp is None for all phases)
-        assert len(vital_obs) >= 6, (
-            f"STEMI should have serial vitals, got {len(vital_obs)}"
-        )
+        assert len(vital_obs) >= 6, f"STEMI should have serial vitals, got {len(vital_obs)}"
 
     def test_vitals_have_different_timestamps(self):
         """Serial vitals have distinct effectiveDateTime values."""
         bundles = _generate_bundles(["stemi"], count=1)
         observations = _get_resources(bundles[0], "Observation")
         vital_obs = [
-            o for o in observations
+            o
+            for o in observations
             if any(
-                c.get("coding", [{}])[0].get("code") == "vital-signs"
-                for c in o.get("category", [])
+                c.get("coding", [{}])[0].get("code") == "vital-signs" for c in o.get("category", [])
             )
         ]
         timestamps = set(o["effectiveDateTime"] for o in vital_obs)
@@ -310,10 +293,10 @@ class TestSerialVitals:
         bundles = _generate_bundles(["cardiac_arrest"], count=1)
         observations = _get_resources(bundles[0], "Observation")
         vital_obs = [
-            o for o in observations
+            o
+            for o in observations
             if any(
-                c.get("coding", [{}])[0].get("code") == "vital-signs"
-                for c in o.get("category", [])
+                c.get("coding", [{}])[0].get("code") == "vital-signs" for c in o.get("category", [])
             )
         ]
         # Only reassess_1 and reassess_2 phases have data
@@ -336,10 +319,25 @@ class TestLabPipeline:
     def test_ed_lab_panels_complete(self):
         """ED_LAB_PANELS has all 17 expected labs."""
         assert len(ED_LAB_PANELS) == 17
-        for key in ["troponin_i", "troponin_t", "lactate", "wbc", "hemoglobin",
-                     "platelets", "sodium", "potassium", "creatinine", "glucose",
-                     "bicarbonate", "blood_culture", "csf_wbc", "csf_glucose",
-                     "csf_protein", "ph_arterial", "inr"]:
+        for key in [
+            "troponin_i",
+            "troponin_t",
+            "lactate",
+            "wbc",
+            "hemoglobin",
+            "platelets",
+            "sodium",
+            "potassium",
+            "creatinine",
+            "glucose",
+            "bicarbonate",
+            "blood_culture",
+            "csf_wbc",
+            "csf_glucose",
+            "csf_protein",
+            "ph_arterial",
+            "inr",
+        ]:
             assert key in ED_LAB_PANELS, f"Missing lab: {key}"
             panel = ED_LAB_PANELS[key]
             assert "loinc" in panel
@@ -350,10 +348,10 @@ class TestLabPipeline:
         bundles = _generate_bundles(["stemi"], count=1)
         observations = _get_resources(bundles[0], "Observation")
         lab_obs = [
-            o for o in observations
+            o
+            for o in observations
             if any(
-                c.get("coding", [{}])[0].get("code") == "laboratory"
-                for c in o.get("category", [])
+                c.get("coding", [{}])[0].get("code") == "laboratory" for c in o.get("category", [])
             )
         ]
         assert len(lab_obs) >= 3, f"STEMI should have lab observations, got {len(lab_obs)}"
@@ -363,10 +361,10 @@ class TestLabPipeline:
         bundles = _generate_bundles(["stemi"], count=1)
         observations = _get_resources(bundles[0], "Observation")
         lab_obs = [
-            o for o in observations
+            o
+            for o in observations
             if any(
-                c.get("coding", [{}])[0].get("code") == "laboratory"
-                for c in o.get("category", [])
+                c.get("coding", [{}])[0].get("code") == "laboratory" for c in o.get("category", [])
             )
             and "valueQuantity" in o
         ]
@@ -408,8 +406,7 @@ class TestLabPipeline:
             o["code"]["coding"][0]["code"]
             for o in observations
             if any(
-                c.get("coding", [{}])[0].get("code") == "laboratory"
-                for c in o.get("category", [])
+                c.get("coding", [{}])[0].get("code") == "laboratory" for c in o.get("category", [])
             )
         ]
         csf_wbc_loinc = ED_LAB_PANELS["csf_wbc"]["loinc"]
@@ -558,9 +555,7 @@ class TestFullBundleValidation:
         for bundle in bundles:
             valid, errors = validate_bundle(bundle)
             scenario_name = _get_scenario_name(bundle) or "unknown"
-            assert valid, (
-                f"Bundle for {scenario_name} failed validation: {errors}"
-            )
+            assert valid, f"Bundle for {scenario_name} failed validation: {errors}"
 
     def test_stemi_e2e_resource_inventory(self):
         """STEMI bundle has all expected resource types."""
@@ -568,11 +563,19 @@ class TestFullBundleValidation:
         bundle = bundles[0]
         types = set(e["resource"]["resourceType"] for e in bundle["entry"])
         expected = {
-            "Patient", "Encounter", "Condition", "Observation",
-            "AllergyIntolerance", "MedicationRequest",
-            "MedicationAdministration", "DiagnosticReport",
-            "DocumentReference", "Organization", "Practitioner",
-            "Procedure", "ServiceRequest",
+            "Patient",
+            "Encounter",
+            "Condition",
+            "Observation",
+            "AllergyIntolerance",
+            "MedicationRequest",
+            "MedicationAdministration",
+            "DiagnosticReport",
+            "DocumentReference",
+            "Organization",
+            "Practitioner",
+            "Procedure",
+            "ServiceRequest",
         }
         missing = expected - types
         assert not missing, f"STEMI bundle missing resource types: {missing}"

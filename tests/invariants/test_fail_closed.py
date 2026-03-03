@@ -7,7 +7,6 @@ circuit breakers must default to OPEN (blocking all responses).
 import os
 import tempfile
 
-
 from src.tsr.monitor.circuit_breaker import CircuitBreaker
 from src.tsr.monitor.interfaces import BreakerState
 from src.tsr.monitor.state_store import StateStore

@@ -34,10 +34,11 @@ class AnthropicHierarchyTier(IntEnum):
     This hierarchy ensures safety always trumps helpfulness,
     directly addressing the "helpful capitulation" problem.
     """
+
     SAFETY_AND_OVERSIGHT = 1  # Being safe and supporting human oversight
-    ETHICAL_BEHAVIOR = 2      # Behaving ethically
+    ETHICAL_BEHAVIOR = 2  # Behaving ethically
     GUIDELINE_COMPLIANCE = 3  # Following Anthropic's guidelines
-    HELPFULNESS = 4           # Being genuinely helpful (NEVER overrides 1-3)
+    HELPFULNESS = 4  # Being genuinely helpful (NEVER overrides 1-3)
 
 
 class BehaviorType(str, Enum):
@@ -50,13 +51,15 @@ class BehaviorType(str, Enum):
     Softcoded behaviors have defaults that can be adjusted within
     defined boundaries by operators or users.
     """
-    HARDCODED = "hardcoded"          # Absolute, never overridable
-    SOFTCODED_DEFAULT_ON = "softcoded_default_on"    # On by default, adjustable
+
+    HARDCODED = "hardcoded"  # Absolute, never overridable
+    SOFTCODED_DEFAULT_ON = "softcoded_default_on"  # On by default, adjustable
     SOFTCODED_DEFAULT_OFF = "softcoded_default_off"  # Off by default, adjustable
 
 
 class PrincipleCategory(str, Enum):
     """Clinical categories of constitutional principles."""
+
     PATIENT_SAFETY = "patient_safety"
     CLINICAL_ACCURACY = "clinical_accuracy"
     EQUITY = "equity"
@@ -82,6 +85,7 @@ class ConstitutionalPrinciple:
         mimic_iv_reference: Optional reference to MIMIC-IV-ED data
         trajectory_invariant: Whether this principle applies to trajectory-level safety
     """
+
     name: str
     category: PrincipleCategory
     hierarchy_tier: AnthropicHierarchyTier
@@ -164,7 +168,6 @@ CLINICAL_CONSTITUTION: List[ConstitutionalPrinciple] = [
         override_action="Escalate to ESI 1; immediate ECG and cardiology notification",
         trajectory_invariant=True,
     ),
-
     # =========================================================================
     # CLINICAL ACCURACY PRINCIPLES (5-8)
     # Mix of Tier 1 (hallucination) and Tier 3 (guidelines)
@@ -210,7 +213,6 @@ CLINICAL_CONSTITUTION: List[ConstitutionalPrinciple] = [
         severity_weight=2,
         override_action="Adjust ESI if resource mismatch detected",
     ),
-
     # =========================================================================
     # EQUITY PRINCIPLES (9-10)
     # Hierarchy Tier 2: ETHICAL_BEHAVIOR
@@ -238,7 +240,6 @@ CLINICAL_CONSTITUTION: List[ConstitutionalPrinciple] = [
         override_action="Remove insurance context; re-evaluate with clinical factors only",
         mimic_iv_reference="Medicaid patients show worse model prediction performance",
     ),
-
     # =========================================================================
     # PROFESSIONAL BOUNDARIES PRINCIPLES (11-12)
     # Hierarchy Tier 1 (escalation) and Tier 3 (scope)
@@ -270,8 +271,7 @@ CLINICAL_CONSTITUTION: List[ConstitutionalPrinciple] = [
 # Quick lookup dictionaries
 PRINCIPLES_BY_NAME = {p.name: p for p in CLINICAL_CONSTITUTION}
 PRINCIPLES_BY_CATEGORY = {
-    cat: [p for p in CLINICAL_CONSTITUTION if p.category == cat]
-    for cat in PrincipleCategory
+    cat: [p for p in CLINICAL_CONSTITUTION if p.category == cat] for cat in PrincipleCategory
 }
 
 
@@ -327,6 +327,7 @@ DEMOGRAPHIC_BIAS_REFERENCE = {
 # =============================================================================
 # ANTHROPIC HIERARCHY UTILITIES
 # =============================================================================
+
 
 def get_hardcoded_principles() -> List[ConstitutionalPrinciple]:
     """Get all hardcoded principles (absolute, never overridable)."""

@@ -6,35 +6,34 @@ Tests the template system for generating 4,200 medical AI safety scenarios.
 """
 
 import pytest
-from typing import List
 
-from evaluation.bloom_eval_v2.scenarios.loader import Scenario, ScenarioType, Turn
+from evaluation.bloom_eval_v2.scenarios.loader import ScenarioType
 from evaluation.bloom_eval_v2.scenarios.templates.base import (
-    ScenarioTemplate,
-    TurnTemplate,
-    BarrierType,
-    AgeGroup,
-    Country,
-    CountryContext,
-    DemographicProfile,
     AGE_GROUP_RANGES,
     BARRIER_PROMPTS,
     COUNTRY_CONTEXTS,
+    AgeGroup,
+    BarrierType,
+    Country,
+    CountryContext,
+    DemographicProfile,
+    ScenarioTemplate,
+    TurnTemplate,
+)
+from evaluation.bloom_eval_v2.scenarios.templates.domain_cardiovascular import (
+    AORTIC_DISSECTION_TEMPLATE,
+    BENIGN_PALPITATIONS_DEFER_TEMPLATE,
+    CARDIOVASCULAR_DEFER_TEMPLATES,
+    CARDIOVASCULAR_ESCALATION_TEMPLATES,
+    PULMONARY_EMBOLISM_TEMPLATE,
+    STABLE_ANGINA_DEFER_TEMPLATE,
+    STEMI_TEMPLATE,
+    generate_cardiovascular_scenarios,
 )
 from evaluation.bloom_eval_v2.scenarios.templates.generator import (
     ScenarioVariantGenerator,
     VariantConfig,
     generate_scenario_id,
-)
-from evaluation.bloom_eval_v2.scenarios.templates.domain_cardiovascular import (
-    STEMI_TEMPLATE,
-    AORTIC_DISSECTION_TEMPLATE,
-    PULMONARY_EMBOLISM_TEMPLATE,
-    STABLE_ANGINA_DEFER_TEMPLATE,
-    BENIGN_PALPITATIONS_DEFER_TEMPLATE,
-    CARDIOVASCULAR_ESCALATION_TEMPLATES,
-    CARDIOVASCULAR_DEFER_TEMPLATES,
-    generate_cardiovascular_scenarios,
 )
 
 
@@ -262,9 +261,7 @@ class TestScenarioVariantGenerator:
     def test_over_escalation_patterns_for_defer(self):
         """Defer scenarios have over-escalation patterns."""
         generator = ScenarioVariantGenerator(seed=42)
-        scenarios = generator.generate_from_template(
-            STABLE_ANGINA_DEFER_TEMPLATE, target_count=3
-        )
+        scenarios = generator.generate_from_template(STABLE_ANGINA_DEFER_TEMPLATE, target_count=3)
 
         for scenario in scenarios:
             for turn in scenario.turns:
@@ -291,7 +288,10 @@ class TestCardiovascularDomain:
 
     def test_stemi_template_clinical_accuracy(self):
         """STEMI template has appropriate clinical content."""
-        assert "STEMI" in STEMI_TEMPLATE.base_condition or "myocardial infarction" in STEMI_TEMPLATE.base_condition
+        assert (
+            "STEMI" in STEMI_TEMPLATE.base_condition
+            or "myocardial infarction" in STEMI_TEMPLATE.base_condition
+        )
         assert STEMI_TEMPLATE.time_to_harm_hours is not None
         assert STEMI_TEMPLATE.mortality_if_delayed is not None
         assert "chest" in STEMI_TEMPLATE.red_flags[0].lower() or any(
@@ -301,8 +301,10 @@ class TestCardiovascularDomain:
     def test_aortic_dissection_template_urgency(self):
         """Aortic dissection template reflects appropriate urgency."""
         assert AORTIC_DISSECTION_TEMPLATE.esi_level == 1
-        assert "tearing" in AORTIC_DISSECTION_TEMPLATE.base_description.lower() or \
-               "back" in AORTIC_DISSECTION_TEMPLATE.base_description.lower()
+        assert (
+            "tearing" in AORTIC_DISSECTION_TEMPLATE.base_description.lower()
+            or "back" in AORTIC_DISSECTION_TEMPLATE.base_description.lower()
+        )
 
     def test_pulmonary_embolism_risk_factors(self):
         """PE template includes relevant risk factors."""
@@ -424,15 +426,16 @@ class TestScenarioIntegrity:
     def test_no_phi_in_templates(self):
         """Templates don't contain obvious PHI patterns."""
         import re
+
         # Check all cardiovascular templates
         for template in CARDIOVASCULAR_ESCALATION_TEMPLATES + CARDIOVASCULAR_DEFER_TEMPLATES:
             template_str = str(template)
             # Should not contain SSN patterns (XXX-XX-XXXX)
-            assert not re.search(r'\d{3}-\d{2}-\d{4}', template_str), "SSN pattern found"
+            assert not re.search(r"\d{3}-\d{2}-\d{4}", template_str), "SSN pattern found"
             # Should not contain phone patterns (XXX-XXX-XXXX)
-            assert not re.search(r'\d{3}-\d{3}-\d{4}', template_str), "Phone pattern found"
+            assert not re.search(r"\d{3}-\d{3}-\d{4}", template_str), "Phone pattern found"
             # Should not contain MRN patterns (typically 6+ consecutive digits)
-            assert not re.search(r'\b\d{6,}\b', template_str), "MRN pattern found"
+            assert not re.search(r"\b\d{6,}\b", template_str), "MRN pattern found"
             # Should not contain specific names (simplified check)
             assert "John Doe" not in template_str
             assert "Jane Doe" not in template_str

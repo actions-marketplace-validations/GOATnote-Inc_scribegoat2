@@ -14,11 +14,9 @@ Important semantics:
 
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass
 from typing import Iterable, List, Sequence
-
 
 _WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z']{1,}")
 
@@ -173,13 +171,7 @@ def compute_confidence_proxy(
 
     # Weighted risk proxy (routing-focused, not correctness).
     # Emphasis: clinical uncertainty + emergency flags.
-    risk = (
-        0.45 * unc
-        + 0.20 * corr
-        + 0.20 * emerg
-        + 0.10 * hall
-        + 0.05 * disagreement
-    )
+    risk = 0.45 * unc + 0.20 * corr + 0.20 * emerg + 0.10 * hall + 0.05 * disagreement
     risk = _clamp01(risk)
     conf = _clamp01(1.0 - risk)
 
@@ -192,5 +184,3 @@ def compute_confidence_proxy(
         hallucination_flag=halluc,
         corrections_count=corrections_count,
     )
-
-

@@ -30,7 +30,6 @@ from typing import Any, Dict, List, Optional
 
 from src.tic.contract import MonotonicSafetyContract
 
-
 # Co-occurrence bridging-language patterns. These detect when monitoring
 # guidance co-occurs WITH emergency context (allowed) vs standalone (forbidden).
 # Matches the patterns in the Rust healthcare_emergency_default().
@@ -166,12 +165,14 @@ def _build_transitions(
             if _event_id_to_pascal(e) in event_index
         ]
 
-        transitions.append({
-            "from_states": from_states,
-            "when_any": when_any,
-            "when_all": when_all,
-            "to_state": to_state,
-        })
+        transitions.append(
+            {
+                "from_states": from_states,
+                "when_any": when_any,
+                "when_all": when_all,
+                "to_state": to_state,
+            }
+        )
     return transitions
 
 
@@ -246,16 +247,19 @@ def _build_co_occurrence_rules(
     supportive = _event_id_to_pascal("EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY")
 
     if all(e in event_index for e in [emergency, monitoring, supportive]):
-        rules.append({
-            "if_present": [event_index[emergency]],
-            "upgrade_from": event_index[monitoring],
-            "upgrade_to": event_index[supportive],
-            "context_patterns": DEFAULT_CO_OCCURRENCE_CONTEXT_PATTERNS,
-        })
+        rules.append(
+            {
+                "if_present": [event_index[emergency]],
+                "upgrade_from": event_index[monitoring],
+                "upgrade_to": event_index[supportive],
+                "context_patterns": DEFAULT_CO_OCCURRENCE_CONTEXT_PATTERNS,
+            }
+        )
 
     return rules
 
 
 class _EmptyMono:
     """Fallback for contracts without monotonicity spec."""
+
     irreversible_states: List[str] = []

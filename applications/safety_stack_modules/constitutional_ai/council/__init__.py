@@ -17,13 +17,13 @@ The council is invoked when:
 """
 
 from constitutional_ai.council.agents import (
-    create_clinical_council,
     ClinicalCouncil,
     CouncilConfig,
+    create_clinical_council,
 )
 from constitutional_ai.council.orchestrator import (
-    run_council_deliberation,
     CouncilResult,
+    run_council_deliberation,
 )
 
 __all__ = [

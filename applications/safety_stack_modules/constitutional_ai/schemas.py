@@ -18,23 +18,25 @@ from uuid import uuid4
 from pydantic import (
     BaseModel,
     Field,
+    computed_field,
     field_validator,
     model_validator,
-    computed_field,
 )
 
 
 class ESILevel(int, Enum):
     """Emergency Severity Index levels."""
+
     RESUSCITATION = 1  # Immediate life-saving intervention
-    EMERGENT = 2       # High risk, time-sensitive condition
-    URGENT = 3         # Stable but needs multiple resources
-    LESS_URGENT = 4    # Stable, needs one resource
-    NON_URGENT = 5     # Stable, no resources needed
+    EMERGENT = 2  # High risk, time-sensitive condition
+    URGENT = 3  # Stable but needs multiple resources
+    LESS_URGENT = 4  # Stable, needs one resource
+    NON_URGENT = 5  # Stable, no resources needed
 
 
 class AuditDecisionType(str, Enum):
     """Types of audit decisions."""
+
     CONSENSUS = "consensus"
     OVERRIDE = "override"
     COUNCIL = "council_deliberation"
@@ -43,6 +45,7 @@ class AuditDecisionType(str, Enum):
 
 class ArrivalMode(str, Enum):
     """Patient arrival mode to ED."""
+
     AMBULATORY = "ambulatory"
     WHEELCHAIR = "wheelchair"
     STRETCHER = "stretcher"
@@ -56,37 +59,19 @@ class VitalSigns(BaseModel):
     Includes computed properties for derived metrics like Shock Index and MAP.
     """
 
-    heart_rate: Annotated[
-        int,
-        Field(ge=30, le=250, description="Beats per minute")
-    ]
-    systolic_bp: Annotated[
-        int,
-        Field(ge=50, le=300, description="Systolic blood pressure in mmHg")
-    ]
+    heart_rate: Annotated[int, Field(ge=30, le=250, description="Beats per minute")]
+    systolic_bp: Annotated[int, Field(ge=50, le=300, description="Systolic blood pressure in mmHg")]
     diastolic_bp: Annotated[
-        int,
-        Field(ge=30, le=200, description="Diastolic blood pressure in mmHg")
+        int, Field(ge=30, le=200, description="Diastolic blood pressure in mmHg")
     ]
-    respiratory_rate: Annotated[
-        int,
-        Field(ge=6, le=60, description="Breaths per minute")
-    ]
-    oxygen_saturation: Annotated[
-        int,
-        Field(ge=0, le=100, description="SpO2 percentage")
-    ]
+    respiratory_rate: Annotated[int, Field(ge=6, le=60, description="Breaths per minute")]
+    oxygen_saturation: Annotated[int, Field(ge=0, le=100, description="SpO2 percentage")]
     temperature_f: Annotated[
-        float,
-        Field(ge=90.0, le=110.0, description="Temperature in Fahrenheit")
+        float, Field(ge=90.0, le=110.0, description="Temperature in Fahrenheit")
     ]
-    gcs: Annotated[
-        int,
-        Field(ge=3, le=15, description="Glasgow Coma Scale total score")
-    ]
+    gcs: Annotated[int, Field(ge=3, le=15, description="Glasgow Coma Scale total score")]
     pain_score: Optional[Annotated[int, Field(ge=0, le=10)]] = Field(
-        default=None,
-        description="Pain score 0-10"
+        default=None, description="Pain score 0-10"
     )
 
     @computed_field
@@ -127,14 +112,13 @@ class VitalSigns(BaseModel):
         """SpO2 < 92% indicates hypoxia."""
         return self.oxygen_saturation < 92
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_clinical_consistency(self):
         """Flag physiologically impossible or suspicious combinations."""
         # Extreme tachycardia with severe hypertension is rare
         if self.heart_rate > 180 and self.systolic_bp > 200:
             raise ValueError(
-                "HR >180 with SBP >200 is physiologically inconsistent; "
-                "verify vital sign accuracy"
+                "HR >180 with SBP >200 is physiologically inconsistent; verify vital sign accuracy"
             )
         # Diastolic should not exceed systolic
         if self.diastolic_bp >= self.systolic_bp:
@@ -153,14 +137,9 @@ class ClinicalCase(BaseModel):
     vital signs, and clinical presentation.
     """
 
-    case_id: str = Field(
-        ...,
-        min_length=8,
-        description="Unique case identifier"
-    )
+    case_id: str = Field(..., min_length=8, description="Unique case identifier")
     encounter_datetime: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Timestamp of patient encounter"
+        default_factory=datetime.utcnow, description="Timestamp of patient encounter"
     )
 
     # Demographics
@@ -169,10 +148,7 @@ class ClinicalCase(BaseModel):
 
     # Clinical presentation
     chief_complaint: str = Field(
-        ...,
-        min_length=5,
-        max_length=500,
-        description="Primary reason for ED visit"
+        ..., min_length=5, max_length=500, description="Primary reason for ED visit"
     )
     vitals: VitalSigns
 
@@ -189,15 +165,13 @@ class ClinicalCase(BaseModel):
     esi_true: Optional[ESILevel] = None
     critical_outcome: Optional[bool] = None
 
-    @field_validator('case_id')
+    @field_validator("case_id")
     @classmethod
     def validate_case_id_format(cls, v: str) -> str:
         """Validate case ID follows expected format."""
-        valid_prefixes = ('ED-', 'TRIAGE-', 'MIMIC-', 'SYNTH-', 'TEST-')
+        valid_prefixes = ("ED-", "TRIAGE-", "MIMIC-", "SYNTH-", "TEST-")
         if not any(v.startswith(prefix) for prefix in valid_prefixes):
-            raise ValueError(
-                f"Case ID must start with one of: {valid_prefixes}"
-            )
+            raise ValueError(f"Case ID must start with one of: {valid_prefixes}")
         return v
 
     @computed_field
@@ -223,8 +197,7 @@ class TriageDecision(BaseModel):
     # Identification
     case_id: str
     decision_id: str = Field(
-        default_factory=lambda: str(uuid4()),
-        description="Unique decision identifier"
+        default_factory=lambda: str(uuid4()), description="Unique decision identifier"
     )
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
@@ -232,9 +205,7 @@ class TriageDecision(BaseModel):
     esi_level: ESILevel
     confidence: Annotated[float, Field(ge=0.0, le=1.0)]
     reasoning_trace: str = Field(
-        ...,
-        min_length=10,
-        description="Chain-of-thought reasoning for the decision"
+        ..., min_length=10, description="Chain-of-thought reasoning for the decision"
     )
 
     # Constitutional review results
@@ -260,18 +231,14 @@ class TriageDecision(BaseModel):
     requires_physician_review: bool = True
     autonomous_decision: bool = False
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_override_consistency(self):
         """Ensure override metadata is consistent."""
         if self.override_applied:
             if self.original_esi is None:
-                raise ValueError(
-                    "original_esi required when override_applied is True"
-                )
+                raise ValueError("original_esi required when override_applied is True")
             if not self.violated_principles:
-                raise ValueError(
-                    "violated_principles required when override_applied is True"
-                )
+                raise ValueError("violated_principles required when override_applied is True")
         return self
 
 
@@ -294,12 +261,10 @@ class AuditTrailEntry(BaseModel):
 
     # Identification
     audit_id: str = Field(
-        default_factory=lambda: str(uuid4()),
-        description="UUID for this audit entry"
+        default_factory=lambda: str(uuid4()), description="UUID for this audit entry"
     )
     case_id: str = Field(
-        ...,
-        description="Patient encounter identifier (should be hashed for storage)"
+        ..., description="Patient encounter identifier (should be hashed for storage)"
     )
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
@@ -336,15 +301,11 @@ class AuditTrailEntry(BaseModel):
 
     # Cryptographic integrity (for tamper-evident logging)
     previous_audit_hash: Optional[str] = Field(
-        default=None,
-        description="Hash of previous audit entry for chain integrity"
+        default=None, description="Hash of previous audit entry for chain integrity"
     )
-    entry_hash: Optional[str] = Field(
-        default=None,
-        description="Hash of this entry's contents"
-    )
+    entry_hash: Optional[str] = Field(default=None, description="Hash of this entry's contents")
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_esi_change(self):
         """Ensure ESI changes are logged correctly."""
         if self.override_triggered:

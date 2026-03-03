@@ -17,8 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import statistics
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
@@ -209,7 +208,9 @@ def main() -> None:
     hi_unc_nonabst = [
         r
         for r in rows
-        if (r["abstained"] is False) and (r["clinical_uncertainty_score"] >= 0.6) and (r["score"] <= 40.0)
+        if (r["abstained"] is False)
+        and (r["clinical_uncertainty_score"] >= 0.6)
+        and (r["score"] <= 40.0)
     ]
     # "Many corrections but non-abstained": potential policy threshold mismatch.
     many_corr_nonabst = [
@@ -218,10 +219,14 @@ def main() -> None:
 
     # High-risk queues: emergency/hallucination low-score non-abstained
     emergency_low_nonabst = [
-        r for r in rows if (r["abstained"] is False) and (r["score"] <= 20.0) and r["emergency_flag"]
+        r
+        for r in rows
+        if (r["abstained"] is False) and (r["score"] <= 20.0) and r["emergency_flag"]
     ]
     halluc_low_nonabst = [
-        r for r in rows if (r["abstained"] is False) and (r["score"] <= 20.0) and r["hallucination_flag"]
+        r
+        for r in rows
+        if (r["abstained"] is False) and (r["score"] <= 20.0) and r["hallucination_flag"]
     ]
 
     # Summarize top rules overall and in key subsets
@@ -236,7 +241,9 @@ def main() -> None:
         return c.most_common(15)
 
     top_rules_low_score_nonabst = _top_rules_for([r["prompt_id"] for r in low_score_nonabst])
-    top_rules_emergency_low_nonabst = _top_rules_for([r["prompt_id"] for r in emergency_low_nonabst])
+    top_rules_emergency_low_nonabst = _top_rules_for(
+        [r["prompt_id"] for r in emergency_low_nonabst]
+    )
     top_rules_halluc_low_nonabst = _top_rules_for([r["prompt_id"] for r in halluc_low_nonabst])
 
     # Meta provenance anchors
@@ -280,30 +287,53 @@ def main() -> None:
             "low_score_non_abstained": {
                 "definition": "score<=20 AND abstained==False",
                 "count": len(low_score_nonabst),
-                "example_prompt_ids": [r["prompt_id"] for r in sorted(low_score_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[:25]],
+                "example_prompt_ids": [
+                    r["prompt_id"]
+                    for r in sorted(low_score_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[
+                        :25
+                    ]
+                ],
                 "top_rules": top_rules_low_score_nonabst,
                 "note": "Use this as a tail-risk queue; do not interpret confidence_score as calibrated unless it varies meaningfully.",
             },
             "high_clinical_uncertainty_low_score_non_abstained": {
                 "definition": "score<=40 AND clinical_uncertainty_score>=0.6 AND abstained==False",
                 "count": len(hi_unc_nonabst),
-                "example_prompt_ids": [r["prompt_id"] for r in sorted(hi_unc_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[:25]],
+                "example_prompt_ids": [
+                    r["prompt_id"]
+                    for r in sorted(hi_unc_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[:25]
+                ],
             },
             "many_corrections_non_abstained": {
                 "definition": "corrections_count>=3 AND abstained==False",
                 "count": len(many_corr_nonabst),
-                "example_prompt_ids": [r["prompt_id"] for r in sorted(many_corr_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[:25]],
+                "example_prompt_ids": [
+                    r["prompt_id"]
+                    for r in sorted(many_corr_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[
+                        :25
+                    ]
+                ],
             },
             "emergency_low_score_non_abstained": {
                 "definition": "score<=20 AND emergency_flag==True AND abstained==False",
                 "count": len(emergency_low_nonabst),
-                "example_prompt_ids": [r["prompt_id"] for r in sorted(emergency_low_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[:25]],
+                "example_prompt_ids": [
+                    r["prompt_id"]
+                    for r in sorted(
+                        emergency_low_nonabst, key=lambda x: (x["score"], x["prompt_id"])
+                    )[:25]
+                ],
                 "top_rules": top_rules_emergency_low_nonabst,
             },
             "hallucination_low_score_non_abstained": {
                 "definition": "score<=20 AND hallucination_flag==True AND abstained==False",
                 "count": len(halluc_low_nonabst),
-                "example_prompt_ids": [r["prompt_id"] for r in sorted(halluc_low_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[:25]],
+                "example_prompt_ids": [
+                    r["prompt_id"]
+                    for r in sorted(halluc_low_nonabst, key=lambda x: (x["score"], x["prompt_id"]))[
+                        :25
+                    ]
+                ],
                 "top_rules": top_rules_halluc_low_nonabst,
             },
         },
@@ -318,7 +348,9 @@ def main() -> None:
     md.append(f"**Source:** `{args.graded}`, `{args.diag}`  ")
     md.append(f"**Meta:** `{args.meta}`")
     md.append("")
-    md.append("This report is **forensic**: it extracts systematic patterns from committed telemetry. It does **not** grade or assert clinical correctness.")
+    md.append(
+        "This report is **forensic**: it extracts systematic patterns from committed telemetry. It does **not** grade or assert clinical correctness."
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -346,13 +378,19 @@ def main() -> None:
     md.append("")
     md.append("## Observability / instrumentation sanity checks")
     md.append("")
-    md.append(f"- `confidence_score` distinct values: {len(confidence_values)} (top: {confidence_values.most_common(3)})")
-    md.append(f"- `uncertainty_score` distinct values: {len(uncertainty_values)} (top: {uncertainty_values.most_common(3)})")
+    md.append(
+        f"- `confidence_score` distinct values: {len(confidence_values)} (top: {confidence_values.most_common(3)})"
+    )
+    md.append(
+        f"- `uncertainty_score` distinct values: {len(uncertainty_values)} (top: {uncertainty_values.most_common(3)})"
+    )
     md.append("- `clinical_uncertainty_score` percentiles:")
     for k, v in out["observability"]["clinical_uncertainty_percentiles"].items():
         md.append(f"  - {k}: {v:.6f}")
     md.append("")
-    md.append("Interpretation note: if confidence_score/uncertainty_score are constant defaults, they cannot support calibration/overconfidence conclusions.")
+    md.append(
+        "Interpretation note: if confidence_score/uncertainty_score are constant defaults, they cannot support calibration/overconfidence conclusions."
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -377,7 +415,9 @@ def main() -> None:
     md.append("")
     md.append("## Failure taxonomies (telemetry-derived signatures)")
     md.append("")
-    md.append("These are *signatures* with deterministic definitions and prompt_id lists for downstream review.")
+    md.append(
+        "These are *signatures* with deterministic definitions and prompt_id lists for downstream review."
+    )
     md.append("")
 
     def _sig_block(key: str) -> None:
@@ -404,13 +444,25 @@ def main() -> None:
     md.append("")
     md.append("## Patchable patterns (what to change to target which signatures)")
     md.append("")
-    md.append("These are engineering hypotheses anchored in the above signatures and rule activations (not clinical ground truth).")
+    md.append(
+        "These are engineering hypotheses anchored in the above signatures and rule activations (not clinical ground truth)."
+    )
     md.append("")
-    md.append("- **Red-flag escalation hard-gating** targets `emergency_low_score_non_abstained` by forcing constrained escalation UX and preventing unsafe reassurance/verbosity in emergencies.")
-    md.append("- **No-invented-specifics hard constraint** targets `hallucination_low_score_non_abstained` and any cases with extrapolation warnings.")
-    md.append("- **Uncertainty/calibration instrumentation upgrade**: if `confidence_score`/`uncertainty_score` are constant, downstream systems cannot use them for safe routing; add a real uncertainty estimator and validate it against tail-risk slices.")
-    md.append("- **Abstention threshold calibration (as an ablation)** targets `many_corrections_non_abstained` (cases that pass through despite multiple safety rules).")
-    md.append("- **Non-English routing** targets `non_english_flagged` cases by forcing language-aware disclaimers and safe navigation templates.")
+    md.append(
+        "- **Red-flag escalation hard-gating** targets `emergency_low_score_non_abstained` by forcing constrained escalation UX and preventing unsafe reassurance/verbosity in emergencies."
+    )
+    md.append(
+        "- **No-invented-specifics hard constraint** targets `hallucination_low_score_non_abstained` and any cases with extrapolation warnings."
+    )
+    md.append(
+        "- **Uncertainty/calibration instrumentation upgrade**: if `confidence_score`/`uncertainty_score` are constant, downstream systems cannot use them for safe routing; add a real uncertainty estimator and validate it against tail-risk slices."
+    )
+    md.append(
+        "- **Abstention threshold calibration (as an ablation)** targets `many_corrections_non_abstained` (cases that pass through despite multiple safety rules)."
+    )
+    md.append(
+        "- **Non-English routing** targets `non_english_flagged` cases by forcing language-aware disclaimers and safe navigation templates."
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -446,5 +498,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

@@ -65,13 +65,13 @@ def _print_presets() -> None:
     print(f"{'─' * (name_width + 2)} {'─' * 50}")
     for p in presets:
         print(f"{p['name']:<{name_width + 2}} {p['description']}")
-    print(f"\nUsage: scribegoat-fhir generate --spec configs/fhir-gen/<preset>.yaml --output <dir>")
-    print(f"Schema reference: configs/fhir-gen/schema.yaml\n")
+    print("\nUsage: scribegoat-fhir generate --spec configs/fhir-gen/<preset>.yaml --output <dir>")
+    print("Schema reference: configs/fhir-gen/schema.yaml\n")
 
 
 def _run_generate(spec_path: str, output_dir: str, seed: int, use_case: str | None) -> None:
     """Generate synthetic FHIR bundles from a spec."""
-    from src.fhir.generator import load_spec, generate_all, write_output
+    from src.fhir.generator import generate_all, load_spec, write_output
 
     try:
         spec = load_spec(spec_path)
@@ -97,9 +97,7 @@ def _run_generate(spec_path: str, output_dir: str, seed: int, use_case: str | No
     for category, bundle_list in bundles.items():
         print(f"  {category}: {len(bundle_list)}")
 
-    output = write_output(
-        bundles, output_dir, spec_path=spec_path, seed=spec["generation"]["seed"]
-    )
+    output = write_output(bundles, output_dir, spec_path=spec_path, seed=spec["generation"]["seed"])
     print(f"\nOutput written to: {output}")
 
     # Print validation summary
@@ -107,7 +105,7 @@ def _run_generate(spec_path: str, output_dir: str, seed: int, use_case: str | No
     if manifest_path.exists():
         with open(manifest_path) as f:
             manifest = json.load(f)
-        print(f"\nValidation summary:")
+        print("\nValidation summary:")
         for cat, summary in manifest.get("validation", {}).items():
             print(f"  {cat}: {summary['valid']}/{summary['total']} valid")
 
@@ -167,10 +165,10 @@ def _run_stats(input_dir: str) -> None:
         print(f"  Total bundles: {manifest.get('total_bundles')}")
         print(f"  Unique bundles: {manifest.get('unique_bundles')}")
         print(f"  Duplicates: {manifest.get('duplicate_bundles')}")
-        print(f"\nCategories:")
+        print("\nCategories:")
         for cat, count in manifest.get("categories", {}).items():
             print(f"  {cat}: {count}")
-        print(f"\nValidation:")
+        print("\nValidation:")
         for cat, summary in manifest.get("validation", {}).items():
             status = "PASS" if summary["errors"] == 0 else "FAIL"
             print(f"  {cat}: {summary['valid']}/{summary['total']} [{status}]")
@@ -217,14 +215,23 @@ if click is not None:
         _print_presets()
 
     @cli.command()
-    @click.option("--spec", required=True, type=click.Path(exists=True),
-                  help="Path to YAML spec file. See configs/fhir-gen/ for presets.")
-    @click.option("--output", required=True, type=click.Path(),
-                  help="Output directory for generated bundles.")
-    @click.option("--seed", default=42, type=int,
-                  help="Random seed for deterministic output (default: 42).")
-    @click.option("--use-case", type=click.Choice(["safety_eval", "cms_0057f", "uscdi_v3", "mixed"]),
-                  help="Override the use case specified in the YAML spec.")
+    @click.option(
+        "--spec",
+        required=True,
+        type=click.Path(exists=True),
+        help="Path to YAML spec file. See configs/fhir-gen/ for presets.",
+    )
+    @click.option(
+        "--output", required=True, type=click.Path(), help="Output directory for generated bundles."
+    )
+    @click.option(
+        "--seed", default=42, type=int, help="Random seed for deterministic output (default: 42)."
+    )
+    @click.option(
+        "--use-case",
+        type=click.Choice(["safety_eval", "cms_0057f", "uscdi_v3", "mixed"]),
+        help="Override the use case specified in the YAML spec.",
+    )
     def generate(spec: str, output: str, seed: int, use_case: str | None) -> None:
         """Generate synthetic FHIR bundles from a YAML spec.
 
@@ -246,8 +253,13 @@ if click is not None:
         _run_generate(spec, output, seed, use_case)
 
     @cli.command()
-    @click.option("--input", "input_dir", required=True, type=click.Path(exists=True),
-                  help="Directory containing generated bundles.")
+    @click.option(
+        "--input",
+        "input_dir",
+        required=True,
+        type=click.Path(exists=True),
+        help="Directory containing generated bundles.",
+    )
     def validate(input_dir: str) -> None:
         """Validate all FHIR bundles in a directory.
 
@@ -258,8 +270,13 @@ if click is not None:
         _run_validate(input_dir)
 
     @cli.command()
-    @click.option("--input", "input_dir", required=True, type=click.Path(exists=True),
-                  help="Directory containing generated bundles.")
+    @click.option(
+        "--input",
+        "input_dir",
+        required=True,
+        type=click.Path(exists=True),
+        help="Directory containing generated bundles.",
+    )
     def stats(input_dir: str) -> None:
         """Print statistics for generated data.
 
@@ -284,10 +301,14 @@ else:
         subparsers = parser.add_subparsers(dest="command")
 
         gen_parser = subparsers.add_parser("generate", help="Generate synthetic FHIR bundles")
-        gen_parser.add_argument("--spec", required=True, help="Path to YAML spec file (see configs/fhir-gen/)")
+        gen_parser.add_argument(
+            "--spec", required=True, help="Path to YAML spec file (see configs/fhir-gen/)"
+        )
         gen_parser.add_argument("--output", required=True, help="Output directory")
         gen_parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
-        gen_parser.add_argument("--use-case", choices=["safety_eval", "cms_0057f", "uscdi_v3", "mixed"])
+        gen_parser.add_argument(
+            "--use-case", choices=["safety_eval", "cms_0057f", "uscdi_v3", "mixed"]
+        )
 
         val_parser = subparsers.add_parser("validate", help="Validate FHIR bundles")
         val_parser.add_argument("--input", required=True, dest="input_dir", help="Input directory")

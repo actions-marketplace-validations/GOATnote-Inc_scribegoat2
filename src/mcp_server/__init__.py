@@ -15,4 +15,3 @@ All tools support optional FHIR context for healthcare deployments.
 """
 
 __version__ = "1.0.0"
-

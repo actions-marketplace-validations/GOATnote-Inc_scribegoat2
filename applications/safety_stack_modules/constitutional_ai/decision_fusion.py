@@ -13,7 +13,7 @@ Claude-Opus (supervisor) with graduated escalation to the AutoGen council.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 class FusionMethod(str, Enum):
     """Methods for fusing model decisions."""
-    CONSENSUS = "consensus"          # Both models agree
+
+    CONSENSUS = "consensus"  # Both models agree
     TRACE_ALIGNED = "trace_aligned"  # Different ESI but aligned reasoning
     WEIGHTED_VOTE = "weighted_vote"  # Confidence-weighted decision
     COUNCIL_ESCALATION = "council_escalation"  # Requires council deliberation
@@ -30,15 +31,17 @@ class FusionMethod(str, Enum):
 
 class AgreementLevel(str, Enum):
     """Inter-rater agreement levels (Cohen's kappa interpretation)."""
-    VERY_GOOD = "very_good"    # kappa >= 0.80
-    GOOD = "good"              # 0.60 <= kappa < 0.80
-    MODERATE = "moderate"      # 0.40 <= kappa < 0.60
-    FAIR_POOR = "fair_poor"    # kappa < 0.40
+
+    VERY_GOOD = "very_good"  # kappa >= 0.80
+    GOOD = "good"  # 0.60 <= kappa < 0.80
+    MODERATE = "moderate"  # 0.40 <= kappa < 0.60
+    FAIR_POOR = "fair_poor"  # kappa < 0.40
 
 
 @dataclass
 class FusionResult:
     """Result of decision fusion between models."""
+
     final_esi: Optional[int]
     method: FusionMethod
     override_applied: bool
@@ -82,13 +85,13 @@ class DecisionFusion:
         if self.embedder is None:
             try:
                 from sentence_transformers import SentenceTransformer
-                self.embedder = SentenceTransformer('all-mpnet-base-v2')
+
+                self.embedder = SentenceTransformer("all-mpnet-base-v2")
                 self._embedder_loaded = True
                 logger.info("Loaded sentence-transformers model for reasoning comparison")
             except ImportError:
                 logger.warning(
-                    "sentence-transformers not installed; "
-                    "using fallback similarity method"
+                    "sentence-transformers not installed; using fallback similarity method"
                 )
                 self._embedder_loaded = True
 
@@ -128,11 +131,15 @@ class DecisionFusion:
 
         # Extract confidence scores
         gpt_conf = gpt_result.get("confidence", 0.7)
-        claude_conf = claude_result.get("confidence", claude_result.get("supervisor_confidence", 0.7))
+        claude_conf = claude_result.get(
+            "confidence", claude_result.get("supervisor_confidence", 0.7)
+        )
 
         # Extract reasoning traces
         gpt_reasoning = gpt_result.get("reasoning_trace", gpt_result.get("reasoning", ""))
-        claude_reasoning = claude_result.get("reasoning_trace", claude_result.get("supervisor_reasoning", ""))
+        claude_reasoning = claude_result.get(
+            "reasoning_trace", claude_result.get("supervisor_reasoning", "")
+        )
 
         # Level 1: Final-Answer Agreement (Fast Path)
         if gpt_esi == claude_esi:
@@ -157,9 +164,7 @@ class DecisionFusion:
                 )
 
         # Level 2: Reasoning-Trace Comparison
-        reasoning_similarity = self._compute_reasoning_similarity(
-            gpt_reasoning, claude_reasoning
-        )
+        reasoning_similarity = self._compute_reasoning_similarity(gpt_reasoning, claude_reasoning)
 
         if reasoning_similarity >= similarity_threshold:
             # Aligned reasoning but different ESI - defer to Claude on safety

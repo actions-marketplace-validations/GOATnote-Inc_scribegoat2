@@ -11,19 +11,23 @@ conflicts between contract invariants and applies resolution policies.
 Default policy: ``stricter_wins`` — if any contract forbids an action,
 the composed contract forbids it regardless of what other contracts allow.
 """
-from dataclasses import dataclass, field
-from typing import Optional
+
+from dataclasses import dataclass
+
 from src.tsr.contracts.versioned import ContractVersion
+
 
 @dataclass
 class CompositionConflict:
     """A conflict between two contracts."""
+
     contract_a: str
     contract_b: str
     state: str
     event: str
     conflict_type: str  # "forbid_vs_require", "forbid_vs_allow"
     resolution: str  # "stricter_wins", "manual_review"
+
 
 class ContractComposer:
     """Composes multiple MSCs with conflict detection and resolution.
@@ -51,7 +55,7 @@ class ContractComposer:
         contract_list = list(self.contracts.values())
 
         for i, a in enumerate(contract_list):
-            for b in contract_list[i + 1:]:
+            for b in contract_list[i + 1 :]:
                 # Check for event conflicts across shared states
                 shared_states = set(a.states) & set(b.states)
                 for state in shared_states:
@@ -64,14 +68,16 @@ class ContractComposer:
                     # Conflict: A forbids what B requires
                     conflicts = a_forbid & b_require
                     for event in conflicts:
-                        self._conflicts.append(CompositionConflict(
-                            contract_a=a.contract_id,
-                            contract_b=b.contract_id,
-                            state=state,
-                            event=event,
-                            conflict_type="forbid_vs_require",
-                            resolution=self.resolution_policy,
-                        ))
+                        self._conflicts.append(
+                            CompositionConflict(
+                                contract_a=a.contract_id,
+                                contract_b=b.contract_id,
+                                state=state,
+                                event=event,
+                                conflict_type="forbid_vs_require",
+                                resolution=self.resolution_policy,
+                            )
+                        )
 
     @property
     def conflicts(self) -> list[CompositionConflict]:

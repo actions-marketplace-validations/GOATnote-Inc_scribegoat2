@@ -83,5 +83,3 @@ def load_hard_case_pack(path: str | Path) -> HardCasePack:
         description=description,
         cases=cases,
     )
-
-

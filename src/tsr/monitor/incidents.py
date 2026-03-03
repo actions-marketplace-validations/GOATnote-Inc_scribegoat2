@@ -12,8 +12,8 @@ from datetime import datetime
 from typing import List, Optional
 
 from src.tsr.monitor.interfaces import (
-    IStateStore,
     Incident,
+    IStateStore,
     SafetyMetricEvent,
     Severity,
 )
@@ -89,9 +89,7 @@ class IncidentManager:
         )
         return incident
 
-    def escalate(
-        self, incident: Incident, new_severity: Severity, reason: str = ""
-    ) -> Incident:
+    def escalate(self, incident: Incident, new_severity: Severity, reason: str = "") -> Incident:
         """Escalate an incident to a higher severity.
 
         Severity can only increase (monotonic escalation).
@@ -245,13 +243,9 @@ class IncidentManager:
         Returns:
             List of unresolved incidents.
         """
-        return self._state_store.load_incidents_by_contract(
-            contract_id, include_resolved=False
-        )
+        return self._state_store.load_incidents_by_contract(contract_id, include_resolved=False)
 
-    def get_unacknowledged_incidents(
-        self, contract_id: Optional[str] = None
-    ) -> List[Incident]:
+    def get_unacknowledged_incidents(self, contract_id: Optional[str] = None) -> List[Incident]:
         """Get all unacknowledged incidents, optionally filtered by contract.
 
         Args:

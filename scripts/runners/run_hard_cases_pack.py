@@ -16,10 +16,9 @@ Non-goals / Safety:
 from __future__ import annotations
 
 import argparse
-import json
+import asyncio
 import os
 import re
-import asyncio
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,13 +34,13 @@ sys.path.insert(0, str(_SCRIPTS_DIR))
 sys.path.insert(0, str(_PROJECT_ROOT / "applications" / "council_architecture"))
 sys.path.insert(0, str(_PROJECT_ROOT / "applications" / "safety_stack_modules"))
 
-from council.models import get_async_client
 from council.medical_qa_orchestrator import run_medical_qa_council
-from reliability.confidence_proxy import compute_confidence_proxy
+from council.models import get_async_client
 from hard_cases.load_pack import load_hard_case_pack
-from hard_cases.risk_tags import derive_hard_case_risk_tags
+from hard_cases.rag_runtime import build_retrieval_augmented_question, init_hard_cases_rag_runtime
 from hard_cases.reference_discipline import compute_reference_discipline
-from hard_cases.rag_runtime import init_hard_cases_rag_runtime, build_retrieval_augmented_question
+from hard_cases.risk_tags import derive_hard_case_risk_tags
+from reliability.confidence_proxy import compute_confidence_proxy
 from runners.run_official_healthbench import run_safety_stack
 
 
@@ -93,16 +92,32 @@ def _router_should_abstain(
 
 async def _run() -> int:
     ap = argparse.ArgumentParser(description="Run ScribeGoat2 on a hard-case pack (non-grading).")
-    ap.add_argument("--pack", default="data/hard_cases/hard_cases_pack.yaml", help="Path to pack (JSON-authored YAML).")
+    ap.add_argument(
+        "--pack",
+        default="data/hard_cases/hard_cases_pack.yaml",
+        help="Path to pack (JSON-authored YAML).",
+    )
     ap.add_argument("--run-id", default="hard_cases_v1", help="Run id used for output filenames.")
     ap.add_argument("--limit", type=int, default=None, help="Optional max number of cases.")
 
     ap.add_argument("--model", default="gpt-5.2", help="Primary council model.")
-    ap.add_argument("--secondary-model", default=None, help="Optional secondary council model for agreement telemetry.")
-    ap.add_argument("--chairman-style", default="default", help="Chairman style (default/structured_v2 etc).")
-    ap.add_argument("--reasoning-effort", default="medium", help="Reasoning effort (none/low/medium/high/xhigh).")
+    ap.add_argument(
+        "--secondary-model",
+        default=None,
+        help="Optional secondary council model for agreement telemetry.",
+    )
+    ap.add_argument(
+        "--chairman-style", default="default", help="Chairman style (default/structured_v2 etc)."
+    )
+    ap.add_argument(
+        "--reasoning-effort",
+        default="medium",
+        help="Reasoning effort (none/low/medium/high/xhigh).",
+    )
     ap.add_argument("--verbosity", default="medium", help="Verbosity (low/medium/high).")
-    ap.add_argument("--strict-safety", action="store_true", help="Use stricter abstention thresholds.")
+    ap.add_argument(
+        "--strict-safety", action="store_true", help="Use stricter abstention thresholds."
+    )
     ap.add_argument(
         "--require-citations",
         action="store_true",
@@ -128,9 +143,20 @@ async def _run() -> int:
     )
 
     # Router is default-off to avoid changing canonical behavior by accident.
-    ap.add_argument("--enable-router", action="store_true", help="Enable abstention/deferral routing for low agreement.")
-    ap.add_argument("--agreement-threshold", type=float, default=0.82, help="Agreement threshold for router.")
-    ap.add_argument("--confidence-cutoff", type=float, default=0.25, help="Routing confidence cutoff for router.")
+    ap.add_argument(
+        "--enable-router",
+        action="store_true",
+        help="Enable abstention/deferral routing for low agreement.",
+    )
+    ap.add_argument(
+        "--agreement-threshold", type=float, default=0.82, help="Agreement threshold for router."
+    )
+    ap.add_argument(
+        "--confidence-cutoff",
+        type=float,
+        default=0.25,
+        help="Routing confidence cutoff for router.",
+    )
 
     args = ap.parse_args()
 
@@ -321,7 +347,9 @@ async def _run() -> int:
                 },
                 "diagnostics": diag_dict,
                 # Optional: preserve specialist opinions (can be large; keep off by default via env).
-                "specialist_opinions": specialist_opinions if os.getenv("HARD_CASES_INCLUDE_SPECIALISTS") else None,
+                "specialist_opinions": specialist_opinions
+                if os.getenv("HARD_CASES_INCLUDE_SPECIALISTS")
+                else None,
                 "secondary": secondary,
             }
         )
@@ -338,5 +366,3 @@ async def _run() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(asyncio.run(_run()))
-
-

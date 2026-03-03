@@ -3,15 +3,19 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
+
 class FailureMode(Enum):
     """How TSR handles internal errors during safety checking."""
-    FAIL_CLOSED = "fail_closed"     # Hold response (default, safe)
-    FAIL_OPEN = "fail_open"         # Release response (dangerous, testing only)
+
+    FAIL_CLOSED = "fail_closed"  # Hold response (default, safe)
+    FAIL_OPEN = "fail_open"  # Release response (dangerous, testing only)
     FAIL_WITH_WARNING = "fail_with_warning"  # Release with safety warning
+
 
 @dataclass
 class TSRConfig:
     """Trajectory Safety Runtime configuration."""
+
     contract_ids: list[str] = field(default_factory=lambda: ["healthcare_emergency_v1"])
     enforcement_enabled: bool = True
     max_enforcement_latency_ms: int = 100

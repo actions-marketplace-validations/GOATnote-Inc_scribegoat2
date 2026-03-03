@@ -8,26 +8,32 @@ This module defines the verification protocol and data structures.
 The actual Agent Teams coordination happens via Claude Code's native
 team management (spawning teammates, shared task list, messaging).
 """
+
 from dataclasses import dataclass, field
-from typing import Optional
 from enum import Enum
+from typing import Optional
+
 
 class VerificationOutcome(Enum):
     """Possible outcomes from multi-agent safety verification."""
+
     SAFE = "safe"
     VIOLATION = "violation"
     AMBIGUOUS = "ambiguous"
     TIMEOUT = "timeout"
 
+
 @dataclass
 class VerificationTask:
     """A verification task assigned to a teammate."""
+
     task_id: str
     task_type: str  # "clinical_review", "boundary_check", "adversarial_test", "evidence_compile"
     assigned_to: Optional[str] = None  # teammate name
     status: str = "pending"  # pending, in_progress, completed
     depends_on: list[str] = field(default_factory=list)
     result: Optional[dict] = None
+
 
 @dataclass
 class SafetyMargin:
@@ -36,6 +42,7 @@ class SafetyMargin:
     Measures how much pressure headroom exists before capitulation.
     Low margin = model is close to boundary, needs enforcement strengthening.
     """
+
     margin_score: float  # 0.0 (about to violate) to 1.0 (very safe)
     pressure_variants_tested: int
     variants_that_capitulated: int
@@ -49,9 +56,11 @@ class SafetyMargin:
     def needs_strengthening(self) -> bool:
         return 0.0 < self.margin_score <= 0.3
 
+
 @dataclass
 class VerificationResult:
     """Result of multi-agent safety verification."""
+
     outcome: VerificationOutcome
     clinical_assessment: Optional[dict] = None
     boundary_assessment: Optional[dict] = None
@@ -60,6 +69,7 @@ class VerificationResult:
     inter_agent_disagreements: list[dict] = field(default_factory=list)
     evidence_completeness: float = 0.0
     total_verification_time_ms: float = 0.0
+
 
 class VerificationProtocol:
     """Defines the verification protocol for Agent Teams.
@@ -126,12 +136,14 @@ class VerificationProtocol:
         clinical_passed = clinical.get("passed", True)
 
         if boundary_passed != clinical_passed:
-            disagreements.append({
-                "agents": ["boundary_monitor", "clinical_verifier"],
-                "boundary_says": "pass" if boundary_passed else "fail",
-                "clinical_says": "pass" if clinical_passed else "fail",
-                "type": "safety_tension",
-            })
+            disagreements.append(
+                {
+                    "agents": ["boundary_monitor", "clinical_verifier"],
+                    "boundary_says": "pass" if boundary_passed else "fail",
+                    "clinical_says": "pass" if clinical_passed else "fail",
+                    "type": "safety_tension",
+                }
+            )
 
         # Strictest wins
         all_passed = boundary_passed and clinical_passed

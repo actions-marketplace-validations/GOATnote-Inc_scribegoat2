@@ -5,11 +5,13 @@ This module provides spec-compliant calls with reasoning-effort + verbosity cont
 Model selection is always explicit at call sites, and can be hard-asserted via
 SCRIBEGOAT_EXPECTED_MODEL for reproducibility.
 """
-from openai import OpenAI, AsyncOpenAI
-from typing import Optional, Dict, Literal, List
+
 import os
 import re
 from collections import Counter
+from typing import Dict, List, Literal
+
+from openai import AsyncOpenAI, OpenAI
 
 # =============================================================================
 # SAFETY EVALUATION MODE ASSERTION
@@ -47,6 +49,7 @@ def _assert_expected_model(requested_model: str) -> None:
             "does not match SCRIBEGOAT_EXPECTED_MODEL. "
             f"expected={expected!r} got={requested_model!r}"
         )
+
 
 # Reasoning effort options
 ReasoningEffort = Literal["none", "low", "medium", "high", "xhigh"]
@@ -109,9 +112,7 @@ class MockChat:
                 "This text is intentionally verbose to satisfy reasoning length checks for tests."
             )
             content = (
-                f"ESI Level: {esi_level}\n"
-                f"Confidence: {confidence:.2f}\n"
-                f"Reasoning: {reasoning}"
+                f"ESI Level: {esi_level}\nConfidence: {confidence:.2f}\nReasoning: {reasoning}"
             )
             return MockChatCompletion(content)
 
@@ -135,12 +136,7 @@ class MockResponses:
     async def create(self, **kwargs: Dict) -> MockResponse:
         prompt = kwargs.get("input", [{}])[-1].get("content", "")
         if "Hallucination" in prompt or "fact-checker" in prompt:
-            output = (
-                "Total claims analyzed: 2\n"
-                "Supported: 2\n"
-                "Hallucinated: 0\n"
-                "Uncertain: 0\n"
-            )
+            output = "Total claims analyzed: 2\nSupported: 2\nHallucinated: 0\nUncertain: 0\n"
         elif "Anonymized Recommendations" in prompt:
             rankings = {
                 f"Opinion {letter}": {"rank": 6 - i, "justification": "Mock critique"}
@@ -222,16 +218,10 @@ class MockOpenAI(MockAsyncOpenAI):
         def create(self, **kwargs: Dict) -> MockResponse:
             prompt = kwargs.get("input", [{}])[-1].get("content", "")
             if "Hallucination" in prompt:
-                output = (
-                    "Total claims analyzed: 1\n"
-                    "Supported: 1\n"
-                    "Hallucinated: 0\n"
-                    "Uncertain: 0\n"
-                )
+                output = "Total claims analyzed: 1\nSupported: 1\nHallucinated: 0\nUncertain: 0\n"
             else:
                 output = "Mock sync response."
             return MockResponse(output)
-
 
 
 def get_client() -> OpenAI:
@@ -269,11 +259,11 @@ def call_gpt51(
     reasoning_effort: ReasoningEffort = "medium",
     verbosity: TextVerbosity = "medium",
     temperature: float = DEFAULT_TEMPERATURE,
-    seed: int = DEFAULT_SEED
+    seed: int = DEFAULT_SEED,
 ) -> str:
     """
     Call an LLM using Responses API (spec-compliant).
-    
+
     Args:
         client: OpenAI client
         prompt: User prompt
@@ -282,7 +272,7 @@ def call_gpt51(
         verbosity: low, medium, high
         temperature: Ignored for reasoning models
         seed: Random seed for reproducibility
-    
+
     Returns:
         Model output text
     """
@@ -291,12 +281,12 @@ def call_gpt51(
         model=model,
         input=[
             {"role": "developer", "content": system_prompt},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
         reasoning={"effort": reasoning_effort},
-        text={"verbosity": verbosity}
+        text={"verbosity": verbosity},
     )
-    
+
     return response.output_text
 
 
@@ -308,11 +298,11 @@ async def call_gpt51_async(
     reasoning_effort: ReasoningEffort = "medium",
     verbosity: TextVerbosity = "medium",
     temperature: float = DEFAULT_TEMPERATURE,
-    seed: int = DEFAULT_SEED
+    seed: int = DEFAULT_SEED,
 ) -> str:
     """
     Async version of call_gpt51 for parallel council execution.
-    
+
     Returns:
         Model output text
     """
@@ -321,19 +311,19 @@ async def call_gpt51_async(
         model=model,
         input=[
             {"role": "developer", "content": system_prompt},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
         reasoning={"effort": reasoning_effort},
-        text={"verbosity": verbosity}
+        text={"verbosity": verbosity},
     )
-    
+
     return response.output_text
 
 
 def get_token_usage(response) -> Dict[str, int]:
     """
     Extract token usage from response for cost tracking
-    
+
     Returns:
         {"input_tokens": int, "output_tokens": int}
     """
@@ -341,7 +331,7 @@ def get_token_usage(response) -> Dict[str, int]:
     # Update based on actual Responses API response format
     return {
         "input_tokens": getattr(response, "input_tokens", 0),
-        "output_tokens": getattr(response, "output_tokens", 0)
+        "output_tokens": getattr(response, "output_tokens", 0),
     }
 
 
@@ -351,7 +341,7 @@ def estimate_cost(input_tokens: int, output_tokens: int) -> float:
 
     NOTE: Pricing is model-dependent and changes over time. This function is a
     legacy heuristic and should not be treated as authoritative.
-    
+
     Returns:
         Estimated cost in USD
     """

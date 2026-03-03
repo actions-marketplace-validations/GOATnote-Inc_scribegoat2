@@ -12,7 +12,6 @@ list of human-readable error strings.
 
 from typing import Any, Dict, List, Optional, Tuple
 
-
 ValidationResult = Tuple[bool, List[str]]
 
 
@@ -73,9 +72,7 @@ def _check_reference(
     if ref is None:
         errors.append(f"{field_name}.reference: required")
     elif expected_type and not ref.startswith(f"{expected_type}/"):
-        errors.append(
-            f"{field_name}.reference: expected {expected_type}/*, got '{ref}'"
-        )
+        errors.append(f"{field_name}.reference: expected {expected_type}/*, got '{ref}'")
     return errors
 
 
@@ -131,9 +128,7 @@ def validate_pas_claim(resource: Dict[str, Any]) -> ValidationResult:
 
     # Provider reference
     if "provider" in resource:
-        errors.extend(
-            _check_reference(resource["provider"], "provider", "Organization")
-        )
+        errors.extend(_check_reference(resource["provider"], "provider", "Organization"))
 
     # Insurer reference
     if "insurer" in resource:
@@ -260,8 +255,7 @@ def validate_crd_coverage_info(resource: Dict[str, Any]) -> ValidationResult:
 
     if "documentation_needed" not in resource and "documentationNeeded" not in resource:
         errors.append(
-            "documentationNeeded: required field indicating if "
-            "additional documentation is needed"
+            "documentationNeeded: required field indicating if additional documentation is needed"
         )
 
     return len(errors) == 0, errors
@@ -286,9 +280,7 @@ def validate_us_core_patient(resource: Dict[str, Any]) -> ValidationResult:
         return False, errors
 
     # Required fields per US Core
-    errors.extend(
-        _check_required(resource, ["name", "gender"])
-    )
+    errors.extend(_check_required(resource, ["name", "gender"]))
 
     # Name must be a non-empty list with family or given
     name_list = resource.get("name")
@@ -335,15 +327,19 @@ def validate_us_core_encounter(resource: Dict[str, Any]) -> ValidationResult:
         return False, errors
 
     # Required fields
-    errors.extend(
-        _check_required(resource, ["status", "class", "subject"])
-    )
+    errors.extend(_check_required(resource, ["status", "class", "subject"]))
 
     # Status validation
     status = resource.get("status")
     valid_statuses = {
-        "planned", "arrived", "triaged", "in-progress",
-        "onleave", "finished", "cancelled", "entered-in-error",
+        "planned",
+        "arrived",
+        "triaged",
+        "in-progress",
+        "onleave",
+        "finished",
+        "cancelled",
+        "entered-in-error",
         "unknown",
     }
     if status and status not in valid_statuses:
@@ -380,15 +376,19 @@ def validate_us_core_observation(resource: Dict[str, Any]) -> ValidationResult:
         return False, errors
 
     # Required fields
-    errors.extend(
-        _check_required(resource, ["status", "category", "code", "subject"])
-    )
+    errors.extend(_check_required(resource, ["status", "category", "code", "subject"]))
 
     # Status validation
     status = resource.get("status")
     valid_statuses = {
-        "registered", "preliminary", "final", "amended",
-        "corrected", "cancelled", "entered-in-error", "unknown",
+        "registered",
+        "preliminary",
+        "final",
+        "amended",
+        "corrected",
+        "cancelled",
+        "entered-in-error",
+        "unknown",
     }
     if status and status not in valid_statuses:
         errors.append(f"status: must be one of {valid_statuses}, got '{status}'")
@@ -460,9 +460,7 @@ def validate_sdoh_goal(resource: Dict[str, Any]) -> ValidationResult:
         return False, errors
 
     # Required fields
-    errors.extend(
-        _check_required(resource, ["lifecycleStatus", "description", "subject"])
-    )
+    errors.extend(_check_required(resource, ["lifecycleStatus", "description", "subject"]))
 
     # Description must have text
     desc = resource.get("description")
@@ -477,8 +475,14 @@ def validate_sdoh_goal(resource: Dict[str, Any]) -> ValidationResult:
     # Lifecycle status
     status = resource.get("lifecycleStatus")
     valid_statuses = {
-        "proposed", "planned", "accepted", "active",
-        "on-hold", "completed", "cancelled", "entered-in-error",
+        "proposed",
+        "planned",
+        "accepted",
+        "active",
+        "on-hold",
+        "completed",
+        "cancelled",
+        "entered-in-error",
         "rejected",
     }
     if status and status not in valid_statuses:
@@ -552,15 +556,20 @@ def validate_diagnostic_report(resource: Dict[str, Any]) -> ValidationResult:
         errors.append("resourceType must be 'DiagnosticReport'")
         return False, errors
 
-    errors.extend(
-        _check_required(resource, ["status", "code", "subject"])
-    )
+    errors.extend(_check_required(resource, ["status", "code", "subject"]))
 
     status = resource.get("status")
     valid_statuses = {
-        "registered", "partial", "preliminary", "final",
-        "amended", "corrected", "appended", "cancelled",
-        "entered-in-error", "unknown",
+        "registered",
+        "partial",
+        "preliminary",
+        "final",
+        "amended",
+        "corrected",
+        "appended",
+        "cancelled",
+        "entered-in-error",
+        "unknown",
     }
     if status and status not in valid_statuses:
         errors.append(f"status: must be one of {valid_statuses}, got '{status}'")
@@ -595,8 +604,13 @@ def validate_medication_administration(resource: Dict[str, Any]) -> ValidationRe
 
     status = resource.get("status")
     valid_statuses = {
-        "in-progress", "not-done", "on-hold", "completed",
-        "entered-in-error", "stopped", "unknown",
+        "in-progress",
+        "not-done",
+        "on-hold",
+        "completed",
+        "entered-in-error",
+        "stopped",
+        "unknown",
     }
     if status and status not in valid_statuses:
         errors.append(f"status: must be one of {valid_statuses}, got '{status}'")
@@ -622,9 +636,7 @@ def validate_document_reference(resource: Dict[str, Any]) -> ValidationResult:
         errors.append("resourceType must be 'DocumentReference'")
         return False, errors
 
-    errors.extend(
-        _check_required(resource, ["status", "type", "subject", "content"])
-    )
+    errors.extend(_check_required(resource, ["status", "type", "subject", "content"]))
 
     status = resource.get("status")
     valid_statuses = {"current", "superseded", "entered-in-error"}

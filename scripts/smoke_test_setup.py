@@ -21,16 +21,16 @@ Output:
 Last Updated: 2026-01-24
 """
 
-import sys
-import os
-import json
 import argparse
 import importlib
 import importlib.util
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field, asdict
+import json
+import os
+import sys
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 # Minimum Python version
 MIN_PYTHON_VERSION = (3, 10)
@@ -116,6 +116,7 @@ REQUIRED_FILES = [
 @dataclass
 class DependencyResult:
     """Result of a single dependency check."""
+
     name: str
     description: str
     available: bool
@@ -126,6 +127,7 @@ class DependencyResult:
 @dataclass
 class StructureResult:
     """Result of a directory/file structure check."""
+
     path: str
     exists: bool
     is_readable: bool = True
@@ -134,6 +136,7 @@ class StructureResult:
 @dataclass
 class ContractResult:
     """Result of a contract parsing check."""
+
     path: str
     valid: bool
     error: Optional[str] = None
@@ -144,6 +147,7 @@ class ContractResult:
 @dataclass
 class ResultsFileResult:
     """Result of checking existing results files."""
+
     path: str
     readable: bool
     record_count: Optional[int] = None
@@ -153,6 +157,7 @@ class ResultsFileResult:
 @dataclass
 class ValidationReport:
     """Complete validation report."""
+
     timestamp: str
     python_version: str
     python_compatible: bool
@@ -200,6 +205,7 @@ def get_package_version(module_name: str) -> Optional[str]:
     try:
         # Try importlib.metadata first (Python 3.8+)
         from importlib.metadata import version
+
         # Map module names to package names
         package_map = {
             "yaml": "pyyaml",
@@ -239,9 +245,7 @@ def check_dependency(name: str, description: str) -> DependencyResult:
         )
 
 
-def check_optional_dependency(
-    name: str, description: str, degraded_msg: str
-) -> DependencyResult:
+def check_optional_dependency(name: str, description: str, degraded_msg: str) -> DependencyResult:
     """Check if an optional Python dependency is available."""
     result = check_dependency(name, description)
     if not result.available:
@@ -259,6 +263,7 @@ def check_system_binary(name: str, description: str, degraded_msg: str) -> Depen
         version = None
         try:
             import subprocess
+
             result = subprocess.run(
                 [name, "--version"],
                 capture_output=True,
@@ -541,19 +546,18 @@ def run_validation(base_path: Path, verbose: bool = False) -> ValidationReport:
         report.results_files.append(result)
 
     # Compute summary flags
-    report.all_required_deps_available = all(
-        d.available for d in report.required_dependencies
-    )
-    report.all_structure_valid = (
-        all(d.exists and d.is_readable for d in report.directories)
-        and all(f.exists and f.is_readable for f in report.files)
-    )
+    report.all_required_deps_available = all(d.available for d in report.required_dependencies)
+    report.all_structure_valid = all(
+        d.exists and d.is_readable for d in report.directories
+    ) and all(f.exists and f.is_readable for f in report.files)
     report.all_contracts_valid = all(c.valid for c in report.contracts)
 
     # Determine exit code
     if not python_compatible:
         report.exit_code = 1
-        report.exit_reason = f"Python {python_version} < {MIN_PYTHON_VERSION[0]}.{MIN_PYTHON_VERSION[1]}"
+        report.exit_reason = (
+            f"Python {python_version} < {MIN_PYTHON_VERSION[0]}.{MIN_PYTHON_VERSION[1]}"
+        )
     elif not report.all_required_deps_available:
         report.exit_code = 1
         missing = [d.name for d in report.required_dependencies if not d.available]
@@ -565,7 +569,7 @@ def run_validation(base_path: Path, verbose: bool = False) -> ValidationReport:
         missing = missing_dirs + missing_files
         report.exit_reason = f"Invalid structure: {', '.join(missing[:5])}"
         if len(missing) > 5:
-            report.exit_reason += f" (+{len(missing)-5} more)"
+            report.exit_reason += f" (+{len(missing) - 5} more)"
     elif not report.all_contracts_valid:
         report.exit_code = 3
         invalid = [c.path for c in report.contracts if not c.valid]
@@ -587,8 +591,9 @@ def print_human_readable(report: ValidationReport, verbose: bool = False) -> Non
     # Use rich if available, otherwise plain text
     try:
         from rich.console import Console
-        from rich.table import Table
         from rich.panel import Panel
+        from rich.table import Table
+
         console = Console()
         use_rich = True
     except ImportError:
@@ -770,12 +775,14 @@ Examples:
         help="Output machine-readable JSON instead of human-readable text",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show detailed output including all optional dependencies",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Write JSON report to specified path (implies --json)",
     )

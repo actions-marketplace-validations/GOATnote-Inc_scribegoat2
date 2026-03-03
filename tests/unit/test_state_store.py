@@ -5,7 +5,6 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-
 from src.tsr.monitor.interfaces import BreakerState, Incident, Severity
 from src.tsr.monitor.state_store import StateStore
 
@@ -39,9 +38,7 @@ class TestStateStore:
         """Initialize creates database tables."""
         store = _make_store()
         conn = store._ensure_initialized()
-        tables = conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        ).fetchall()
+        tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
         table_names = {t[0] for t in tables}
         assert "breaker_states" in table_names
         assert "incidents" in table_names
@@ -94,9 +91,7 @@ class TestStateStore:
         active = store.load_incidents_by_contract("test-contract")
         assert len(active) == 0
 
-        all_inc = store.load_incidents_by_contract(
-            "test-contract", include_resolved=True
-        )
+        all_inc = store.load_incidents_by_contract("test-contract", include_resolved=True)
         assert len(all_inc) == 1
 
     def test_audit_log_append_and_load(self) -> None:
@@ -176,8 +171,7 @@ class TestStateStore:
                 errors.append(e)
 
         threads = [
-            threading.Thread(target=write_breaker, args=(f"contract-{i}",))
-            for i in range(5)
+            threading.Thread(target=write_breaker, args=(f"contract-{i}",)) for i in range(5)
         ]
         for t in threads:
             t.start()

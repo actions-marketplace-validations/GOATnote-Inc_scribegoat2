@@ -3,15 +3,18 @@
 Produces standardized safety evidence packages that map to
 FDA 510(k)/De Novo and CE MDR submission formats.
 """
-import json
+
 import hashlib
+import json
 from dataclasses import dataclass, field
-from typing import Optional
 from datetime import datetime, timezone
+from typing import Optional
+
 
 @dataclass
 class SafetyMetrics:
     """Quantitative safety metrics for evidence package."""
+
     total_trajectories: int
     pass_rate: float
     pass_k_5: float
@@ -19,14 +22,17 @@ class SafetyMetrics:
     post_mitigation_failure_rate: float
     mean_violation_turn: Optional[float] = None
 
+
 @dataclass
 class EnforcementRecord:
     """Record of enforcement actions taken."""
+
     violations_intercepted: int
     enforcement_success_rate: float
     mean_enforcement_latency_ms: float
     p99_enforcement_latency_ms: float
     level_1_resolution_rate: float
+
 
 @dataclass
 class EvidencePackage:
@@ -35,6 +41,7 @@ class EvidencePackage:
     Contains all quantitative safety evidence, enforcement records,
     and forensic artifacts needed for FDA/CE regulatory review.
     """
+
     # Identity
     package_id: str
     model_id: str

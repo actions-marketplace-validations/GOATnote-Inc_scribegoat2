@@ -22,16 +22,15 @@ Exit codes:
 Last Updated: 2026-01-24
 """
 
-import sys
-import os
-import json
 import argparse
-import subprocess
+import json
 import shutil
+import subprocess
+import sys
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass, field, asdict
+from typing import Any, Dict, List, Optional
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -58,6 +57,7 @@ EXIT_REPORT_GENERATION_FAILURE = 5
 @dataclass
 class StepResult:
     """Result of a pipeline step."""
+
     step_name: str
     success: bool
     duration_seconds: float
@@ -69,6 +69,7 @@ class StepResult:
 @dataclass
 class PipelineResult:
     """Result of the full pipeline."""
+
     timestamp: str
     success: bool
     exit_code: int
@@ -88,6 +89,7 @@ def load_config(config_path: Path) -> Dict[str, Any]:
     """Load evaluation configuration from YAML."""
     try:
         import yaml
+
         with open(config_path) as f:
             return yaml.safe_load(f)
     except ImportError:
@@ -132,6 +134,7 @@ def get_default_config() -> Dict[str, Any]:
 def step_validate_environment(config: Dict[str, Any], verbose: bool) -> StepResult:
     """Step 1: Validate environment."""
     import time
+
     start = time.time()
 
     step_name = "validate_environment"
@@ -188,6 +191,7 @@ def step_validate_environment(config: Dict[str, Any], verbose: bool) -> StepResu
 def step_validate_contracts(config: Dict[str, Any], verbose: bool) -> StepResult:
     """Step 2: Validate contracts and taxonomy coverage."""
     import time
+
     start = time.time()
 
     step_name = "validate_contracts"
@@ -238,6 +242,7 @@ def step_run_evaluation(
 ) -> StepResult:
     """Step 3: Run evaluation (or use cached/fixture results)."""
     import time
+
     start = time.time()
 
     step_name = "run_evaluation"
@@ -322,6 +327,7 @@ def step_tic_analysis(
 ) -> StepResult:
     """Step 4: Run TIC analysis on results."""
     import time
+
     start = time.time()
 
     step_name = "tic_analysis"
@@ -342,11 +348,14 @@ def step_tic_analysis(
             results = json.load(f)
 
         # Extract TIC analysis if present, or compute stub
-        tic_data = results.get("tic_analysis", {
-            "contract": config.get("contract", {}).get("contract_path", "unknown"),
-            "violations_detected": 0,
-            "note": "TIC analysis computed from results",
-        })
+        tic_data = results.get(
+            "tic_analysis",
+            {
+                "contract": config.get("contract", {}).get("contract_path", "unknown"),
+                "violations_detected": 0,
+                "note": "TIC analysis computed from results",
+            },
+        )
 
         # Save TIC analysis
         tic_output = output_dir / "tic_analysis.json"
@@ -379,6 +388,7 @@ def step_compute_metrics(
 ) -> StepResult:
     """Step 5: Compute pass^k metrics with confidence intervals."""
     import time
+
     start = time.time()
 
     step_name = "compute_metrics"
@@ -443,6 +453,7 @@ def step_generate_report(
 ) -> StepResult:
     """Step 6: Generate final report with manifest."""
     import time
+
     start = time.time()
 
     step_name = "generate_report"
@@ -513,7 +524,7 @@ def step_generate_report(
             f.write("\n".join(report_lines))
 
         # Generate manifest
-        from src.utils.hashing import generate_manifest, sha256_file
+        from src.utils.hashing import generate_manifest
 
         manifest = generate_manifest(
             results_path=results_path,
@@ -536,6 +547,7 @@ def step_generate_report(
 
     except Exception as e:
         import traceback
+
         return StepResult(
             step_name=step_name,
             success=False,
@@ -559,6 +571,7 @@ def run_pipeline(
 ) -> PipelineResult:
     """Run the complete evaluation pipeline."""
     import time
+
     start = time.time()
 
     # Setup output directory
@@ -736,7 +749,8 @@ Examples:
     )
 
     parser.add_argument(
-        "--config", "-c",
+        "--config",
+        "-c",
         type=Path,
         default=PROJECT_ROOT / "configs" / "evaluation_config.yaml",
         help="Path to configuration YAML file",
@@ -752,12 +766,14 @@ Examples:
         help="Use cached results from specified directory",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Output directory for results",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Verbose output",
     )

@@ -39,7 +39,8 @@ from typing import Any, Dict, Generator, List, Optional, Set
 OTEL_AVAILABLE = False
 try:
     from opentelemetry import trace
-    from opentelemetry.trace import Status, StatusCode, Span
+    from opentelemetry.trace import Span, Status, StatusCode
+
     OTEL_AVAILABLE = True
 except ImportError:
     Span = Any  # type: ignore
@@ -55,6 +56,7 @@ def is_tracing_enabled() -> bool:
 @dataclass
 class SpanContext:
     """Context for a tracing span."""
+
     span: Optional[Any]
     name: str
     start_time: float

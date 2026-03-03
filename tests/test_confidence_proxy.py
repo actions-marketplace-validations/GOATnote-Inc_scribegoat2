@@ -11,7 +11,11 @@ def test_confidence_proxy_increases_risk_with_corrections() -> None:
     )
     p3 = compute_confidence_proxy(
         clinical_uncertainty_score=0.10,
-        safety_corrections_applied=["professional_consultation", "severity_context_added", "child_fever_urgency"],
+        safety_corrections_applied=[
+            "professional_consultation",
+            "severity_context_added",
+            "child_fever_urgency",
+        ],
         specialist_opinions=["A", "A"],
     )
     assert p3.risk_proxy > p0.risk_proxy
@@ -50,5 +54,3 @@ def test_disagreement_proxy_detects_divergent_text() -> None:
     assert disagree.disagreement_proxy > agree.disagreement_proxy
     # disagreement contributes positively to risk (small weight)
     assert disagree.risk_proxy >= agree.risk_proxy
-
-

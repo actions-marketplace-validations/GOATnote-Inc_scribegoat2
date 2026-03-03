@@ -30,9 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
 
     # Status command
-    status_parser = subparsers.add_parser(
-        "status", help="Check monitor status for a contract"
-    )
+    status_parser = subparsers.add_parser("status", help="Check monitor status for a contract")
     status_parser.add_argument("contract_id", help="Contract ID to check")
     status_parser.add_argument(
         "--db",
@@ -41,9 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # Reset command
-    reset_parser = subparsers.add_parser(
-        "reset", help="Reset circuit breaker (human-only)"
-    )
+    reset_parser = subparsers.add_parser("reset", help="Reset circuit breaker (human-only)")
     reset_parser.add_argument("contract_id", help="Contract ID to reset")
     reset_parser.add_argument("--by", required=True, help="Your identity (name/email)")
     reset_parser.add_argument("--reason", required=True, help="Reason for reset")

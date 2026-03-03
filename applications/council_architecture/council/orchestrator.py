@@ -25,33 +25,33 @@ Citations:
 - Karpathy A. "LLM Council: Evaluating Intelligence Through Peer Review." 2025.
 - Shaikh Y, et al. "Council of AIs on USMLE." PLOS Digital Health, Oct 2025.
 """
-import asyncio
+
 import logging
 import os
-from typing import Dict, List, Any
+from typing import Dict, List
 
-from council.models import get_async_client
-from council.debate import get_first_opinions
-from council.chairman import synthesize_final_decision
-from council.peer_critique import run_peer_critique_layer
-from council.config import COUNCIL_HEADS
-from tools.vital_sign_calculator import compute_risk_scores
 from eval.hallucinations import detect_hallucinations
-from council.safety_critic import run_safety_critic
-from reliability.deterministic_guardrails import apply_deterministic_guardrails
 from reliability.confidence_detector import (
     assess_confidence,
-    ConfidenceAssessment,
-    CONSTITUTIONAL_UNCERTAINTY_THRESHOLD,
 )
+from reliability.deterministic_guardrails import apply_deterministic_guardrails
+
+from council.chairman import synthesize_final_decision
+from council.config import COUNCIL_HEADS
+from council.debate import get_first_opinions
+from council.models import get_async_client
+from council.peer_critique import run_peer_critique_layer
+from council.safety_critic import run_safety_critic
+from tools.vital_sign_calculator import compute_risk_scores
 
 # RAG imports (soft import for optional dependency)
 try:
     from rag.config import RAGConfig, RAGSafetyConfig, get_default_rag_config
-    from rag.schemas import RAGContext
-    from rag.index import HybridIndex
     from rag.embeddings import Embedder, MockEmbedder
+    from rag.index import HybridIndex
     from rag.retrieval import retrieve
+    from rag.schemas import RAGContext
+
     RAG_AVAILABLE = True
 except ImportError:
     RAG_AVAILABLE = False
@@ -66,85 +66,88 @@ logger = logging.getLogger(__name__)
 def _build_clinical_question(case_data: Dict) -> str:
     """
     Build a clinical question from case data for RAG retrieval.
-    
+
     Combines chief complaint, nursing note, and vital signs into
     a coherent clinical question suitable for MedCoT-style retrieval.
     """
     parts = []
-    
+
     # Demographics
-    age = case_data.get('age', 'Unknown age')
-    sex = case_data.get('sex', 'patient')
+    age = case_data.get("age", "Unknown age")
+    sex = case_data.get("sex", "patient")
     parts.append(f"A {age}-year-old {sex}")
-    
+
     # Chief complaint
-    chief = case_data.get('chief_complaint', '')
+    chief = case_data.get("chief_complaint", "")
     if chief:
         parts.append(f"presents with {chief}")
-    
+
     # Nursing note (abbreviated)
-    note = case_data.get('nursing_note', '')
+    note = case_data.get("nursing_note", "")
     if note and len(note) > 50:
         # Take first sentence or first 200 chars
-        first_sentence = note.split('.')[0] + '.'
+        first_sentence = note.split(".")[0] + "."
         parts.append(first_sentence[:200])
     elif note:
         parts.append(note)
-    
+
     # Add question
-    base = ' '.join(parts).strip()
-    if not base.endswith('?'):
+    base = " ".join(parts).strip()
+    if not base.endswith("?"):
         base += ". What is the appropriate ESI level and clinical assessment?"
-    
+
     return base
 
 
 def enhance_case_with_tools(case_data: Dict) -> Dict:
     """
     Add computed risk scores to case data for heads to reference.
-    
+
     Implements Priority 3: Tool use for objective vital sign assessment.
     """
     enhanced = case_data.copy()
-    
-    age = case_data.get('age', 50)
-    vitals = case_data.get('vital_signs', case_data.get('vitals', {}))
-    
+
+    age = case_data.get("age", 50)
+    vitals = case_data.get("vital_signs", case_data.get("vitals", {}))
+
     if vitals:
         risk_scores = compute_risk_scores(age, vitals)
-        enhanced['computed_risk_scores'] = risk_scores
-        
+        enhanced["computed_risk_scores"] = risk_scores
+
         # Add human-readable risk summary
         alerts = []
-        if risk_scores['shock_index'] > 0.9:
-            alerts.append(f"⚠️ SHOCK INDEX {risk_scores['shock_index']} - {risk_scores['shock_index_interpretation']}")
-        if risk_scores['map'] < 60:
+        if risk_scores["shock_index"] > 0.9:
+            alerts.append(
+                f"⚠️ SHOCK INDEX {risk_scores['shock_index']} - {risk_scores['shock_index_interpretation']}"
+            )
+        if risk_scores["map"] < 60:
             alerts.append(f"⚠️ MAP {risk_scores['map']} mmHg - {risk_scores['map_interpretation']}")
-        if risk_scores['qsofa'] >= 2:
+        if risk_scores["qsofa"] >= 2:
             alerts.append(f"⚠️ qSOFA {risk_scores['qsofa']} - {risk_scores['qsofa_interpretation']}")
-        
-        enhanced['risk_alerts'] = alerts
-    
+
+        enhanced["risk_alerts"] = alerts
+
     return enhanced
 
 
 def calculate_consensus(opinions: List[Dict]) -> float:
     """
     Calculate consensus score (fraction agreeing within ±1 ESI level).
-    
+
     Used for iterative consensus trigger (Priority 2).
     """
     if not opinions:
         return 1.0
-    
-    esi_predictions = [op.get('esi_pred') for op in opinions if op.get('esi_pred')]
+
+    esi_predictions = [op.get("esi_pred") for op in opinions if op.get("esi_pred")]
     if not esi_predictions:
         return 0.5
-    
+
     # Mode ESI
     from collections import Counter
+
     mode_esi = Counter(esi_predictions).most_common(1)[0][0]
-    
+
     # Count within ±1
     agreeing = sum(1 for esi in esi_predictions if abs(esi - mode_esi) <= 1)
     return agreeing / len(esi_predictions)
@@ -155,7 +158,7 @@ async def run_council_async(
     use_peer_critique: bool = True,
     max_iterations: int = 2,
     use_safety_critic: bool = False,
-    client = None,  # Allow injection of client (e.g. AnthropicAdapter)
+    client=None,  # Allow injection of client (e.g. AnthropicAdapter)
     model: str = "gpt-5.1",
     # RAG parameters (Stage 0: Knowledge Augmentation)
     use_rag: bool = False,
@@ -166,7 +169,7 @@ async def run_council_async(
 ) -> Dict:
     """
     Run enhanced council process with optional RAG augmentation.
-    
+
     Architecture:
         Stage 0: RAG Knowledge Augmentation (if use_rag=True)
         Stage 1: Parallel first opinions (with vital sign tools)
@@ -176,7 +179,7 @@ async def run_council_async(
         Stage 5: Safety critic review
         Stage 6: Hallucination detection
         Stage 7: Deterministic guardrails (ALWAYS final authority)
-    
+
     Args:
         case_data: Patient case dict
         use_peer_critique: Enable Karpathy peer review layer (default True)
@@ -189,10 +192,10 @@ async def run_council_async(
         rag_safety_config: RAG safety configuration (uses default if None)
         rag_index: Pre-loaded hybrid index (required if use_rag=True)
         rag_embedder: Pre-loaded embedder (required if use_rag=True)
-    
+
     Returns:
         Dict with final ESI, reasoning, citations, and safety metadata.
-    
+
     Safety Invariants:
         - RAG is advisory, not authoritative
         - Deterministic guardrails override any RAG-derived conclusions
@@ -200,14 +203,14 @@ async def run_council_async(
     """
     if client is None:
         client = get_async_client()
-    
+
     iterations = []
     rag_context: RAGContext | None = None
     rag_citations: list[str] = []
-    
+
     # Enhance case with computational tools (Priority 3)
     enhanced_case = enhance_case_with_tools(case_data)
-    
+
     # === STAGE 0: RAG KNOWLEDGE AUGMENTATION ===
     if use_rag and RAG_AVAILABLE:
         if rag_index is None or rag_embedder is None:
@@ -222,13 +225,14 @@ async def run_council_async(
                 rag_config.enabled = True
             if rag_safety_config is None:
                 from rag.config import RAGSafetyConfig
+
                 rag_safety_config = RAGSafetyConfig()
-            
+
             # Extract clinical question for retrieval
             clinical_question = _build_clinical_question(enhanced_case)
-            
+
             logger.info("[RAG] Stage 0: Retrieving knowledge for: %s", clinical_question[:100])
-            
+
             # Run retrieval
             rag_context = retrieve(
                 question=clinical_question,
@@ -237,48 +241,41 @@ async def run_council_async(
                 config=rag_config,
                 safety_config=rag_safety_config,
             )
-            
+
             rag_citations = rag_context.citations
-            
+
             logger.info(
                 "[RAG] Retrieved %d citations, confidence=%.2f, should_abstain=%s",
                 len(rag_citations),
                 rag_context.confidence,
                 rag_context.should_abstain,
             )
-            
+
             # Inject RAG context into case data for specialists
             if rag_context.formatted_context:
-                enhanced_case['rag_context'] = rag_context.formatted_context
-                enhanced_case['rag_confidence'] = rag_context.confidence
-                enhanced_case['rag_should_abstain'] = rag_context.should_abstain
-                enhanced_case['rag_citations'] = rag_citations
+                enhanced_case["rag_context"] = rag_context.formatted_context
+                enhanced_case["rag_confidence"] = rag_context.confidence
+                enhanced_case["rag_should_abstain"] = rag_context.should_abstain
+                enhanced_case["rag_citations"] = rag_citations
     elif use_rag and not RAG_AVAILABLE:
         logger.warning(
-            "[RAG] use_rag=True but RAG module not available. "
-            "Install with: pip install .[rag]"
+            "[RAG] use_rag=True but RAG module not available. Install with: pip install .[rag]"
         )
-    
+
     # === ITERATION 1 ===
-    
+
     # Stage 1: Debate (Parallel First Opinions)
-    first_opinions = await get_first_opinions(
-        client=client,
-        case_data=enhanced_case,
-        model=model
-    )
-    
+    first_opinions = await get_first_opinions(client=client, case_data=enhanced_case, model=model)
+
     # Stage 2: Peer Critique (NEW - Karpathy method)
     credibility_weights = None
     critiques = None
-    
+
     if use_peer_critique:
         credibility_weights, critiques = await run_peer_critique_layer(
-            client=client,
-            initial_opinions=first_opinions,
-            head_configs=COUNCIL_HEADS
+            client=client, initial_opinions=first_opinions, head_configs=COUNCIL_HEADS
         )
-    
+
     # Stage 3: Chairman Synthesis
     final_decision = await synthesize_final_decision(
         client=client,
@@ -286,59 +283,61 @@ async def run_council_async(
         member_opinions=first_opinions,
         peer_rankings=critiques if use_peer_critique else None,
         credibility_weights=credibility_weights,
-        model=model
+        model=model,
     )
-    
-    iterations.append({
-        'iteration': 1,
-        'opinions': first_opinions,
-        'critiques': critiques,
-        'weights': credibility_weights,
-        'decision': final_decision
-    })
-    
+
+    iterations.append(
+        {
+            "iteration": 1,
+            "opinions": first_opinions,
+            "critiques": critiques,
+            "weights": credibility_weights,
+            "decision": final_decision,
+        }
+    )
+
     # === ITERATIVE CONSENSUS (Priority 2) ===
     # Trigger second round if ESI 1/2 AND low consensus
-    
-    final_esi = final_decision.get('final_esi_level')
+
+    final_esi = final_decision.get("final_esi_level")
     consensus_score = calculate_consensus(first_opinions)
-    
+
     if final_esi in [1, 2] and consensus_score < 0.6 and max_iterations > 1:
         # Run second iteration with peer critiques made explicit
         refined_case = enhanced_case.copy()
-        refined_case['peer_feedback'] = {
-            'iteration': 1,
-            'critiques': critiques,
-            'chairman_decision': final_decision
+        refined_case["peer_feedback"] = {
+            "iteration": 1,
+            "critiques": critiques,
+            "chairman_decision": final_decision,
         }
-        
+
         # Re-run with explicit peer context
         second_opinions = await get_first_opinions(
-            client=client,
-            case_data=refined_case,
-            model=model
+            client=client, case_data=refined_case, model=model
         )
-        
+
         second_decision = await synthesize_final_decision(
             client=client,
             case_data=refined_case,
             member_opinions=second_opinions,
             peer_rankings=None,  # No re-critique in iteration 2
             credibility_weights=None,
-            model=model
+            model=model,
         )
-        
-        iterations.append({
-            'iteration': 2,
-            'opinions': second_opinions,
-            'decision': second_decision,
-            'reason': f'Low consensus ({consensus_score:.2f}) for ESI {final_esi}'
-        })
-        
+
+        iterations.append(
+            {
+                "iteration": 2,
+                "opinions": second_opinions,
+                "decision": second_decision,
+                "reason": f"Low consensus ({consensus_score:.2f}) for ESI {final_esi}",
+            }
+        )
+
         # Use second iteration as final
         final_decision = second_decision
-        final_esi = second_decision.get('final_esi_level')
-    
+        final_esi = second_decision.get("final_esi_level")
+
     # === SAFETY CRITIC ===
     pre_critic_final_esi = final_esi
     critic_result = None
@@ -349,55 +348,53 @@ async def run_council_async(
         critic_result = await run_safety_critic(
             case_data=case_data,
             council_decision={**final_decision, "final_esi": final_esi},
-            member_opinions=first_opinions
+            member_opinions=first_opinions,
         )
 
-        if critic_result.get('override_recommended'):
+        if critic_result.get("override_recommended"):
             critic_overrode = True
-            final_esi = critic_result.get('critic_esi') or final_esi
+            final_esi = critic_result.get("critic_esi") or final_esi
             override_note = (
                 "Safety Critic Override: Adjusted to ESI "
                 f"{final_esi} after critic flagged undertriage. "
                 f"Critic reasoning: {critic_result.get('reasoning', '')}"
             )
-            final_decision['rationale'] = (
+            final_decision["rationale"] = (
                 f"{final_decision.get('rationale', '')}\n\n{override_note}"
             ).strip()
-            final_decision['final_esi_level'] = final_esi
+            final_decision["final_esi_level"] = final_esi
 
         logger.info(
             "[SafetyCritic] Council ESI %s -> Final ESI %s (critic ESI: %s, overrode=%s)",
             pre_critic_final_esi,
             final_esi,
-            critic_result.get('critic_esi') if critic_result else None,
-            critic_overrode
+            critic_result.get("critic_esi") if critic_result else None,
+            critic_overrode,
         )
 
     # === SAFETY CHECKS ===
-    
+
     # === SAFETY CHECKS ===
-    
+
     # Hallucination detection (Optional - requires Enterprise Level 3)
-    import os
     if os.getenv("ENABLE_HALLUCINATION_CHECK", "true").lower() == "true":
         hallucination_check = await detect_hallucinations(
             case_data=case_data,  # Use original (non-enhanced) for checking
-            council_output=final_decision.get("rationale", "")
+            council_output=final_decision.get("rationale", ""),
         )
     else:
         hallucination_check = {
             "status": "Skipped",
             "hallucination_rate": 0.0,
-            "details": "Hallucination check disabled (requires Enterprise Level 3)"
+            "details": "Hallucination check disabled (requires Enterprise Level 3)",
         }
-    
+
     # === CONFIDENCE ASSESSMENT (Constitutional Triage Uncertainty) ===
     # Extract agent ESI predictions for confidence analysis
     agent_esi_predictions = [
-        op.get('esi_pred') for op in first_opinions 
-        if op.get('esi_pred') is not None
+        op.get("esi_pred") for op in first_opinions if op.get("esi_pred") is not None
     ]
-    
+
     # Assess confidence and detect potential incorrect-confidence scenarios
     confidence_assessment = assess_confidence(
         case_data=case_data,
@@ -405,24 +402,26 @@ async def run_council_async(
         final_esi=final_esi,
         consensus_score=consensus_score,
     )
-    
+
     # Auto-escalate uncertain ESI-4 → ESI-3 (per Constitutional AI principles)
     pre_confidence_esi = final_esi
     confidence_escalated = False
-    
+
     # Handle None ESI (default to ESI-3 for safety)
     if final_esi is None:
         final_esi = 3
         logger.warning("[ConfidenceDetector] final_esi was None, defaulting to ESI-3")
-    
+
     if confidence_assessment.escalation_recommended and final_esi >= 4:
         final_esi = max(1, final_esi - 1)  # Escalate by 1 level
         confidence_escalated = True
         logger.info(
             "[ConfidenceDetector] Escalated ESI %s → %s: %s",
-            pre_confidence_esi, final_esi, confidence_assessment.escalation_reason
+            pre_confidence_esi,
+            final_esi,
+            confidence_assessment.escalation_reason,
         )
-    
+
     # Compile full result
     result = {
         "final_esi": final_esi,
@@ -431,16 +430,16 @@ async def run_council_async(
         "reasoning": final_decision.get("rationale"),
         "heads": first_opinions,
         "peer_critique": {
-            'enabled': use_peer_critique,
-            'critiques': critiques,
-            'weights': credibility_weights
+            "enabled": use_peer_critique,
+            "critiques": critiques,
+            "weights": credibility_weights,
         },
         "iterations": iterations,
         "consensus_score": consensus_score,
         "chairman": final_decision,
         "is_refusal": final_decision.get("is_refusal", False),
         "hallucination_check": hallucination_check,
-        "computed_risk_scores": enhanced_case.get('computed_risk_scores'),
+        "computed_risk_scores": enhanced_case.get("computed_risk_scores"),
         "safety_critic_enabled": use_safety_critic,
         "safety_critic": critic_result,
         "critic_overrode": critic_overrode,
@@ -463,15 +462,16 @@ async def run_council_async(
             "should_abstain": rag_context.should_abstain if rag_context else False,
             "corpus_id": rag_context.corpus_id if rag_context else None,
             "embedding_model_id": rag_context.embedding_model_id if rag_context else None,
-        } if use_rag else {"enabled": False},
+        }
+        if use_rag
+        else {"enabled": False},
     }
 
     # Apply Deterministic Guardrails (Priority 0 - MUST run last)
     guardrail_res = apply_deterministic_guardrails(case_data, result)
     result = guardrail_res.safe_output
     result["deterministic_flags"] = [
-        {"code": f.code, "message": f.message, "severity": f.severity}
-        for f in guardrail_res.flags
+        {"code": f.code, "message": f.message, "severity": f.severity} for f in guardrail_res.flags
     ]
-    
+
     return result

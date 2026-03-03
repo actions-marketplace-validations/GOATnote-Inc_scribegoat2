@@ -21,38 +21,42 @@ License: CC0 1.0 (matching MSC framework)
 import hashlib
 import secrets
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
-from contextlib import contextmanager
-
 
 # =============================================================================
 # ISOLATION POLICIES
 # =============================================================================
 
+
 class IsolationLevel(Enum):
     """Level of health data isolation."""
-    STANDARD = "standard"       # Basic isolation, logging allowed
-    STRICT = "strict"           # No logging of PHI, minimal traces
-    EPHEMERAL = "ephemeral"     # Memory cleared after session, no persistence
+
+    STANDARD = "standard"  # Basic isolation, logging allowed
+    STRICT = "strict"  # No logging of PHI, minimal traces
+    EPHEMERAL = "ephemeral"  # Memory cleared after session, no persistence
 
 
 class DataFlowPolicy(Enum):
     """Policy for data flow between contexts."""
-    BLOCKED = "blocked"         # No data can flow
-    ANONYMIZED = "anonymized"   # Only de-identified data can flow
-    PERMITTED = "permitted"     # Data can flow (should rarely be used)
+
+    BLOCKED = "blocked"  # No data can flow
+    ANONYMIZED = "anonymized"  # Only de-identified data can flow
+    PERMITTED = "permitted"  # Data can flow (should rarely be used)
 
 
 # =============================================================================
 # HEALTH SPACE CONTEXT
 # =============================================================================
 
+
 @dataclass
 class HealthSpaceConfig:
     """Configuration for health space isolation."""
+
     # Isolation settings
     isolation_level: IsolationLevel = IsolationLevel.STRICT
     memory_isolation: bool = True
@@ -61,7 +65,7 @@ class HealthSpaceConfig:
 
     # Retention settings
     session_retention_hours: int = 24  # Conversations retained for this long
-    memory_retention_days: int = 0     # Health memories (0 = no retention)
+    memory_retention_days: int = 0  # Health memories (0 = no retention)
 
     # Flow policies
     inbound_flow_policy: DataFlowPolicy = DataFlowPolicy.BLOCKED
@@ -82,6 +86,7 @@ class HealthSpaceMemory:
     - Not used for model training
     - Subject to stricter retention policies
     """
+
     session_id: str
     memories: List[Dict[str, Any]] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -97,14 +102,16 @@ class HealthSpaceMemory:
             f"{self.session_id}:{len(self.memories)}:{time.time_ns()}".encode()
         ).hexdigest()[:16]
 
-        self.memories.append({
-            "id": memory_id,
-            "content": content,
-            "type": memory_type,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "training_excluded": True,
-            "exportable": False,
-        })
+        self.memories.append(
+            {
+                "id": memory_id,
+                "content": content,
+                "type": memory_type,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "training_excluded": True,
+                "exportable": False,
+            }
+        )
 
         self.last_accessed = datetime.now(timezone.utc)
         return memory_id
@@ -124,6 +131,7 @@ class HealthSpace:
     Implements the privacy architecture used by both major AI healthcare
     offerings to ensure health data remains isolated from general context.
     """
+
     session_id: str
     config: HealthSpaceConfig = field(default_factory=HealthSpaceConfig)
     memory: HealthSpaceMemory = field(default=None)
@@ -161,11 +169,14 @@ class HealthSpace:
         self.last_verification = datetime.now(timezone.utc)
 
         if self.config.audit_enabled:
-            self._log_audit_event("isolation_verification", {
-                "verified": self.isolation_verified,
-                "checks_passed": sum(checks),
-                "total_checks": len(checks),
-            })
+            self._log_audit_event(
+                "isolation_verification",
+                {
+                    "verified": self.isolation_verified,
+                    "checks_passed": sum(checks),
+                    "total_checks": len(checks),
+                },
+            )
 
         return self.isolation_verified
 
@@ -184,11 +195,14 @@ class HealthSpace:
 
         # Even if permitted, log the attempt
         if self.config.audit_enabled:
-            self._log_audit_event("export_attempt", {
-                "target_context": target_context,
-                "policy": self.config.outbound_flow_policy.value,
-                "allowed": True,
-            })
+            self._log_audit_event(
+                "export_attempt",
+                {
+                    "target_context": target_context,
+                    "policy": self.config.outbound_flow_policy.value,
+                    "allowed": True,
+                },
+            )
 
         return True
 
@@ -218,12 +232,15 @@ class HealthSpace:
 
         if self.config.audit_enabled:
             # Audit without storing PHI
-            self._log_audit_event("conversation_turn", {
-                "turn_number": self.conversation_turns,
-                "user_message_length": len(user_message),
-                "response_length": len(assistant_response),
-                "contains_phi": contains_phi,
-            })
+            self._log_audit_event(
+                "conversation_turn",
+                {
+                    "turn_number": self.conversation_turns,
+                    "user_message_length": len(user_message),
+                    "response_length": len(assistant_response),
+                    "contains_phi": contains_phi,
+                },
+            )
 
     def connect_health_source(self, source_type: str, source_id: str) -> bool:
         """
@@ -237,10 +254,13 @@ class HealthSpace:
             self.connected_sources.append(source_key)
 
             if self.config.audit_enabled:
-                self._log_audit_event("source_connected", {
-                    "source_type": source_type,
-                    "source_id_hash": hashlib.sha256(source_id.encode()).hexdigest()[:8],
-                })
+                self._log_audit_event(
+                    "source_connected",
+                    {
+                        "source_type": source_type,
+                        "source_id_hash": hashlib.sha256(source_id.encode()).hexdigest()[:8],
+                    },
+                )
 
         return True
 
@@ -253,7 +273,9 @@ class HealthSpace:
             "training_excluded": self.config.training_excluded,
             "cross_context_blocked": self.config.cross_context_blocked,
             "isolation_verified": self.isolation_verified,
-            "last_verification": self.last_verification.isoformat() if self.last_verification else None,
+            "last_verification": self.last_verification.isoformat()
+            if self.last_verification
+            else None,
             "conversation_turns": self.conversation_turns,
             "connected_sources_count": len(self.connected_sources),
             "memories_count": len(self.memory.memories),
@@ -261,17 +283,20 @@ class HealthSpace:
 
     def _log_audit_event(self, event_type: str, details: Dict[str, Any]) -> None:
         """Log audit event (for compliance, not training)."""
-        self.audit_events.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "event_type": event_type,
-            "session_id": self.session_id,
-            "details": details,
-        })
+        self.audit_events.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event_type": event_type,
+                "session_id": self.session_id,
+                "details": details,
+            }
+        )
 
 
 # =============================================================================
 # HEALTH CONTEXT MANAGER
 # =============================================================================
+
 
 class HealthContextManager:
     """
@@ -349,10 +374,13 @@ class HealthContextManager:
         if clear_memories:
             cleared_count = space.memory.clear()
             if space.config.audit_enabled:
-                space._log_audit_event("space_closed", {
-                    "memories_cleared": cleared_count,
-                    "conversation_turns": space.conversation_turns,
-                })
+                space._log_audit_event(
+                    "space_closed",
+                    {
+                        "memories_cleared": cleared_count,
+                        "conversation_turns": space.conversation_turns,
+                    },
+                )
 
         self._closed_spaces.add(session_id)
         return True
@@ -403,6 +431,7 @@ class HealthContextManager:
 # ISOLATION ENFORCEMENT DECORATOR
 # =============================================================================
 
+
 def require_health_isolation(func):
     """
     Decorator to ensure function executes within isolated health context.
@@ -413,6 +442,7 @@ def require_health_isolation(func):
             # This function can only be called with a properly isolated space
             pass
     """
+
     def wrapper(*args, **kwargs):
         # Look for HealthSpace in args or kwargs
         health_space = None
@@ -426,14 +456,10 @@ def require_health_isolation(func):
             health_space = kwargs.get("health_space")
 
         if health_space is None:
-            raise ValueError(
-                f"{func.__name__} requires a HealthSpace argument for isolation"
-            )
+            raise ValueError(f"{func.__name__} requires a HealthSpace argument for isolation")
 
         if not health_space.verify_isolation():
-            raise ValueError(
-                f"HealthSpace {health_space.session_id} failed isolation verification"
-            )
+            raise ValueError(f"HealthSpace {health_space.session_id} failed isolation verification")
 
         return func(*args, **kwargs)
 

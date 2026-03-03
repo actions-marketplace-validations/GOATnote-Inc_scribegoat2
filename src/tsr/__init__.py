@@ -29,10 +29,10 @@ Design principles:
 5. Rust hot path available via ``tsr_core/`` for performance-critical deployments
 """
 
+from src.tsr.contracts.composer import ContractComposer
+from src.tsr.contracts.versioned import VersionedContract
 from src.tsr.runtime.config import TSRConfig
 from src.tsr.runtime.server import TSRServer
-from src.tsr.contracts.versioned import VersionedContract
-from src.tsr.contracts.composer import ContractComposer
 
 __all__ = [
     "TSRConfig",

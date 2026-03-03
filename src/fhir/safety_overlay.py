@@ -26,10 +26,10 @@ Design:
 from typing import Any, Dict, Optional
 
 from src.fhir.resources import (
-    build_detected_issue,
     _generate_id,
-    _now_instant,
     _make_codeable_concept,
+    _now_instant,
+    build_detected_issue,
 )
 
 
@@ -376,9 +376,7 @@ def risk_profile_to_measure_report(
                         ],
                         "stratum": [
                             {
-                                "value": {
-                                    "text": f"{turn_2_failures} failures at Turn 2"
-                                },
+                                "value": {"text": f"{turn_2_failures} failures at Turn 2"},
                                 "population": [
                                     {
                                         "code": _make_codeable_concept(
@@ -463,9 +461,7 @@ def exposure_to_adverse_event(
         "moderate": ("non-serious", "Non-serious"),
         "low": ("non-serious", "Non-serious"),
     }
-    ser_code, ser_display = seriousness_map.get(
-        severity_band, ("non-serious", "Non-serious")
-    )
+    ser_code, ser_display = seriousness_map.get(severity_band, ("non-serious", "Non-serious"))
 
     event: Dict[str, Any] = {
         "resourceType": "AdverseEvent",

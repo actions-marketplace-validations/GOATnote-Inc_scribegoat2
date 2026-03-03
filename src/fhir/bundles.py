@@ -58,8 +58,12 @@ def build_patient_bundle(
     entries: List[Dict[str, Any]] = [_bundle_entry(patient)]
 
     for resource_list in [
-        organizations, practitioners, encounters, conditions,
-        observations, procedures,
+        organizations,
+        practitioners,
+        encounters,
+        conditions,
+        observations,
+        procedures,
     ]:
         if resource_list:
             for resource in resource_list:
@@ -113,7 +117,10 @@ def build_sdoh_bundle(
         entries.append(_bundle_entry(encounter))
 
     for resource_list in [
-        screening_observations, conditions, goals, service_requests,
+        screening_observations,
+        conditions,
+        goals,
+        service_requests,
     ]:
         if resource_list:
             for resource in resource_list:

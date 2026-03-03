@@ -24,15 +24,15 @@ Exit codes:
 Last Updated: 2026-01-24
 """
 
-import sys
-import os
-import json
-import subprocess
 import argparse
+import json
+import os
+import subprocess
+import sys
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-from dataclasses import dataclass, field, asdict
+from typing import Any, Dict, List, Optional
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -47,6 +47,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 @dataclass
 class CheckResult:
     """Result of a single audit check."""
+
     check_id: str
     check_name: str
     passed: bool
@@ -58,6 +59,7 @@ class CheckResult:
 @dataclass
 class ChecklistReport:
     """Complete audit checklist report."""
+
     timestamp: str
     checks: List[CheckResult] = field(default_factory=list)
     total_checks: int = 0
@@ -84,6 +86,7 @@ class ChecklistReport:
 def check_no_api_keys_required(verbose: bool) -> CheckResult:
     """Verify coverage validation can run without API keys."""
     import time
+
     start = time.time()
 
     check_id = "NO_API_KEYS_FOR_COVERAGE"
@@ -142,6 +145,7 @@ def check_no_api_keys_required(verbose: bool) -> CheckResult:
 def check_scripts_have_help(verbose: bool) -> CheckResult:
     """Verify all scripts have --help flags."""
     import time
+
     start = time.time()
 
     check_id = "SCRIPTS_HAVE_HELP"
@@ -195,6 +199,7 @@ def check_scripts_have_help(verbose: bool) -> CheckResult:
 def check_contracts_parseable(verbose: bool) -> CheckResult:
     """Verify contracts can be parsed."""
     import time
+
     start = time.time()
 
     check_id = "CONTRACTS_PARSEABLE"
@@ -214,6 +219,7 @@ def check_contracts_parseable(verbose: bool) -> CheckResult:
 
     try:
         import yaml
+
         failed_contracts = []
 
         for contract_path in contract_files:
@@ -258,6 +264,7 @@ def check_contracts_parseable(verbose: bool) -> CheckResult:
 def check_fixtures_valid(verbose: bool) -> CheckResult:
     """Verify fixtures are valid JSON/YAML."""
     import time
+
     start = time.time()
 
     check_id = "FIXTURES_VALID"
@@ -283,7 +290,7 @@ def check_fixtures_valid(verbose: bool) -> CheckResult:
                 for i, line in enumerate(f):
                     json.loads(line)
         except json.JSONDecodeError as e:
-            failed_fixtures.append(f"{jsonl_path.name}:{i+1}: {e}")
+            failed_fixtures.append(f"{jsonl_path.name}:{i + 1}: {e}")
         except Exception as e:
             failed_fixtures.append(f"{jsonl_path.name}: {e}")
 
@@ -300,6 +307,7 @@ def check_fixtures_valid(verbose: bool) -> CheckResult:
     # Check YAML files in contracts subdirectory
     try:
         import yaml
+
         for yaml_path in (fixtures_dir / "configs" / "contracts").glob("*.yaml"):
             try:
                 with open(yaml_path) as f:
@@ -331,6 +339,7 @@ def check_fixtures_valid(verbose: bool) -> CheckResult:
 def check_documentation_exists(verbose: bool) -> CheckResult:
     """Verify required documentation files exist."""
     import time
+
     start = time.time()
 
     check_id = "DOCUMENTATION_EXISTS"
@@ -374,13 +383,14 @@ def check_documentation_exists(verbose: bool) -> CheckResult:
 def check_hashing_module(verbose: bool) -> CheckResult:
     """Verify hashing module works correctly."""
     import time
+
     start = time.time()
 
     check_id = "HASHING_MODULE_WORKS"
     check_name = "Hashing module produces consistent results"
 
     try:
-        from src.utils.hashing import sha256_text, sha256_file
+        from src.utils.hashing import sha256_file, sha256_text
 
         # Test text hashing
         test_text = "Hello, world!"
@@ -439,6 +449,7 @@ def check_hashing_module(verbose: bool) -> CheckResult:
 def check_thresholds_documented(verbose: bool) -> CheckResult:
     """Verify thresholds are labeled as normative in code."""
     import time
+
     start = time.time()
 
     check_id = "THRESHOLDS_LABELED"
@@ -497,6 +508,7 @@ def check_thresholds_documented(verbose: bool) -> CheckResult:
 def check_exit_codes_documented(verbose: bool) -> CheckResult:
     """Verify exit codes are documented."""
     import time
+
     start = time.time()
 
     check_id = "EXIT_CODES_DOCUMENTED"
@@ -620,7 +632,9 @@ def print_report(report: ChecklistReport, verbose: bool = False) -> None:
 
     print()
     print("-" * 60)
-    print(f"Total: {report.total_checks} | Passed: {report.passed_checks} | Failed: {report.failed_checks}")
+    print(
+        f"Total: {report.total_checks} | Passed: {report.passed_checks} | Failed: {report.failed_checks}"
+    )
     print()
 
     if report.overall_passed:
@@ -649,7 +663,8 @@ Examples:
 """,
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Verbose output",
     )
@@ -659,7 +674,8 @@ Examples:
         help="Output JSON instead of human-readable text",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         help="Write report to specified path",
     )

@@ -40,7 +40,9 @@ def _is_hallucination_related(rule: str) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate GPT-5.2 high-risk case index (extractive).")
+    parser = argparse.ArgumentParser(
+        description="Generate GPT-5.2 high-risk case index (extractive)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -158,7 +160,9 @@ def main() -> None:
     md.append(f"**Generated (UTC):** {now}  ")
     md.append(f"**Source:** `{args.graded}`, `{args.diag}`")
     md.append("")
-    md.append("This document is **purely extractive**. It is a *triage queue* generator, not a clinical harm claim.")
+    md.append(
+        "This document is **purely extractive**. It is a *triage queue* generator, not a clinical harm claim."
+    )
     md.append("")
     md.append(f"Low-score threshold used for queues: **score <= {thr:.1f}**")
     md.append("")
@@ -203,7 +207,9 @@ def main() -> None:
         if not isinstance(reasons, list):
             reasons = []
         reasons_s = "; ".join(str(x) for x in reasons)
-        md.append(f"| `{r['prompt_id']}` | {r['score']:.1f} | {r['corrections_count']} | {reasons_s} |")
+        md.append(
+            f"| `{r['prompt_id']}` | {r['score']:.1f} | {r['corrections_count']} | {reasons_s} |"
+        )
     md.append("")
     md.append("---")
     md.append("")
@@ -232,5 +238,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

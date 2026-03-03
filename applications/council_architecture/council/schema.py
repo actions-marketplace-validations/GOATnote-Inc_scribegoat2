@@ -1,5 +1,7 @@
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator, ConfigDict
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, validator
+
 
 class VitalSigns(BaseModel):
     hr: Optional[float] = Field(None, description="Heart Rate")
@@ -11,29 +13,31 @@ class VitalSigns(BaseModel):
     pain: Optional[float] = Field(None, description="Pain Score 0-10")
     map: Optional[float] = Field(None, description="Mean Arterial Pressure")
 
-    @validator('spo2')
+    @validator("spo2")
     def validate_spo2(cls, v):
         if v is not None and (v < 0 or v > 100):
-            raise ValueError('SpO2 must be between 0 and 100')
+            raise ValueError("SpO2 must be between 0 and 100")
         return v
+
 
 class PatientCase(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    
+
     patient_id: str
     age: float
     sex: str
     chief_complaint: str
-    vital_signs: Optional[VitalSigns] = Field(None, alias="vitals") # Handle both keys
-    nursing_note: Optional[str] = Field(None, alias="nursing_notes") # Handle both keys
+    vital_signs: Optional[VitalSigns] = Field(None, alias="vitals")  # Handle both keys
+    nursing_note: Optional[str] = Field(None, alias="nursing_notes")  # Handle both keys
     history: Optional[str] = None
     medications: Optional[str] = None
     arrival_mode: Optional[str] = None
-    
+
     # Benchmark specific fields
     esi_true: Optional[int] = None
     critical_outcome: Optional[bool] = None
     cc_category: Optional[str] = None
+
 
 class CouncilMemberOpinion(BaseModel):
     member_id: int
@@ -41,6 +45,7 @@ class CouncilMemberOpinion(BaseModel):
     esi_level: Optional[int]
     rationale: str
     confidence: float
+
 
 class CouncilConsensus(BaseModel):
     final_esi: int

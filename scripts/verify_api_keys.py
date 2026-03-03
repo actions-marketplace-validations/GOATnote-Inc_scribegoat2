@@ -14,6 +14,7 @@ import sys
 # Load .env if available
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
     print("✅ Loaded .env file")
 except ImportError:
@@ -22,10 +23,10 @@ except ImportError:
 
 # Required API keys
 REQUIRED_KEYS = {
-    'OPENAI_API_KEY': 'OpenAI (GPT-5.2)',
-    'ANTHROPIC_API_KEY': 'Anthropic (Claude)',
-    'GOOGLE_API_KEY': 'Google (Gemini)',
-    'XAI_API_KEY': 'xAI (Grok)'
+    "OPENAI_API_KEY": "OpenAI (GPT-5.2)",
+    "ANTHROPIC_API_KEY": "Anthropic (Claude)",
+    "GOOGLE_API_KEY": "Google (Gemini)",
+    "XAI_API_KEY": "xAI (Grok)",
 }
 
 print("\n🔍 Checking API Keys:\n")
@@ -33,10 +34,10 @@ print("\n🔍 Checking API Keys:\n")
 all_present = True
 for key, description in REQUIRED_KEYS.items():
     value = os.getenv(key)
-    
+
     if value:
         # Show first 10 chars for verification
-        masked = value[:10] + '...' + value[-4:] if len(value) > 14 else value[:6] + '...'
+        masked = value[:10] + "..." + value[-4:] if len(value) > 14 else value[:6] + "..."
         print(f"  ✅ {key:20s} = {masked:20s} ({description})")
     else:
         print(f"  ❌ {key:20s} = NOT SET ({description})")
@@ -47,7 +48,9 @@ print()
 if all_present:
     print("✅ All API keys configured correctly")
     print("\nYou can now run evaluations:")
-    print("  python bloom_medical_eval/run_phase1b_harm_boundary_eval.py --target-model gpt-5.2 --provider openai --all --smoke-test")
+    print(
+        "  python bloom_medical_eval/run_phase1b_harm_boundary_eval.py --target-model gpt-5.2 --provider openai --all --smoke-test"
+    )
     sys.exit(0)
 else:
     print("❌ Missing API keys detected")
@@ -56,4 +59,3 @@ else:
     print("  2. Add missing keys to .env (see .env.example)")
     print("  3. For CI: Configure GitHub Secrets")
     sys.exit(1)
-

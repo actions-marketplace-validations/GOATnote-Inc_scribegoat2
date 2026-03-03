@@ -7,15 +7,14 @@ This package provides tools for maintaining the Enhanced Co-Author Persona:
 """
 
 from .commit_generator import CommitMessage, CommitType, Scope
-from .next_best_action import RepoAnalyzer, Action, Priority, Category
+from .next_best_action import Action, Category, Priority, RepoAnalyzer
 
 __all__ = [
     "CommitMessage",
-    "CommitType", 
+    "CommitType",
     "Scope",
     "RepoAnalyzer",
     "Action",
     "Priority",
     "Category",
 ]
-

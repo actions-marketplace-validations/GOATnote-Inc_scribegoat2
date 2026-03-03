@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
-    from mcp.types import Tool, TextContent
+    from mcp.types import TextContent, Tool
 
     MCP_AVAILABLE = True
 except ImportError:
@@ -96,9 +96,7 @@ async def check_response(
         forbidden_events = contract.invariants[state.current_state].forbid_any
 
     # Check for violation
-    violation_info = check_violation_realtime(
-        response, state.current_state, forbidden_events
-    )
+    violation_info = check_violation_realtime(response, state.current_state, forbidden_events)
 
     result = {
         "passed": violation_info is None,
@@ -317,9 +315,7 @@ async def main():
         sys.exit(1)
 
     async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream, write_stream, app.create_initialization_options()
-        )
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 
 if __name__ == "__main__":

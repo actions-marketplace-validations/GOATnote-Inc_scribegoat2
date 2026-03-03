@@ -11,31 +11,31 @@ Provides fault tolerance and reliability patterns:
 Designed for mission-critical healthcare AI systems
 """
 
-from .circuit_breaker import (
-    CircuitBreaker,
-    CircuitState,
-    CircuitBreakerError,
-    circuit_breaker,
-)
-from .retry import (
-    RetryPolicy,
-    RetryError,
-    retry,
-    with_retry,
-)
-from .timeout import (
-    TimeoutPolicy,
-    TimeoutError,
-    with_timeout,
-)
 from .bulkhead import (
     Bulkhead,
     BulkheadError,
     with_bulkhead,
 )
+from .circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerError,
+    CircuitState,
+    circuit_breaker,
+)
 from .fallback import (
     FallbackPolicy,
     with_fallback,
+)
+from .retry import (
+    RetryError,
+    RetryPolicy,
+    retry,
+    with_retry,
+)
+from .timeout import (
+    TimeoutError,
+    TimeoutPolicy,
+    with_timeout,
 )
 
 __all__ = [

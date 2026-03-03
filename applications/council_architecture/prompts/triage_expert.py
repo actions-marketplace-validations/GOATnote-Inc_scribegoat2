@@ -57,9 +57,9 @@ def format_triage_prompt(case_data: dict) -> str:
 
     Returns: formatted prompt string
     """
-    vital_signs_str = "\n".join([
-        f"- {k}: {v}" for k, v in case_data.get("vital_signs", {}).items()
-    ])
+    vital_signs_str = "\n".join(
+        [f"- {k}: {v}" for k, v in case_data.get("vital_signs", {}).items()]
+    )
 
     # Build RAG context section if available
     rag_context_section = ""
@@ -76,9 +76,7 @@ def format_triage_prompt(case_data: dict) -> str:
         elif rag_confidence < 0.5:
             confidence_note = "\n\u26a0\ufe0f MODERATE CONFIDENCE: Verify retrieved evidence against clinical presentation."
 
-        rag_context_section = RAG_CONTEXT_SECTION.format(
-            rag_context=rag_context
-        ) + confidence_note
+        rag_context_section = RAG_CONTEXT_SECTION.format(rag_context=rag_context) + confidence_note
 
     return TRIAGE_ASSESSMENT_PROMPT.format(
         age=case_data.get("age", "Unknown"),

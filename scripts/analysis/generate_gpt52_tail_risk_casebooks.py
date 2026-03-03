@@ -16,9 +16,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 
 def _load(path: str) -> Any:
@@ -51,7 +51,9 @@ def _is_medication_safety(rule: str) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate GPT-5.2 tail-risk casebooks (extractive).")
+    parser = argparse.ArgumentParser(
+        description="Generate GPT-5.2 tail-risk casebooks (extractive)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -107,15 +109,19 @@ def main() -> None:
     abst_md.append(f"**Generated (UTC):** {now}  ")
     abst_md.append(f"**Source:** `{args.graded}`, `{args.diag}`")
     abst_md.append("")
-    abst_md.append("This document is **purely extractive**: it lists abstained cases and their recorded reasons/telemetry.")
+    abst_md.append(
+        "This document is **purely extractive**: it lists abstained cases and their recorded reasons/telemetry."
+    )
     abst_md.append("")
     abst_md.append("---")
     abst_md.append("")
-    abst_md.append(f"## Summary")
+    abst_md.append("## Summary")
     abst_md.append("")
     abst_md.append(f"- Abstained cases: **{len(abstained_ids)}** / 1000")
     abst_md.append("")
-    abst_md.append("| prompt_id | score | reasons | safety_corrections | uncertainty | clinical_uncertainty | confidence | total_time_ms |")
+    abst_md.append(
+        "| prompt_id | score | reasons | safety_corrections | uncertainty | clinical_uncertainty | confidence | total_time_ms |"
+    )
     abst_md.append("|---|---:|---|---|---:|---:|---:|---:|")
     for pid in abstained_ids:
         d = diag_by_id.get(pid, {})
@@ -168,7 +174,9 @@ def main() -> None:
     safety_md.append(f"**Generated (UTC):** {now}  ")
     safety_md.append(f"**Source:** `{args.graded}`, `{args.diag}`")
     safety_md.append("")
-    safety_md.append("This document is **purely extractive**: it lists cases where the safety stack recorded emergency / hallucination-related / medication-safety rules.")
+    safety_md.append(
+        "This document is **purely extractive**: it lists cases where the safety stack recorded emergency / hallucination-related / medication-safety rules."
+    )
     safety_md.append("")
     safety_md.append("---")
     safety_md.append("")
@@ -180,9 +188,15 @@ def main() -> None:
     safety_md.append("")
     safety_md.append("### Top rules (counts)")
     safety_md.append("")
-    safety_md.append("- Emergency: " + ", ".join([f"`{k}`×{v}" for k, v in emergency_rules.most_common(10)]))
-    safety_md.append("- Hallucination: " + ", ".join([f"`{k}`×{v}" for k, v in halluc_rules.most_common(10)]))
-    safety_md.append("- Medication: " + ", ".join([f"`{k}`×{v}" for k, v in med_rules.most_common(10)]))
+    safety_md.append(
+        "- Emergency: " + ", ".join([f"`{k}`×{v}" for k, v in emergency_rules.most_common(10)])
+    )
+    safety_md.append(
+        "- Hallucination: " + ", ".join([f"`{k}`×{v}" for k, v in halluc_rules.most_common(10)])
+    )
+    safety_md.append(
+        "- Medication: " + ", ".join([f"`{k}`×{v}" for k, v in med_rules.most_common(10)])
+    )
     safety_md.append("")
     safety_md.append("---")
     safety_md.append("")
@@ -245,5 +259,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

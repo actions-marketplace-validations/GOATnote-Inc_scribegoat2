@@ -1,33 +1,32 @@
 """Tests for adversarial augmentation of FHIR bundles."""
 
 import copy
+import random
 
 import pytest
 
 from src.fhir.adversarial import (
-    augment_bundles,
-    _demographic_variants,
+    _AUG_EXT_URL,
     _coding_variants,
+    _demographic_variants,
+    _find_all_resources,
+    _find_resource,
     _pa_adversarial_variants,
     _structural_variants,
-    _find_resource,
-    _find_all_resources,
-    _AUG_EXT_URL,
+    augment_bundles,
 )
 from src.fhir.generator import (
     generate_all,
-    generate_safety_eval_bundles,
     generate_cms_0057f_bundles,
+    generate_safety_eval_bundles,
     load_spec,
     validate_bundle,
 )
 
-import random
-
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def minimal_safety_spec():
@@ -103,6 +102,7 @@ def cms_bundles():
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_augmentation_tags(bundle):
     """Extract augmentation category tags from bundle extensions."""
     tags = []
@@ -123,6 +123,7 @@ def _get_augmentation_tags(bundle):
 # ---------------------------------------------------------------------------
 # Category 1: Demographic diversity
 # ---------------------------------------------------------------------------
+
 
 class TestDemographicVariants:
     def test_produces_correct_count(self, safety_bundles):
@@ -180,6 +181,7 @@ class TestDemographicVariants:
 # Category 2: Coding edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestCodingVariants:
     def test_produces_correct_count(self, safety_bundles):
         rng = random.Random(42)
@@ -213,6 +215,7 @@ class TestCodingVariants:
 # ---------------------------------------------------------------------------
 # Category 3: PA adversarial
 # ---------------------------------------------------------------------------
+
 
 class TestPAAdversarialVariants:
     def test_only_applies_to_cms_bundles(self, safety_bundles):
@@ -250,6 +253,7 @@ class TestPAAdversarialVariants:
 # ---------------------------------------------------------------------------
 # Category 4: FHIR structural
 # ---------------------------------------------------------------------------
+
 
 class TestStructuralVariants:
     def test_produces_correct_count(self, safety_bundles):
@@ -308,6 +312,7 @@ class TestStructuralVariants:
 # augment_bundles (integration of all categories)
 # ---------------------------------------------------------------------------
 
+
 class TestAugmentBundles:
     def test_augments_safety_eval(self, safety_bundles):
         adv_spec = {
@@ -363,6 +368,7 @@ class TestAugmentBundles:
 # generate_all integration
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateAllIntegration:
     def test_adversarial_enabled_produces_more_bundles(self, minimal_safety_spec):
         # Without adversarial
@@ -409,6 +415,7 @@ class TestGenerateAllIntegration:
 # ---------------------------------------------------------------------------
 # load_spec defaults
 # ---------------------------------------------------------------------------
+
 
 class TestLoadSpecDefaults:
     def test_adversarial_defaults(self, tmp_path):

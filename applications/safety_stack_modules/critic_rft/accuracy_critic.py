@@ -16,9 +16,8 @@ Integration with existing critic_rft/reward_grader.py:
 - The trained critic can score new model outputs
 """
 
-from pathlib import Path
-from typing import Iterator
 import random
+from pathlib import Path
 
 from critic_rft.schemas import (
     AccuracyCriticExample,

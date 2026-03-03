@@ -19,8 +19,7 @@ Usage::
 
 from __future__ import annotations
 
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 def replay_transcript_rust(
@@ -45,8 +44,7 @@ def replay_transcript_rust(
         import tsr_core
     except ImportError:
         raise ImportError(
-            "tsr_core Rust kernel not available. "
-            "Build with: cd tsr_core && cargo build --release"
+            "tsr_core Rust kernel not available. Build with: cd tsr_core && cargo build --release"
         )
 
     tic = tsr_core.StreamingTIC.from_contract_json(contract_ir_json)
@@ -61,21 +59,25 @@ def replay_transcript_rust(
 
         if not turn_result.passed and turn_result.violation is not None:
             v = turn_result.violation
-            violations.append({
-                "turn": v.turn,
-                "state": v.state,
-                "violating_events": list(v.violating_events),
-                "evidence": v.evidence,
-            })
+            violations.append(
+                {
+                    "turn": v.turn,
+                    "state": v.state,
+                    "violating_events": list(v.violating_events),
+                    "evidence": v.evidence,
+                }
+            )
 
     tic_result = tic.result()
     for st in tic_result.state_history:
-        state_transitions.append({
-            "turn": st.turn,
-            "from_state": st.from_state,
-            "to_state": st.to_state,
-            "events": list(st.events),
-        })
+        state_transitions.append(
+            {
+                "turn": st.turn,
+                "from_state": st.from_state,
+                "to_state": st.to_state,
+                "events": list(st.events),
+            }
+        )
 
     return {
         "passed": tic_result.passed,
@@ -118,12 +120,14 @@ def replay_transcript_python(
             inv = contract.invariants[state]
             violation = inv.check_violation(event_names)
             if violation is not None:
-                violations.append({
-                    "turn": i,
-                    "state": state,
-                    "violating_events": violation.get("events_present", []),
-                    "evidence": str(violation),
-                })
+                violations.append(
+                    {
+                        "turn": i,
+                        "state": state,
+                        "violating_events": violation.get("events_present", []),
+                        "evidence": str(violation),
+                    }
+                )
 
         # Check transitions
         for target_state, rule in contract.entry_rules.items():
@@ -134,12 +138,14 @@ def replay_transcript_python(
                     if state in contract.monotonicity.irreversible_states:
                         break
                 state = target_state
-                state_transitions.append({
-                    "turn": i,
-                    "from_state": old_state,
-                    "to_state": state,
-                    "events": sorted(event_names),
-                })
+                state_transitions.append(
+                    {
+                        "turn": i,
+                        "from_state": old_state,
+                        "to_state": state,
+                        "events": sorted(event_names),
+                    }
+                )
                 break
 
     return {

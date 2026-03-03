@@ -9,9 +9,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.tic.contract import load_contract, MonotonicSafetyContract
-from src.tic.events import extract_events_realtime
+from src.tic.contract import MonotonicSafetyContract, load_contract
 from src.tic.enforcement import SafetyState
+from src.tic.events import extract_events_realtime
 from src.tic.fhir_adapter import apply_fhir_context
 
 logger = logging.getLogger(__name__)

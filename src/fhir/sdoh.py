@@ -20,23 +20,21 @@ terminology from LOINC, SNOMED CT, and Gravity Project value sets.
 from typing import Any, Dict, List, Optional
 
 from src.fhir.resources import (
+    _add_synthetic_tag,
     _generate_id,
-    _now_instant,
     _make_codeable_concept,
     _make_reference,
-    _add_synthetic_tag,
-    build_observation,
-    build_condition,
+    _now_instant,
     build_goal,
-    build_service_request,
+    build_observation,
     build_questionnaire_response,
+    build_service_request,
 )
 from src.fhir.terminology import (
+    SDOH_CATEGORY_CODES,
     SDOH_LOINC_CODES,
     SDOH_SNOMED_CODES,
-    SDOH_CATEGORY_CODES,
 )
-
 
 # ---------------------------------------------------------------------------
 # SDOH Screening (QuestionnaireResponse + Observations)

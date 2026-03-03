@@ -109,10 +109,7 @@ class TestCIGateway:
 
         payload = {"contract_id": "test-contract"}
         payload_bytes = json.dumps(payload, sort_keys=True).encode()
-        sig = (
-            "sha256="
-            + hmac.new(secret.encode(), payload_bytes, hashlib.sha256).hexdigest()
-        )
+        sig = "sha256=" + hmac.new(secret.encode(), payload_bytes, hashlib.sha256).hexdigest()
 
         result = gateway.handle_webhook(payload, signature=sig)
         assert result["status"] == "queued"

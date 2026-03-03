@@ -14,28 +14,30 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 
 
 @dataclass
 class RiskVector:
     """Normalized risk assessment across dimensions."""
-    vital_instability: float = 0.0      # 0-1: How abnormal are vitals?
-    symptom_severity: float = 0.0       # 0-1: How severe are symptoms?
-    resource_needs: float = 0.0         # 0-1: Expected resource utilization
-    time_sensitivity: float = 0.0       # 0-1: How time-critical?
-    vulnerability: float = 0.0          # 0-1: Patient vulnerability (age, comorbidities)
-    
+
+    vital_instability: float = 0.0  # 0-1: How abnormal are vitals?
+    symptom_severity: float = 0.0  # 0-1: How severe are symptoms?
+    resource_needs: float = 0.0  # 0-1: Expected resource utilization
+    time_sensitivity: float = 0.0  # 0-1: How time-critical?
+    vulnerability: float = 0.0  # 0-1: Patient vulnerability (age, comorbidities)
+
     def magnitude(self) -> float:
         """L2 norm of risk vector."""
         return math.sqrt(
-            self.vital_instability**2 +
-            self.symptom_severity**2 +
-            self.resource_needs**2 +
-            self.time_sensitivity**2 +
-            self.vulnerability**2
+            self.vital_instability**2
+            + self.symptom_severity**2
+            + self.resource_needs**2
+            + self.time_sensitivity**2
+            + self.vulnerability**2
         )
-    
+
     def to_dict(self) -> Dict[str, float]:
         return {
             "vital_instability": self.vital_instability,
@@ -50,15 +52,16 @@ class RiskVector:
 @dataclass
 class ConfidenceAssessment:
     """Result of confidence detection analysis."""
-    consensus_score: float              # 0-1: Agent agreement
-    esi_variance: float                 # Variance in ESI predictions
-    risk_vector: RiskVector             # Normalized risk dimensions
-    uncertainty_score: float            # 0-1: Higher = more uncertain
-    confidence_correctness: float       # 0-1: Estimated probability of being correct
-    escalation_recommended: bool        # Should we escalate?
-    escalation_reason: Optional[str]    # Why escalate?
+
+    consensus_score: float  # 0-1: Agent agreement
+    esi_variance: float  # Variance in ESI predictions
+    risk_vector: RiskVector  # Normalized risk dimensions
+    uncertainty_score: float  # 0-1: Higher = more uncertain
+    confidence_correctness: float  # 0-1: Estimated probability of being correct
+    escalation_recommended: bool  # Should we escalate?
+    escalation_reason: Optional[str]  # Why escalate?
     flags: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "consensus_score": self.consensus_score,
@@ -75,11 +78,11 @@ class ConfidenceAssessment:
 # Age-appropriate vital sign ranges (simplified)
 PEDIATRIC_VITAL_RANGES = {
     # (min_hr, max_hr, min_rr, max_rr) by age group
-    "infant": (100, 160, 30, 60),      # 0-1 year
-    "toddler": (90, 150, 24, 40),      # 1-3 years
-    "preschool": (80, 140, 22, 34),    # 3-5 years
-    "school": (70, 120, 18, 30),       # 5-12 years
-    "adolescent": (60, 100, 12, 20),   # 12+ years
+    "infant": (100, 160, 30, 60),  # 0-1 year
+    "toddler": (90, 150, 24, 40),  # 1-3 years
+    "preschool": (80, 140, 22, 34),  # 3-5 years
+    "school": (70, 120, 18, 30),  # 5-12 years
+    "adolescent": (60, 100, 12, 20),  # 12+ years
 }
 
 
@@ -100,21 +103,21 @@ def _get_age_group(age: float) -> str:
 def _compute_vital_instability(vitals: Dict[str, Any], age: Optional[float]) -> float:
     """
     Compute normalized vital sign instability score (0-1).
-    
+
     Higher score = more unstable/abnormal vitals.
     """
     if not vitals:
         return 0.0
-    
+
     score = 0.0
     checks = 0
-    
+
     hr = vitals.get("hr")
     rr = vitals.get("rr")
     spo2 = vitals.get("spo2")
     sbp = vitals.get("sbp")
     temp = vitals.get("temp")
-    
+
     # Get age-appropriate ranges
     if age is not None and age < 18:
         age_group = _get_age_group(age)
@@ -124,7 +127,7 @@ def _compute_vital_instability(vitals: Dict[str, Any], age: Optional[float]) -> 
         # Adult ranges
         min_hr, max_hr = 60, 100
         min_rr, max_rr = 12, 20
-    
+
     # Heart rate check
     if hr is not None:
         checks += 1
@@ -132,7 +135,7 @@ def _compute_vital_instability(vitals: Dict[str, Any], age: Optional[float]) -> 
             score += min(1.0, (min_hr - hr) / 30)  # Bradycardia
         elif hr > max_hr:
             score += min(1.0, (hr - max_hr) / 50)  # Tachycardia
-    
+
     # Respiratory rate check
     if rr is not None:
         checks += 1
@@ -140,19 +143,19 @@ def _compute_vital_instability(vitals: Dict[str, Any], age: Optional[float]) -> 
             score += min(1.0, (min_rr - rr) / 5)
         elif rr > max_rr:
             score += min(1.0, (rr - max_rr) / 15)
-    
+
     # SpO2 check (universal)
     if spo2 is not None:
         checks += 1
         if spo2 < 95:
             score += min(1.0, (95 - spo2) / 10)  # Each 10% drop below 95 = full point
-    
+
     # Blood pressure (simplified)
     if sbp is not None:
         checks += 1
         if sbp < 90:
             score += min(1.0, (90 - sbp) / 20)  # Hypotension
-    
+
     # Temperature
     if temp is not None:
         checks += 1
@@ -160,7 +163,7 @@ def _compute_vital_instability(vitals: Dict[str, Any], age: Optional[float]) -> 
             score += min(1.0, (temp - 38.0) / 2)  # Fever
         elif temp < 36.0:
             score += min(1.0, (36.0 - temp) / 2)  # Hypothermia
-    
+
     return min(1.0, score / max(checks, 1))
 
 
@@ -170,57 +173,81 @@ def _compute_symptom_severity(text: str) -> float:
     """
     text_lower = text.lower()
     score = 0.0
-    
+
     # Severe symptoms (high weight)
     severe_keywords = [
-        "unresponsive", "unconscious", "apnea", "cyanosis", "seizure",
-        "severe pain", "worst headache", "paralysis", "hemiplegia"
+        "unresponsive",
+        "unconscious",
+        "apnea",
+        "cyanosis",
+        "seizure",
+        "severe pain",
+        "worst headache",
+        "paralysis",
+        "hemiplegia",
     ]
     for kw in severe_keywords:
         if kw in text_lower:
             score += 0.4
-    
+
     # Moderate symptoms
     moderate_keywords = [
-        "difficulty breathing", "chest pain", "vomiting blood",
-        "altered mental status", "confusion", "dehydration",
-        "high fever", "lethargy", "inconsolable"
+        "difficulty breathing",
+        "chest pain",
+        "vomiting blood",
+        "altered mental status",
+        "confusion",
+        "dehydration",
+        "high fever",
+        "lethargy",
+        "inconsolable",
     ]
     for kw in moderate_keywords:
         if kw in text_lower:
             score += 0.2
-    
+
     # Mild concerning symptoms
     mild_keywords = [
-        "fever", "cough", "vomiting", "diarrhea", "pain",
-        "decreased appetite", "runny nose", "congestion"
+        "fever",
+        "cough",
+        "vomiting",
+        "diarrhea",
+        "pain",
+        "decreased appetite",
+        "runny nose",
+        "congestion",
     ]
     for kw in mild_keywords:
         if kw in text_lower:
             score += 0.05
-    
+
     # Reassuring findings (reduce score)
     reassuring_keywords = [
-        "well-appearing", "interactive", "playful", "alert",
-        "drinking fluids", "no distress", "stable"
+        "well-appearing",
+        "interactive",
+        "playful",
+        "alert",
+        "drinking fluids",
+        "no distress",
+        "stable",
     ]
     for kw in reassuring_keywords:
         if kw in text_lower:
             score -= 0.1
-    
+
     return max(0.0, min(1.0, score))
 
 
 def _compute_vulnerability(age: Optional[float], text: str) -> float:
     """
     Compute patient vulnerability score (0-1).
-    
+
     Higher for very young, very old, or immunocompromised.
     Pediatric patients with fever are particularly vulnerable.
     """
     score = 0.0
     text_lower = text.lower()
-    
+
     # Age-based vulnerability
     is_pediatric = age is not None and age < 12
     if age is not None:
@@ -236,22 +263,27 @@ def _compute_vulnerability(age: Optional[float], text: str) -> float:
             score += 0.4  # Very elderly
         elif age > 65:
             score += 0.3  # Elderly
-    
+
     # Pediatric + fever = significantly higher vulnerability
     # (Per pediatric fever protocols - febrile young child needs evaluation)
     if is_pediatric and ("fever" in text_lower or "temp" in text_lower):
         score += 0.2  # Additional vulnerability for febrile pediatric patient
-    
+
     # Comorbidities
     vulnerability_keywords = [
-        "immunocompromised", "chemotherapy", "transplant",
-        "chronic illness", "diabetic", "cardiac history",
-        "premature", "congenital"
+        "immunocompromised",
+        "chemotherapy",
+        "transplant",
+        "chronic illness",
+        "diabetic",
+        "cardiac history",
+        "premature",
+        "congenital",
     ]
     for kw in vulnerability_keywords:
         if kw in text_lower:
             score += 0.2
-    
+
     return min(1.0, score)
 
 
@@ -264,21 +296,23 @@ def compute_risk_vector(
     """
     vitals = case_data.get("vital_signs", {})
     age = case_data.get("age")
-    text = " ".join([
-        str(case_data.get("chief_complaint", "")),
-        str(case_data.get("nursing_note", "")),
-    ])
-    
+    text = " ".join(
+        [
+            str(case_data.get("chief_complaint", "")),
+            str(case_data.get("nursing_note", "")),
+        ]
+    )
+
     vital_instability = _compute_vital_instability(vitals, age)
     symptom_severity = _compute_symptom_severity(text)
     vulnerability = _compute_vulnerability(age, text)
-    
+
     # Resource needs estimation based on ESI prediction
     # Handle None ESI (default to mid-range)
     esi_safe = esi_pred if esi_pred is not None else 3
     resource_map = {1: 1.0, 2: 0.8, 3: 0.6, 4: 0.3, 5: 0.1}
     resource_needs = resource_map.get(esi_safe, 0.5)
-    
+
     # Time sensitivity
     if esi_safe <= 2:
         time_sensitivity = 0.9
@@ -286,7 +320,7 @@ def compute_risk_vector(
         time_sensitivity = 0.5
     else:
         time_sensitivity = 0.2
-    
+
     return RiskVector(
         vital_instability=vital_instability,
         symptom_severity=symptom_severity,
@@ -299,16 +333,16 @@ def compute_risk_vector(
 class IncorrectConfidenceDetector:
     """
     Detects cases where high consensus may mask incorrect triage.
-    
+
     Key insight: High consensus + low risk vector mismatch = likely correct
                 High consensus + high risk vector mismatch = potential undertriage
-    
+
     The SYNTH-050 case showed 100% consensus but wrong ESI because:
     - Pediatric patient (vulnerability)
     - Fever (symptom severity)
     - Resource needs underestimated
     """
-    
+
     def __init__(
         self,
         uncertainty_threshold: float = 0.3,
@@ -324,7 +358,7 @@ class IncorrectConfidenceDetector:
         self.uncertainty_threshold = uncertainty_threshold
         self.auto_escalate_esi4 = auto_escalate_esi4
         self.risk_escalation_threshold = risk_escalation_threshold
-    
+
     def assess(
         self,
         case_data: Dict[str, Any],
@@ -334,40 +368,43 @@ class IncorrectConfidenceDetector:
     ) -> ConfidenceAssessment:
         """
         Assess confidence correctness for a triage decision.
-        
+
         Args:
             case_data: Patient case dictionary
             agent_esi_predictions: ESI predictions from each council agent
             final_esi: Final ESI assigned
             consensus_score: Pre-computed consensus (optional)
-        
+
         Returns:
             ConfidenceAssessment with escalation recommendation
         """
         flags = []
-        
+
         # Compute variance among agents
         if len(agent_esi_predictions) > 1:
             esi_variance = float(np.var(agent_esi_predictions))
         else:
             esi_variance = 0.0
-        
+
         # Compute consensus if not provided
         if consensus_score is None:
             if len(agent_esi_predictions) > 1:
                 # Fraction agreeing with mode
                 from collections import Counter
+
                 mode = Counter(agent_esi_predictions).most_common(1)[0][0]
-                consensus_score = sum(1 for e in agent_esi_predictions if e == mode) / len(agent_esi_predictions)
+                consensus_score = sum(1 for e in agent_esi_predictions if e == mode) / len(
+                    agent_esi_predictions
+                )
             else:
                 consensus_score = 1.0
-        
+
         # Compute risk vector
         risk_vector = compute_risk_vector(case_data, final_esi)
         risk_magnitude = risk_vector.magnitude()
-        
+
         # === Constitutional Triage Uncertainty Metric ===
-        # 
+        #
         # Uncertainty increases with:
         # - Higher risk vector magnitude (more concerning features)
         # - Lower consensus (agents disagree)
@@ -375,35 +412,37 @@ class IncorrectConfidenceDetector:
         # - Patient vulnerability
         #
         # Uncertainty = (1 - consensus) + 0.3*variance + 0.5*risk_magnitude*vulnerability
-        
+
         variance_penalty = 0.3 * esi_variance
         risk_penalty = 0.5 * risk_magnitude * risk_vector.vulnerability
-        
+
         uncertainty_score = (1 - consensus_score) + variance_penalty + risk_penalty
         uncertainty_score = min(1.0, uncertainty_score)
-        
+
         # Confidence correctness = inverse of uncertainty
         confidence_correctness = 1.0 - uncertainty_score
-        
+
         # === Escalation Logic ===
         escalation_recommended = False
         escalation_reason = None
-        
+
         # Handle None ESI safely
         esi_safe = final_esi if final_esi is not None else 3
-        
+
         # === STABILITY FLOOR (prevents over-escalation) ===
         # If vitals are truly stable and risk is low, don't escalate
         # Note: Vulnerability >= 0.2 means pediatric or elderly - these should still
         # be considered for escalation even if vitals appear stable
         is_truly_stable = (
-            risk_vector.vital_instability < 0.1 and
-            risk_vector.symptom_severity < 0.15 and  # Stricter symptom threshold
-            risk_vector.vulnerability < 0.15  # Exclude pediatric (0.2+) and elderly
+            risk_vector.vital_instability < 0.1
+            and risk_vector.symptom_severity < 0.15  # Stricter symptom threshold
+            and risk_vector.vulnerability < 0.15  # Exclude pediatric (0.2+) and elderly
         )
-        
+
         if is_truly_stable and esi_safe >= 4:
-            flags.append(f"STABILITY_FLOOR: vital_instab={risk_vector.vital_instability:.2f}, symptom_sev={risk_vector.symptom_severity:.2f}")
+            flags.append(
+                f"STABILITY_FLOOR: vital_instab={risk_vector.vital_instability:.2f}, symptom_sev={risk_vector.symptom_severity:.2f}"
+            )
             # Do NOT escalate - patient is genuinely stable
             return ConfidenceAssessment(
                 consensus_score=consensus_score,
@@ -415,14 +454,16 @@ class IncorrectConfidenceDetector:
                 escalation_reason=None,
                 flags=flags + ["STABLE_PATIENT: No escalation needed"],
             )
-        
+
         # Rule 1: High uncertainty prevents confident assignment
         if uncertainty_score > self.uncertainty_threshold:
-            flags.append(f"HIGH_UNCERTAINTY: {uncertainty_score:.2f} > {self.uncertainty_threshold}")
+            flags.append(
+                f"HIGH_UNCERTAINTY: {uncertainty_score:.2f} > {self.uncertainty_threshold}"
+            )
             if esi_safe >= 3:
                 escalation_recommended = True
                 escalation_reason = "Uncertainty too high for non-urgent ESI"
-        
+
         # Rule 2: Risk vector mismatch with ESI (only for significant mismatch)
         expected_risk = {1: 0.8, 2: 0.6, 3: 0.4, 4: 0.2, 5: 0.1}
         expected = expected_risk.get(esi_safe, 0.5)
@@ -432,14 +473,18 @@ class IncorrectConfidenceDetector:
             if esi_safe >= 4 and risk_vector.vulnerability > 0.2:
                 # Only escalate if patient is also somewhat vulnerable
                 escalation_recommended = True
-                escalation_reason = f"Risk vector ({risk_magnitude:.2f}) inconsistent with ESI {esi_safe}"
-        
+                escalation_reason = (
+                    f"Risk vector ({risk_magnitude:.2f}) inconsistent with ESI {esi_safe}"
+                )
+
         # Rule 3: Vulnerable patient with low ESI (stricter threshold)
         if risk_vector.vulnerability > 0.4 and esi_safe >= 4:
-            flags.append(f"VULNERABLE_LOW_ESI: vulnerability={risk_vector.vulnerability:.2f}, ESI={esi_safe}")
+            flags.append(
+                f"VULNERABLE_LOW_ESI: vulnerability={risk_vector.vulnerability:.2f}, ESI={esi_safe}"
+            )
             escalation_recommended = True
             escalation_reason = "Vulnerable patient should not be ESI 4/5"
-        
+
         # Rule 4: Auto-escalate uncertain ESI-4 → ESI-3 (stricter)
         # Only if BOTH uncertain AND somewhat vulnerable
         if self.auto_escalate_esi4 and esi_safe == 4:
@@ -447,11 +492,13 @@ class IncorrectConfidenceDetector:
                 flags.append("AUTO_ESCALATE_ESI4: Uncertain ESI-4 → ESI-3")
                 escalation_recommended = True
                 escalation_reason = "Uncertain ESI-4 auto-escalated to ESI-3 for safety"
-        
+
         # Rule 5: High consensus but high risk = overconfidence warning (info only)
         if consensus_score > 0.9 and risk_magnitude > self.risk_escalation_threshold:
-            flags.append(f"OVERCONFIDENCE_WARNING: consensus={consensus_score:.2f} but risk={risk_magnitude:.2f}")
-        
+            flags.append(
+                f"OVERCONFIDENCE_WARNING: consensus={consensus_score:.2f} but risk={risk_magnitude:.2f}"
+            )
+
         return ConfidenceAssessment(
             consensus_score=consensus_score,
             esi_variance=esi_variance,
@@ -462,7 +509,7 @@ class IncorrectConfidenceDetector:
             escalation_reason=escalation_reason,
             flags=flags,
         )
-    
+
     def should_escalate(
         self,
         case_data: Dict[str, Any],
@@ -471,17 +518,17 @@ class IncorrectConfidenceDetector:
     ) -> Tuple[bool, int, str]:
         """
         Convenience method to check if escalation is needed.
-        
+
         Returns:
             (should_escalate, new_esi, reason)
         """
         assessment = self.assess(case_data, agent_esi_predictions, final_esi)
-        
+
         if assessment.escalation_recommended:
             # Escalate by 1 level (more urgent)
             new_esi = max(1, final_esi - 1)
             return True, new_esi, assessment.escalation_reason or "Escalation recommended"
-        
+
         return False, final_esi, "No escalation needed"
 
 
@@ -512,4 +559,3 @@ def assess_confidence(
         final_esi=final_esi,
         consensus_score=consensus_score,
     )
-

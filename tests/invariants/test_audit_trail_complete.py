@@ -7,7 +7,6 @@ an audit log entry.
 import os
 import tempfile
 
-
 from src.tsr.monitor.circuit_breaker import CircuitBreaker
 from src.tsr.monitor.incidents import IncidentManager
 from src.tsr.monitor.interfaces import BreakerState, Severity

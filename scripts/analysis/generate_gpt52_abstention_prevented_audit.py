@@ -47,7 +47,9 @@ def _is_medication_safety(rule: str) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate GPT-5.2 abstention vs prevented-catastrophic audit (extractive).")
+    parser = argparse.ArgumentParser(
+        description="Generate GPT-5.2 abstention vs prevented-catastrophic audit (extractive)."
+    )
     parser.add_argument(
         "--graded",
         default="results/gpt52_thinking_1000_default_council_1000_graded.json",
@@ -161,7 +163,9 @@ def main() -> None:
             "prevented_proxy_threshold": float(args.prevented_threshold),
             "prevented_proxy_count": computed_prevented,
             "abstention_count_matches_meta": (computed_abst_count == meta_abst_count),
-            "prevented_proxy_matches_meta_catastrophic_prevented": (computed_prevented == meta_prevented),
+            "prevented_proxy_matches_meta_catastrophic_prevented": (
+                computed_prevented == meta_prevented
+            ),
         },
         "top_rules_in_abstentions": rule_counter.most_common(20),
         "rows": rows,
@@ -174,7 +178,9 @@ def main() -> None:
     md.append(f"**Source:** `{args.graded}`, `{args.diag}`  ")
     md.append(f"**Meta:** `{args.meta}`")
     md.append("")
-    md.append("This document is **purely extractive**. It reconciles meta summary fields against per‑case diagnostics + scores.")
+    md.append(
+        "This document is **purely extractive**. It reconciles meta summary fields against per‑case diagnostics + scores."
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -192,7 +198,9 @@ def main() -> None:
     md.append("")
     md.append(f"- `meta.abstention.count`: **{meta_abst_count}**")
     md.append(f"- `computed abstention_count` (diag.abstained): **{computed_abst_count}**")
-    md.append(f"- Abstention count matches: **{out['computed_from_diag_and_graded']['abstention_count_matches_meta']}**")
+    md.append(
+        f"- Abstention count matches: **{out['computed_from_diag_and_graded']['abstention_count_matches_meta']}**"
+    )
     md.append("")
     md.append(f"- `meta.error_prevention.catastrophic_prevented`: **{meta_prevented}**")
     md.append(
@@ -213,7 +221,9 @@ def main() -> None:
     md.append("")
     md.append("## Abstention table (all abstained cases; sorted by score asc)")
     md.append("")
-    md.append("| prompt_id | score | prevented_proxy | corrections | emergency | hallucination | medication | reasons | total_time_ms |")
+    md.append(
+        "| prompt_id | score | prevented_proxy | corrections | emergency | hallucination | medication | reasons | total_time_ms |"
+    )
     md.append("|---|---:|---:|---:|---:|---:|---:|---|---:|")
     for r in rows:
         reasons_s = "; ".join(str(x) for x in (r.get("abstention_reasons") or []))
@@ -251,5 +261,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

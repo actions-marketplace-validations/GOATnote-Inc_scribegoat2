@@ -1,6 +1,7 @@
 """Tests for the HealthBench baseline runner utilities."""
-from pathlib import Path
+
 import sys
+from pathlib import Path
 
 import pytest
 

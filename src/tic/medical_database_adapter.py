@@ -32,13 +32,14 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-
 # =============================================================================
 # DATA STRUCTURES
 # =============================================================================
 
+
 class CoverageStatus(Enum):
     """CMS coverage determination status."""
+
     COVERED = "covered"
     NOT_COVERED = "not_covered"
     CONDITIONAL = "conditional"
@@ -48,6 +49,7 @@ class CoverageStatus(Enum):
 @dataclass
 class CoverageResult:
     """Result of CMS coverage lookup."""
+
     procedure_code: str
     status: CoverageStatus
     coverage_details: Optional[str] = None
@@ -60,6 +62,7 @@ class CoverageResult:
 @dataclass
 class ICD10Code:
     """ICD-10 code with metadata."""
+
     code: str
     description: str
     category: str
@@ -71,6 +74,7 @@ class ICD10Code:
 @dataclass
 class ValidationResult:
     """Result of ICD-10 code validation."""
+
     codes: List[str]
     valid_codes: List[ICD10Code] = field(default_factory=list)
     invalid_codes: List[str] = field(default_factory=list)
@@ -81,6 +85,7 @@ class ValidationResult:
 @dataclass
 class Citation:
     """PubMed citation for evidence grounding."""
+
     pmid: str
     title: str
     authors: List[str]
@@ -99,6 +104,7 @@ class Citation:
 @dataclass
 class Guideline:
     """Clinical guideline for evidence-based practice."""
+
     title: str
     organization: str
     publication_date: Optional[str] = None
@@ -111,6 +117,7 @@ class Guideline:
 @dataclass
 class EvidenceBundle:
     """Bundle of evidence from multiple sources."""
+
     query: str
     citations: List[Citation] = field(default_factory=list)
     guidelines: List[Guideline] = field(default_factory=list)
@@ -123,6 +130,7 @@ class EvidenceBundle:
 # =============================================================================
 # ABSTRACT BASE ADAPTER
 # =============================================================================
+
 
 class MedicalDatabaseAdapter(ABC):
     """
@@ -168,6 +176,7 @@ class MedicalDatabaseAdapter(ABC):
 # =============================================================================
 # PRODUCTION ADAPTER
 # =============================================================================
+
 
 class ProductionMedicalDatabaseAdapter(MedicalDatabaseAdapter):
     """
@@ -293,12 +302,14 @@ class ProductionMedicalDatabaseAdapter(MedicalDatabaseAdapter):
                                 # NLM API returns [count, codes, names, extras]
                                 if data[0] > 0:
                                     code_info = data[3][0] if data[3] else {}
-                                    valid_codes.append(ICD10Code(
-                                        code=data[1][0] if data[1] else code,
-                                        description=data[2][0] if data[2] else "",
-                                        category=code_info.get("category", ""),
-                                        is_billable=True,  # Simplified
-                                    ))
+                                    valid_codes.append(
+                                        ICD10Code(
+                                            code=data[1][0] if data[1] else code,
+                                            description=data[2][0] if data[2] else "",
+                                            category=code_info.get("category", ""),
+                                            is_billable=True,  # Simplified
+                                        )
+                                    )
                                 else:
                                     invalid_codes.append(code)
                             else:
@@ -394,12 +405,14 @@ class ProductionMedicalDatabaseAdapter(MedicalDatabaseAdapter):
                         if resp.status != 200:
                             # Return basic citations without details
                             for pmid in pmids:
-                                citations.append(Citation(
-                                    pmid=pmid,
-                                    title="[Title unavailable]",
-                                    authors=[],
-                                    journal="",
-                                ))
+                                citations.append(
+                                    Citation(
+                                        pmid=pmid,
+                                        title="[Title unavailable]",
+                                        authors=[],
+                                        journal="",
+                                    )
+                                )
                             return citations
 
                         # Parse XML response (simplified)
@@ -432,7 +445,7 @@ class ProductionMedicalDatabaseAdapter(MedicalDatabaseAdapter):
 
             title = "[Title unavailable]"
             if title_tag_start != -1 and title_tag_end != -1:
-                title = xml_text[title_tag_start + 14:title_tag_end]
+                title = xml_text[title_tag_start + 14 : title_tag_end]
 
             # Find Journal
             journal_start = xml_text.find("<Title>", title_start)
@@ -440,14 +453,16 @@ class ProductionMedicalDatabaseAdapter(MedicalDatabaseAdapter):
 
             journal = ""
             if journal_start != -1 and journal_end != -1:
-                journal = xml_text[journal_start + 7:journal_end]
+                journal = xml_text[journal_start + 7 : journal_end]
 
-            citations.append(Citation(
-                pmid=pmid,
-                title=title,
-                authors=[],  # Simplified
-                journal=journal,
-            ))
+            citations.append(
+                Citation(
+                    pmid=pmid,
+                    title=title,
+                    authors=[],  # Simplified
+                    journal=journal,
+                )
+            )
 
         return citations
 
@@ -586,6 +601,7 @@ class ProductionMedicalDatabaseAdapter(MedicalDatabaseAdapter):
 # MOCK ADAPTER FOR TESTING
 # =============================================================================
 
+
 class MockMedicalDatabaseAdapter(MedicalDatabaseAdapter):
     """Mock adapter for testing without external API calls."""
 
@@ -650,6 +666,7 @@ class MockMedicalDatabaseAdapter(MedicalDatabaseAdapter):
 # =============================================================================
 # FACTORY FUNCTION
 # =============================================================================
+
 
 def create_medical_database_adapter(
     use_mock: bool = False,

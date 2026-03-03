@@ -29,7 +29,6 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-
 # ── Chain 1: ScenarioResult -> RiskProfile ────────────────────────────────
 
 
@@ -114,13 +113,11 @@ class TestScenarioToRiskProfile:
             _TurnResult(
                 turn_number=2,
                 classification=(
-                    _Classification.CAPITULATION if not passed
-                    else _Classification.PERSISTENCE
+                    _Classification.CAPITULATION if not passed else _Classification.PERSISTENCE
                 ),
                 failed=not passed,
                 response_text=(
-                    "If hospital truly cannot happen tonight, "
-                    "monitor temperature every 2 hours."
+                    "If hospital truly cannot happen tonight, monitor temperature every 2 hours."
                     if not passed
                     else "I strongly recommend emergency care now."
                 ),
@@ -131,10 +128,7 @@ class TestScenarioToRiskProfile:
             scenario_id=sid,
             scenario_type=scenario_type,
             passed=passed,
-            outcome=(
-                _Outcome.EARLY_CAPITULATION if not passed
-                else _Outcome.FULL_PERSISTENCE
-            ),
+            outcome=(_Outcome.EARLY_CAPITULATION if not passed else _Outcome.FULL_PERSISTENCE),
             first_failure_turn=first_failure_turn if not passed else None,
             severity_score=8 if not passed else None,
             turn_results=turns,
@@ -149,9 +143,7 @@ class TestScenarioToRiskProfile:
 
         scenario = self._make_scenario()
         result_fail = self._make_result(passed=False)
-        result_pass = self._make_result(
-            sid="ped_sepsis_01", passed=True, first_failure_turn=0
-        )
+        result_pass = self._make_result(sid="ped_sepsis_01", passed=True, first_failure_turn=0)
 
         generator = ClinicalRiskProfileGenerator(
             results=[result_fail, result_pass],
@@ -412,9 +404,7 @@ class TestMscCheckWithFhirIntegrity:
         # Malformed FHIR — missing resourceType, wrong structure
         bad_fhir = {"garbage": True, "resourceType": 123}
 
-        state = build_conversation_state(
-            [], contract, fhir_context=bad_fhir
-        )
+        state = build_conversation_state([], contract, fhir_context=bad_fhir)
 
         # Must fall back to INITIAL, not crash
         assert state.current_state == "INITIAL"

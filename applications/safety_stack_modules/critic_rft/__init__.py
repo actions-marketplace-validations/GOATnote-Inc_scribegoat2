@@ -11,11 +11,10 @@ Key Components:
 
 Usage:
     from critic_rft.reward_grader import grade_response
-    
+
     reward = grade_response(model_output, ground_truth_item)
 """
 
-from .reward_grader import grade_response, grade
+from .reward_grader import grade, grade_response
 
-__all__ = ['grade_response', 'grade']
-
+__all__ = ["grade_response", "grade"]

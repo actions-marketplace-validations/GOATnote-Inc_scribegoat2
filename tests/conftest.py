@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 
-
 # Ensure repository root is importable when pytest uses importlib mode
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:

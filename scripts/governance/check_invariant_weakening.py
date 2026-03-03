@@ -10,7 +10,6 @@ from pathlib import Path
 
 import yaml
 
-
 # Critical thresholds that cannot be weakened
 CRITICAL_THRESHOLDS = {
     "temperature": {"expected": 0, "direction": "cannot_increase"},

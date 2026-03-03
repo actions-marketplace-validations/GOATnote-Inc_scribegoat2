@@ -22,13 +22,15 @@ def main():
     for filepath in modified_files:
         path = Path(filepath)
         # Check if this is a governance file
-        if any([
-            path.suffix == ".yaml" and "invariant" in str(path).lower(),
-            path.name == "SKILL.md",
-            path.name.endswith("_contract.yaml"),
-            path.name == ".cursorrules",
-            "governance/" in str(path),
-        ]):
+        if any(
+            [
+                path.suffix == ".yaml" and "invariant" in str(path).lower(),
+                path.name == "SKILL.md",
+                path.name.endswith("_contract.yaml"),
+                path.name == ".cursorrules",
+                "governance/" in str(path),
+            ]
+        ):
             governance_files.append(filepath)
 
     if governance_files:

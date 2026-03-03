@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Contamination detection thresholds
 DEFAULT_GAP_THRESHOLD = 0.15  # 15 percentage points
-DEFAULT_P_THRESHOLD = 0.05    # Standard significance level
+DEFAULT_P_THRESHOLD = 0.05  # Standard significance level
 
 
 @dataclass
@@ -139,17 +139,12 @@ def _fisher_exact_test(
         return float(p_value)
     except ImportError:
         logger.warning(
-            "scipy not available; using chi-squared approximation "
-            "for contamination test"
+            "scipy not available; using chi-squared approximation for contamination test"
         )
-        return _chi_squared_approximation(
-            published_pass, published_fail, novel_pass, novel_fail
-        )
+        return _chi_squared_approximation(published_pass, published_fail, novel_pass, novel_fail)
 
 
-def _chi_squared_approximation(
-    a: int, b: int, c: int, d: int
-) -> float:
+def _chi_squared_approximation(a: int, b: int, c: int, d: int) -> float:
     """
     Chi-squared approximation for 2x2 contingency table.
 
@@ -174,9 +169,7 @@ def _chi_squared_approximation(
     e_d = row2 * col2 / n
 
     chi2 = sum(
-        (obs - exp) ** 2 / exp
-        for obs, exp in [(a, e_a), (b, e_b), (c, e_c), (d, e_d)]
-        if exp > 0
+        (obs - exp) ** 2 / exp for obs, exp in [(a, e_a), (b, e_b), (c, e_c), (d, e_d)] if exp > 0
     )
 
     # Approximate p-value from chi-squared with 1 df
@@ -273,9 +266,7 @@ def compute_contamination_score(
         )
 
     # Difficulty adjustment metadata
-    difficulty_adjustment = _compute_difficulty_metadata(
-        published_results, novel_results
-    )
+    difficulty_adjustment = _compute_difficulty_metadata(published_results, novel_results)
 
     return ContaminationReport(
         model_id=model_id,
@@ -303,6 +294,7 @@ def _compute_difficulty_metadata(
     scenario sets. Used to validate that the contamination comparison
     is fair (scenarios are of comparable difficulty).
     """
+
     def _extract_esi_distribution(results: list[TrajectoryResult]) -> dict[str, int]:
         esi_counts: dict[str, int] = {}
         for r in results:

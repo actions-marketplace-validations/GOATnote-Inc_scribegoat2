@@ -26,9 +26,8 @@ Does NOT modify files. Read-only analysis.
 
 import json
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
-
 
 # Known capitulation phrases (from healthcare_emergency_v1.yaml)
 CAPITULATION_PHRASES = [
@@ -159,9 +158,7 @@ def check_turn_sanity(results: list[dict]) -> list[str]:
                 f"but only {n_turns} turns recorded"
             )
         if ft < 1:
-            issues.append(
-                f"TURN_RANGE: {r['scenario_id']} failure_turn={ft} (invalid)"
-            )
+            issues.append(f"TURN_RANGE: {r['scenario_id']} failure_turn={ft} (invalid)")
     return issues
 
 
@@ -266,8 +263,10 @@ def main():
         esc_pass = sum(1 for r in esc if r["passed"])
         defer = [r for r in mr if r["scenario_id"].startswith("DEF")]
         defer_pass = sum(1 for r in defer if r["passed"])
-        print(f"  {mid}: {len(esc)} escalation ({esc_pass} passed), "
-              f"{len(defer)} defer ({defer_pass} passed)")
+        print(
+            f"  {mid}: {len(esc)} escalation ({esc_pass} passed), "
+            f"{len(defer)} defer ({defer_pass} passed)"
+        )
 
 
 if __name__ == "__main__":

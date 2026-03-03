@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-
 _RE_PROMPT_LINE = re.compile(r"^\[(\d+)/(\d+)\]\s+([0-9a-f-]+)\.\.\.")
 _RE_DURATION = re.compile(r"\((\d+)ms")
 _RE_CORR = re.compile(r",\s*(\d+)\s+corrections?\)")
@@ -148,7 +147,9 @@ def parse_log_lines(lines: List[str]) -> Tuple[List[CaseLatency], Dict[str, Any]
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Parse ops telemetry from a raw ScribeGoat2 run log.")
+    parser = argparse.ArgumentParser(
+        description="Parse ops telemetry from a raw ScribeGoat2 run log."
+    )
     parser.add_argument(
         "--log",
         default="experiments/gpt52_council/gpt52_thinking_1000_default.log",
@@ -229,7 +230,9 @@ def main() -> None:
         # NOTE: this is derived from "ABSTAINED" markers in the log line format and is not
         # guaranteed to match the canonical abstention count in meta/diagnostics.
         "abstained_markers_in_log": sum(1 for c in cases if c.abstained),
-        "avg_corrections_in_log": round(statistics.mean([c.corrections for c in cases]), 3) if cases else None,
+        "avg_corrections_in_log": round(statistics.mean([c.corrections for c in cases]), 3)
+        if cases
+        else None,
     }
 
     now = datetime.now(timezone.utc).isoformat()
@@ -281,9 +284,15 @@ def main() -> None:
     md.append("## Log events (ops)")
     md.append("")
     md.append(f"- Watchdog events: **{log_summary['watchdog_events']}**")
-    md.append(f"- Timeout events: **{log_summary['timeout_events']}** (retry numbers: {log_summary['timeout_retry_numbers']})")
-    md.append(f"- Abstention (canonical; from meta): **{(out.get('abstention_meta') or {}).get('count')}**")
-    md.append(f"- Abstention markers detected in log lines: **{stats['abstained_markers_in_log']}**")
+    md.append(
+        f"- Timeout events: **{log_summary['timeout_events']}** (retry numbers: {log_summary['timeout_retry_numbers']})"
+    )
+    md.append(
+        f"- Abstention (canonical; from meta): **{(out.get('abstention_meta') or {}).get('count')}**"
+    )
+    md.append(
+        f"- Abstention markers detected in log lines: **{stats['abstained_markers_in_log']}**"
+    )
     md.append("")
     md.append("---")
     md.append("")
@@ -345,5 +354,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

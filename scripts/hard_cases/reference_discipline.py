@@ -46,5 +46,3 @@ def compute_reference_discipline(answer_text: str) -> ReferenceDisciplineTelemet
         citation_like_count=count,
         markers_found=markers,
     )
-
-

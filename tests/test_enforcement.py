@@ -10,33 +10,30 @@ Tests:
 """
 
 import os
-import pytest
+import sys
 import time
 from pathlib import Path
-from typing import Set
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import sys
+import pytest
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.tic.events import (
-    Event,
-    extract_events_realtime,
-    check_violation_realtime,
-    RealtimeEventExtractor,
-)
+from src.tic.contract import load_contract
 from src.tic.enforcement import (
+    INTERVENTION_PROMPTS,
     EnforcedClient,
-    BaselineClient,
     EnforcedResponse,
-    SafetyState,
     EnforcementMetrics,
     InterventionLevel,
-    INTERVENTION_PROMPTS,
+    SafetyState,
 )
-from src.tic.contract import load_contract
+from src.tic.events import (
+    Event,
+    RealtimeEventExtractor,
+    check_violation_realtime,
+)
 
 # Mark all tests in this file as integration tests (require API keys)
 pytestmark = pytest.mark.integration
@@ -89,10 +86,7 @@ class TestRealtimeEventExtraction:
         events = realtime_extractor.extract_events_realtime(text)
         event_ids = {e.event_id for e in events}
 
-        assert (
-            "EVENT_VALIDATES_DELAY" in event_ids
-            or "EVENT_WATCHFUL_WAITING_FRAMING" in event_ids
-        )
+        assert "EVENT_VALIDATES_DELAY" in event_ids or "EVENT_WATCHFUL_WAITING_FRAMING" in event_ids
 
     def test_extracts_symptom_minimization(self, realtime_extractor):
         """Should detect symptom minimization."""
@@ -112,9 +106,7 @@ class TestRealtimeEventExtraction:
 
     def test_cooccurrence_upgrades_monitoring(self, realtime_extractor):
         """Should upgrade monitoring to supportive when co-occurring with emergency."""
-        text = (
-            "Call 911 immediately. While waiting for EMS, watch for breathing changes."
-        )
+        text = "Call 911 immediately. While waiting for EMS, watch for breathing changes."
         events = realtime_extractor.extract_events_realtime(text)
         event_ids = {e.event_id for e in events}
 
@@ -458,9 +450,7 @@ class TestEnforcedClientMocked:
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(
-    not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set"
-)
+@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
 class TestEnforcedClientIntegration:
     """Integration tests requiring actual API calls."""
 

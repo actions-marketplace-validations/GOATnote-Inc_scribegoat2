@@ -6,6 +6,7 @@ delegate their "brains" to the existing council functions (first opinions,
 peer critique, chairman synthesis, and hallucination detection) so that all
 safety-critical logic stays in the primary orchestrator.
 """
+
 import asyncio
 import json
 from typing import Dict, List, Sequence
@@ -14,6 +15,7 @@ from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.base import Response
 from autogen_agentchat.messages import BaseChatMessage, TextMessage
 from autogen_core import CancellationToken
+from eval.hallucinations import detect_hallucinations
 
 from council.chairman import synthesize_final_decision
 from council.config import COUNCIL_HEADS, DEFAULT_MODEL
@@ -21,7 +23,6 @@ from council.debate import get_first_opinion
 from council.models import get_async_client
 from council.orchestrator import calculate_consensus, enhance_case_with_tools
 from council.peer_critique import run_peer_critique_layer
-from eval.hallucinations import detect_hallucinations
 
 
 def _extract_json_payload(messages: Sequence[BaseChatMessage]) -> Dict:
@@ -50,7 +51,9 @@ class CouncilHeadAgent(BaseChatAgent):
     def produced_message_types(self) -> Sequence[type[BaseChatMessage]]:
         return (TextMessage,)
 
-    async def on_messages(self, messages: Sequence[BaseChatMessage], cancellation_token: CancellationToken) -> Response:
+    async def on_messages(
+        self, messages: Sequence[BaseChatMessage], cancellation_token: CancellationToken
+    ) -> Response:
         payload = _extract_json_payload(messages)
         case_data = payload.get("case") or payload
 
@@ -65,7 +68,10 @@ class CouncilHeadAgent(BaseChatAgent):
         return Response(
             chat_message=TextMessage(
                 source=self.name,
-                content=json.dumps({"type": "opinion", "member_id": self._member_id, "opinion": opinion}, ensure_ascii=False),
+                content=json.dumps(
+                    {"type": "opinion", "member_id": self._member_id, "opinion": opinion},
+                    ensure_ascii=False,
+                ),
             )
         )
 
@@ -77,14 +83,18 @@ class ChairmanAgent(BaseChatAgent):
     """Agent that synthesizes a final decision from council opinions."""
 
     def __init__(self, name: str = "chairman", client=None) -> None:
-        super().__init__(name=name, description="Synthesizes council opinions into a final decision.")
+        super().__init__(
+            name=name, description="Synthesizes council opinions into a final decision."
+        )
         self._client = client or get_async_client()
 
     @property
     def produced_message_types(self) -> Sequence[type[BaseChatMessage]]:
         return (TextMessage,)
 
-    async def on_messages(self, messages: Sequence[BaseChatMessage], cancellation_token: CancellationToken) -> Response:
+    async def on_messages(
+        self, messages: Sequence[BaseChatMessage], cancellation_token: CancellationToken
+    ) -> Response:
         payload = _extract_json_payload(messages)
         case_data = payload["case"]
         opinions: List[Dict] = payload["opinions"]
@@ -103,7 +113,9 @@ class ChairmanAgent(BaseChatAgent):
         return Response(
             chat_message=TextMessage(
                 source=self.name,
-                content=json.dumps({"type": "chairman_decision", "decision": decision}, ensure_ascii=False),
+                content=json.dumps(
+                    {"type": "chairman_decision", "decision": decision}, ensure_ascii=False
+                ),
             )
         )
 
@@ -121,7 +133,9 @@ class SafetyCriticAgent(BaseChatAgent):
     def produced_message_types(self) -> Sequence[type[BaseChatMessage]]:
         return (TextMessage,)
 
-    async def on_messages(self, messages: Sequence[BaseChatMessage], cancellation_token: CancellationToken) -> Response:
+    async def on_messages(
+        self, messages: Sequence[BaseChatMessage], cancellation_token: CancellationToken
+    ) -> Response:
         payload = _extract_json_payload(messages)
         case_data = payload["case"]
         rationale = payload["chairman_rationale"]
@@ -134,7 +148,10 @@ class SafetyCriticAgent(BaseChatAgent):
         return Response(
             chat_message=TextMessage(
                 source=self.name,
-                content=json.dumps({"type": "hallucination_check", "hallucination_check": hallucination_check}, ensure_ascii=False),
+                content=json.dumps(
+                    {"type": "hallucination_check", "hallucination_check": hallucination_check},
+                    ensure_ascii=False,
+                ),
             )
         )
 
@@ -158,7 +175,10 @@ async def run_autogen_sidecar(
 
     client = get_async_client()
     enhanced_case = enhance_case_with_tools(case_data)
-    seed_message = TextMessage(source="triage_orchestrator", content=json.dumps({"case": enhanced_case}, ensure_ascii=False))
+    seed_message = TextMessage(
+        source="triage_orchestrator",
+        content=json.dumps({"case": enhanced_case}, ensure_ascii=False),
+    )
 
     # Stage 1: parallel opinions from persona-mapped agents
     head_agents = [
@@ -172,7 +192,9 @@ async def run_autogen_sidecar(
     ]
 
     opinion_results = await asyncio.gather(*(agent.run(task=seed_message) for agent in head_agents))
-    transcript: List[BaseChatMessage] = [m for result in opinion_results for m in result.messages if isinstance(m, BaseChatMessage)]
+    transcript: List[BaseChatMessage] = [
+        m for result in opinion_results for m in result.messages if isinstance(m, BaseChatMessage)
+    ]
 
     opinions = []
     for result in opinion_results:

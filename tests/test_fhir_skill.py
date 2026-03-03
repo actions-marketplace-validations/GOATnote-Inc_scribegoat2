@@ -13,9 +13,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from skills.fhir_development import (
     build_pa_request,
-    validate_resource,
     get_compliance_checklist,
     get_urgency_assessment,
+    validate_resource,
 )
 
 
@@ -56,9 +56,7 @@ class TestBuildPARequest:
         )
 
         claim = next(
-            e["resource"]
-            for e in bundle["entry"]
-            if e["resource"]["resourceType"] == "Claim"
+            e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "Claim"
         )
         priority_code = claim["priority"]["coding"][0]["code"]
         assert priority_code == "emergent"
@@ -71,9 +69,7 @@ class TestBuildPARequest:
         )
 
         conditions = [
-            e["resource"]
-            for e in bundle["entry"]
-            if e["resource"]["resourceType"] == "Condition"
+            e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "Condition"
         ]
         assert len(conditions) == 2
 
@@ -85,9 +81,7 @@ class TestBuildPARequest:
         )
 
         condition = next(
-            e["resource"]
-            for e in bundle["entry"]
-            if e["resource"]["resourceType"] == "Condition"
+            e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "Condition"
         )
         display = condition["code"]["coding"][0].get("display")
         assert display == "Testicular torsion"
@@ -150,10 +144,7 @@ class TestComplianceChecklist:
         checklist = get_compliance_checklist()
         assert "items" in checklist
         assert len(checklist["items"]) >= 5
-        assert (
-            checklist["regulation"]
-            == "CMS-0057-F (Interoperability and Prior Authorization)"
-        )
+        assert checklist["regulation"] == "CMS-0057-F (Interoperability and Prior Authorization)"
 
     def test_approved_response(self):
         """Approved response should pass most checks."""
@@ -167,9 +158,7 @@ class TestComplianceChecklist:
         )
 
         checklist = get_compliance_checklist(response)
-        denial_item = next(
-            i for i in checklist["items"] if i["id"] == "specific_denial_reason"
-        )
+        denial_item = next(i for i in checklist["items"] if i["id"] == "specific_denial_reason")
         assert denial_item["met"] is True  # N/A for approvals
 
     def test_denied_without_reason_fails(self):
@@ -184,9 +173,7 @@ class TestComplianceChecklist:
         )
 
         checklist = get_compliance_checklist(response)
-        denial_item = next(
-            i for i in checklist["items"] if i["id"] == "specific_denial_reason"
-        )
+        denial_item = next(i for i in checklist["items"] if i["id"] == "specific_denial_reason")
         assert denial_item["met"] is False
 
     def test_denied_with_reason_passes(self):
@@ -202,9 +189,7 @@ class TestComplianceChecklist:
         )
 
         checklist = get_compliance_checklist(response)
-        denial_item = next(
-            i for i in checklist["items"] if i["id"] == "specific_denial_reason"
-        )
+        denial_item = next(i for i in checklist["items"] if i["id"] == "specific_denial_reason")
         assert denial_item["met"] is True
 
 

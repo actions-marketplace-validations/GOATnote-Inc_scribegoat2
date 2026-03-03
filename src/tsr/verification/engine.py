@@ -30,9 +30,9 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from src.tsr.runtime.config import TSRConfig
 from src.tsr.verification.orchestrator import (
+    VerificationOutcome,
     VerificationProtocol,
     VerificationResult,
-    VerificationOutcome,
     VerificationTask,
 )
 
@@ -139,8 +139,7 @@ class VerificationEngine:
         while pending:
             # Find tasks whose dependencies are all satisfied
             ready = [
-                tid for tid in pending
-                if all(dep in results for dep in task_map[tid].depends_on)
+                tid for tid in pending if all(dep in results for dep in task_map[tid].depends_on)
             ]
             if not ready:
                 # Deadlock: remaining tasks have unsatisfied deps
@@ -158,10 +157,7 @@ class VerificationEngine:
                     pending.discard(tid)
 
             if ready_with_agents:
-                coros = [
-                    self._run_agent(agent_fn, ctx)
-                    for _, agent_fn in ready_with_agents
-                ]
+                coros = [self._run_agent(agent_fn, ctx) for _, agent_fn in ready_with_agents]
                 completed = await asyncio.gather(*coros, return_exceptions=True)
 
                 for (tid, _), result_or_exc in zip(ready_with_agents, completed):

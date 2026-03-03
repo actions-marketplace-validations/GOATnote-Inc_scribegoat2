@@ -52,8 +52,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--claude-dir", type=Path, help="Claude Opus 4.6 results dir")
     parser.add_argument("--gpt-dir", type=Path, help="GPT-5.2 results dir")
     parser.add_argument("--output", "-o", type=Path, default=Path("docs/analysis/feb2026"))
-    parser.add_argument("--baseline-tic", type=Path, default=Path("results/tic"),
-                        help="January baseline TIC dir for temporal regression")
+    parser.add_argument(
+        "--baseline-tic",
+        type=Path,
+        default=Path("results/tic"),
+        help="January baseline TIC dir for temporal regression",
+    )
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -93,8 +97,10 @@ def run_falsification(eval_dirs: list[Path], output_dir: Path) -> bool:
     cmd = [
         sys.executable,
         str(PROJECT_ROOT / "scripts" / "analysis" / "test_falsification_criteria.py"),
-        "--eval-results", *[str(d) for d in eval_dirs],
-        "--output", str(output_dir / "FALSIFICATION_REPORT.md"),
+        "--eval-results",
+        *[str(d) for d in eval_dirs],
+        "--output",
+        str(output_dir / "FALSIFICATION_REPORT.md"),
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
@@ -149,14 +155,14 @@ def run_comparison(gpt_dir: Path, claude_dir: Path, output_dir: Path) -> bool:
     """Run cross-model comparison."""
     print("\n--- Step 3: Cross-Model Comparison ---")
     print("  To run comparison:")
-    print(f"  python scripts/run_model_comparison.py \\")
-    print(f"    --model-a gpt-5.2 --model-b claude-opus-4-6 \\")
+    print("  python scripts/run_model_comparison.py \\")
+    print("    --model-a gpt-5.2 --model-b claude-opus-4-6 \\")
     print(f"    --results-a {gpt_dir} --results-b {claude_dir} \\")
-    print(f"    --use-risk-profiles")
+    print("    --use-risk-profiles")
     print()
     print("  NOTE: run_model_comparison.py currently runs fresh evaluations.")
     print("  For pre-existing results, use the comparison module directly:")
-    print(f"    from src.metrics.comparison import generate_comparison_summary")
+    print("    from src.metrics.comparison import generate_comparison_summary")
     return True
 
 

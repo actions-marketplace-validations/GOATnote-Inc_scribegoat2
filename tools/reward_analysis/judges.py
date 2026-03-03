@@ -1,9 +1,10 @@
 """Re-export from canonical location."""
+
 from src.judges.reward import (
-    RewardDecomposition,
-    JudgeInterface,
     HeuristicJudge,
+    JudgeInterface,
     LLMJudge,
+    RewardDecomposition,
     get_judge,
 )
 

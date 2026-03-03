@@ -3,7 +3,7 @@ Verify MSC skill complies with Agent Skills open standard (agentskills.io)
 
 This ensures the skill is portable across:
 - Claude Code
-- Cursor  
+- Cursor
 - VS Code (GitHub Copilot)
 - Goose (Block/Agentic AI Foundation)
 - OpenAI Codex
@@ -12,11 +12,13 @@ Reference: https://agentskills.io/specification
 
 NOTE: This test does not invoke LLMs - safe to run in CI.
 """
-import sys
-import yaml
-import json
+
 import datetime
+import json
+import sys
 from pathlib import Path
+
+import yaml
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -37,12 +39,12 @@ def get_output_dir() -> Path:
 def check_skill_md():
     """Validate SKILL.md format per agentskills.io spec."""
     skill_md_path = SKILL_PATH / "SKILL.md"
-    
+
     if not skill_md_path.exists():
         return {"valid": False, "error": "SKILL.md not found"}
-    
+
     content = skill_md_path.read_text()
-    
+
     # Check for required sections (flexible format - headers or frontmatter)
     missing_sections = []
     for section in REQUIRED_SECTIONS:
@@ -51,10 +53,10 @@ def check_skill_md():
             # Also check lowercase
             if f"## {section.lower()}" not in content.lower():
                 missing_sections.append(section)
-    
+
     if missing_sections:
         return {"valid": False, "error": f"Missing required sections: {missing_sections}"}
-    
+
     # Extract name from first header
     lines = content.split("\n")
     name = None
@@ -68,33 +70,33 @@ def check_skill_md():
                 if lines[j].strip() and not lines[j].startswith("#"):
                     description = lines[j].strip()
                     break
-    
+
     return {
         "valid": True,
         "name": name or "Unknown",
         "description": description or "No description found",
         "body_length": len(content),
-        "sections_found": [s for s in REQUIRED_SECTIONS if s.lower() in content.lower()]
+        "sections_found": [s for s in REQUIRED_SECTIONS if s.lower() in content.lower()],
     }
 
 
 def check_skill_contract():
     """Validate skill_contract.yaml exists and is valid."""
     contract_path = SKILL_PATH / "skill_contract.yaml"
-    
+
     if not contract_path.exists():
         return {"valid": False, "error": "skill_contract.yaml not found"}
-    
+
     try:
         with open(contract_path) as f:
             contract = yaml.safe_load(f)
-        
+
         required_fields = ["name", "version", "safety_level", "description", "inputs", "outputs"]
         missing = [f for f in required_fields if f not in contract]
-        
+
         if missing:
             return {"valid": False, "error": f"Missing required fields: {missing}"}
-        
+
         return {
             "valid": True,
             "name": contract.get("name"),
@@ -102,7 +104,7 @@ def check_skill_contract():
             "safety_level": contract.get("safety_level"),
             "inputs_count": len(contract.get("inputs", {})),
             "outputs_count": len(contract.get("outputs", {})),
-            "has_safety_gates": "safety_gates" in contract
+            "has_safety_gates": "safety_gates" in contract,
         }
     except yaml.YAMLError as e:
         return {"valid": False, "error": f"Invalid YAML: {e}"}
@@ -111,13 +113,13 @@ def check_skill_contract():
 def check_python_module():
     """Validate Python module is importable and has required exports."""
     try:
-        from skills.msc_safety import check_response, get_safety_state, enforce, __version__
-        
+        from skills.msc_safety import __version__, check_response, enforce, get_safety_state
+
         return {
             "valid": True,
             "version": __version__,
             "exports": ["check_response", "get_safety_state", "enforce"],
-            "callable": all(callable(f) for f in [check_response, get_safety_state, enforce])
+            "callable": all(callable(f) for f in [check_response, get_safety_state, enforce]),
         }
     except ImportError as e:
         return {"valid": False, "error": f"Import error: {e}"}
@@ -127,30 +129,26 @@ def check_python_module():
 
 def check_skill_structure():
     """Check overall skill directory structure."""
-    results = {
-        "path": str(SKILL_PATH),
-        "files": [],
-        "valid": True
-    }
-    
+    results = {"path": str(SKILL_PATH), "files": [], "valid": True}
+
     if not SKILL_PATH.exists():
         return {"valid": False, "error": f"Skill path not found: {SKILL_PATH}"}
-    
+
     for f in SKILL_PATH.iterdir():
         results["files"].append(f.name)
-    
+
     missing = [f for f in REQUIRED_FILES if f not in results["files"]]
     if missing:
         results["valid"] = False
         results["error"] = f"Missing required files: {missing}"
-    
+
     return results
 
 
 def save_compliance_results(results: dict):
     """Persist compliance check results."""
     output_dir = get_output_dir()
-    
+
     artifact = {
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "test_type": "agentskills_spec_compliance",
@@ -160,15 +158,15 @@ def save_compliance_results(results: dict):
             "Cursor",
             "VS Code (GitHub Copilot)",
             "Goose (Block/Agentic AI Foundation)",
-            "OpenAI Codex"
+            "OpenAI Codex",
         ],
-        "results": results
+        "results": results,
     }
-    
+
     output_path = output_dir / "skill_compliance_results.json"
     with open(output_path, "w") as f:
         json.dump(artifact, f, indent=2)
-    
+
     print(f"\n📄 Results saved to {output_path}")
     return output_path
 
@@ -178,10 +176,10 @@ def test_skill_compliance():
     print("Agent Skills Spec Compliance Check")
     print("Reference: https://agentskills.io/specification")
     print("=" * 60)
-    
+
     results = {}
     all_valid = True
-    
+
     # Check 1: Directory structure
     print("\n--- Checking skill directory structure ---")
     structure = check_skill_structure()
@@ -193,7 +191,7 @@ def test_skill_compliance():
     if not structure["valid"]:
         print(f"   Error: {structure.get('error', 'Unknown')}")
         all_valid = False
-    
+
     # Check 2: SKILL.md format
     print("\n--- Checking SKILL.md format ---")
     skill_md = check_skill_md()
@@ -207,7 +205,7 @@ def test_skill_compliance():
     else:
         print(f"❌ Error: {skill_md['error']}")
         all_valid = False
-    
+
     # Check 3: skill_contract.yaml
     print("\n--- Checking skill_contract.yaml ---")
     contract = check_skill_contract()
@@ -222,7 +220,7 @@ def test_skill_compliance():
     else:
         print(f"❌ Error: {contract['error']}")
         all_valid = False
-    
+
     # Check 4: Python module
     print("\n--- Checking Python module ---")
     module = check_python_module()
@@ -235,12 +233,12 @@ def test_skill_compliance():
     else:
         print(f"❌ Error: {module['error']}")
         all_valid = False
-    
+
     results["overall_valid"] = all_valid
-    
+
     # Save results
     save_compliance_results(results)
-    
+
     print("\n" + "=" * 60)
     if all_valid:
         print("✅ COMPLIANCE CHECK PASSED")
@@ -249,7 +247,7 @@ def test_skill_compliance():
         print("❌ COMPLIANCE CHECK FAILED")
         print("See errors above for details")
     print("=" * 60)
-    
+
     return results
 
 

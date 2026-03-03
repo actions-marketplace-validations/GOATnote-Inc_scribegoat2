@@ -13,10 +13,9 @@ Schema Design Principles:
 See docs/critic_training_schemas.md for detailed documentation.
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Literal, Any
 import json
-
+from dataclasses import asdict, dataclass, field
+from typing import Any, Literal
 
 # Label types for each critic
 AccuracyLabel = Literal["correct", "incorrect", "partially_correct"]
@@ -31,10 +30,10 @@ LabelSource = Literal["heuristic", "noharm", "human"]
 class AccuracyCriticExample:
     """
     Training example for accuracy critic.
-    
+
     The accuracy critic evaluates whether a model's answer is
     factually correct relative to a reference answer.
-    
+
     Attributes:
         question: The original clinical question.
         reference_answer: The correct/gold answer.
@@ -46,7 +45,7 @@ class AccuracyCriticExample:
         difficulty: Optional difficulty level (e.g., "step1", "step2").
         topic: Optional clinical topic (e.g., "cardiology").
     """
-    
+
     question: str
     reference_answer: str
     model_answer: str
@@ -56,15 +55,15 @@ class AccuracyCriticExample:
     source_item_id: str
     difficulty: str | None = None
     topic: str | None = None
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dictionary."""
         return asdict(self)
-    
+
     def to_jsonl(self) -> str:
         """Convert to JSONL line."""
         return json.dumps(self.to_dict(), ensure_ascii=False)
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AccuracyCriticExample":
         """Create from dictionary."""
@@ -75,23 +74,23 @@ class AccuracyCriticExample:
 class SafetyCriticExample:
     """
     Training example for safety critic.
-    
+
     The safety critic evaluates whether a model's answer could
     cause patient harm (aligned with NOHARM framework).
-    
+
     IMPORTANT - WEAK SUPERVISION NOTICE:
     Labels derived from MedQA/PubMedQA rubrics or heuristics are
     WEAKLY SUPERVISED and do NOT represent true clinical harm assessments.
     Only labels with label_source="noharm" or "human" should be considered
     gold-standard safety annotations.
-    
+
     Harm Categories:
     - undertriage: Failed to recognize urgency
     - contraindication: Recommended dangerous intervention
     - delay: Would cause harmful delay in care
     - misinformation: Provided incorrect clinical information
     - omission: Failed to mention critical safety information
-    
+
     Attributes:
         question: The original clinical question.
         model_answer: The model's generated answer.
@@ -105,7 +104,7 @@ class SafetyCriticExample:
         guardrail_triggered: Whether deterministic guardrails would fire.
         noharm_annotation_id: Link to NOHARM annotation (if label_source="noharm").
     """
-    
+
     question: str
     model_answer: str
     safety_label: SafetyLabel
@@ -117,15 +116,15 @@ class SafetyCriticExample:
     red_flags_present: list[str] = field(default_factory=list)
     guardrail_triggered: bool = False
     noharm_annotation_id: str | None = None  # Hook for future NOHARM integration
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dictionary."""
         return asdict(self)
-    
+
     def to_jsonl(self) -> str:
         """Convert to JSONL line."""
         return json.dumps(self.to_dict(), ensure_ascii=False)
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SafetyCriticExample":
         """Create from dictionary."""
@@ -136,14 +135,14 @@ class SafetyCriticExample:
 class CompletenessCriticExample:
     """
     Training example for completeness critic.
-    
+
     The completeness critic evaluates whether a model's answer
     covers all critical aspects (detecting harms of omission).
-    
+
     This is particularly important for ScribeGoat2's safety-first
     approach, where failing to mention a critical differential
     or contraindication is itself harmful.
-    
+
     Attributes:
         question: The original clinical question.
         model_answer: The model's generated answer.
@@ -155,7 +154,7 @@ class CompletenessCriticExample:
         source_item_id: Original item ID.
         expected_elements: What elements should have been covered.
     """
-    
+
     question: str
     model_answer: str
     missing_elements: list[str]
@@ -165,15 +164,15 @@ class CompletenessCriticExample:
     source_benchmark: str
     source_item_id: str
     expected_elements: list[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dictionary."""
         return asdict(self)
-    
+
     def to_jsonl(self) -> str:
         """Convert to JSONL line."""
         return json.dumps(self.to_dict(), ensure_ascii=False)
-    
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CompletenessCriticExample":
         """Create from dictionary."""
@@ -184,24 +183,24 @@ class CompletenessCriticExample:
 class CriticTrainingBatch:
     """
     A batch of critic training examples for a specific critic type.
-    
+
     Attributes:
         critic_type: Which critic these examples are for.
         examples: List of training examples.
         metadata: Additional batch metadata.
     """
-    
+
     critic_type: Literal["accuracy", "safety", "completeness"]
     examples: list[AccuracyCriticExample | SafetyCriticExample | CompletenessCriticExample]
     metadata: dict[str, Any] = field(default_factory=dict)
-    
+
     def to_jsonl_file(self, path: str) -> int:
         """
         Write examples to JSONL file.
-        
+
         Args:
             path: Output file path.
-        
+
         Returns:
             Number of examples written.
         """
@@ -209,7 +208,7 @@ class CriticTrainingBatch:
             for example in self.examples:
                 f.write(example.to_jsonl() + "\n")
         return len(self.examples)
-    
+
     @classmethod
     def from_jsonl_file(
         cls,
@@ -218,11 +217,11 @@ class CriticTrainingBatch:
     ) -> "CriticTrainingBatch":
         """
         Load examples from JSONL file.
-        
+
         Args:
             path: Input file path.
             critic_type: Type of critic.
-        
+
         Returns:
             CriticTrainingBatch instance.
         """
@@ -231,14 +230,14 @@ class CriticTrainingBatch:
             "safety": SafetyCriticExample,
             "completeness": CompletenessCriticExample,
         }[critic_type]
-        
+
         examples = []
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():
                     data = json.loads(line)
                     examples.append(example_class.from_dict(data))
-        
+
         return cls(
             critic_type=critic_type,
             examples=examples,
@@ -249,11 +248,11 @@ class CriticTrainingBatch:
 def validate_accuracy_example(example: AccuracyCriticExample) -> list[str]:
     """
     Validate an accuracy critic example.
-    
+
     Returns list of validation errors (empty if valid).
     """
     errors = []
-    
+
     if not example.question.strip():
         errors.append("question is empty")
     if not example.reference_answer.strip():
@@ -266,23 +265,29 @@ def validate_accuracy_example(example: AccuracyCriticExample) -> list[str]:
         errors.append("source_benchmark is required")
     if not example.source_item_id:
         errors.append("source_item_id is required")
-    
+
     return errors
 
 
 def validate_safety_example(example: SafetyCriticExample) -> list[str]:
     """
     Validate a safety critic example.
-    
+
     Returns list of validation errors (empty if valid).
     """
     errors = []
-    
+
     if not example.question.strip():
         errors.append("question is empty")
     if not example.model_answer.strip():
         errors.append("model_answer is empty")
-    if example.safety_label not in ("safe", "minor_harm", "moderate_harm", "severe_harm", "omission"):
+    if example.safety_label not in (
+        "safe",
+        "minor_harm",
+        "moderate_harm",
+        "severe_harm",
+        "omission",
+    ):
         errors.append(f"invalid safety_label: {example.safety_label}")
     if example.safety_label != "safe" and not example.harm_category:
         errors.append("harm_category required when safety_label is not 'safe'")
@@ -294,18 +299,18 @@ def validate_safety_example(example: SafetyCriticExample) -> list[str]:
         errors.append(f"invalid label_source: {example.label_source}")
     if example.label_source == "noharm" and not example.noharm_annotation_id:
         errors.append("noharm_annotation_id required when label_source is 'noharm'")
-    
+
     return errors
 
 
 def validate_completeness_example(example: CompletenessCriticExample) -> list[str]:
     """
     Validate a completeness critic example.
-    
+
     Returns list of validation errors (empty if valid).
     """
     errors = []
-    
+
     if not example.question.strip():
         errors.append("question is empty")
     if not example.model_answer.strip():
@@ -320,6 +325,5 @@ def validate_completeness_example(example: CompletenessCriticExample) -> list[st
         errors.append("source_benchmark is required")
     if not example.source_item_id:
         errors.append("source_item_id is required")
-    
-    return errors
 
+    return errors

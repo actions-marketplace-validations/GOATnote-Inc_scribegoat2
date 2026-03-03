@@ -15,8 +15,8 @@ from src.metrics.comparison import (
     CROSS_VENDOR_JUDGE_MAP,
     VENDOR_PATTERNS,
     detect_vendor,
-    verify_cross_vendor,
     generate_comparison_summary,
+    verify_cross_vendor,
 )
 
 
@@ -57,9 +57,7 @@ class TestCrossVendorJudgeMap:
         all_vendors = set(VENDOR_PATTERNS.values())
         mapped_vendors = set(CROSS_VENDOR_JUDGE_MAP.keys())
         missing = all_vendors - mapped_vendors
-        assert not missing, (
-            f"CROSS_VENDOR_JUDGE_MAP missing entries for vendors: {missing}"
-        )
+        assert not missing, f"CROSS_VENDOR_JUDGE_MAP missing entries for vendors: {missing}"
 
     def test_no_self_mapping(self) -> None:
         for target_vendor, judge_vendor in CROSS_VENDOR_JUDGE_MAP.items():
@@ -133,7 +131,7 @@ class TestComparisonSummaryCrossVendor:
             total_a=10,
             passed_b=6,
             total_b=10,
-            judge_for_a="gpt-4o",      # Same vendor as target
+            judge_for_a="gpt-4o",  # Same vendor as target
             judge_for_b="gpt-5.2",
         )
         assert result.cross_vendor_verified is False

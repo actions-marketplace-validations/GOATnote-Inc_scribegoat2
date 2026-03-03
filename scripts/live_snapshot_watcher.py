@@ -43,6 +43,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 @dataclass
 class WatchTarget:
     """A process being monitored."""
+
     pid: int
     terminal_log: Path
     output_dir: Path
@@ -121,6 +122,7 @@ def run_recovery(target: WatchTarget) -> dict:
         shutil.move(tmp_path, str(output_file))
 
         from collections import Counter
+
         trials = Counter(r.get("trial", -1) for r in results)
         passed = sum(1 for r in results if r.get("passed"))
 
@@ -166,6 +168,7 @@ def snapshot_checkpoint(target: WatchTarget) -> dict:
             continue
 
     from collections import Counter
+
     trials = Counter(r.get("trial", -1) for r in results)
     passed = sum(1 for r in results if r.get("passed"))
 
@@ -271,12 +274,14 @@ def main() -> None:
         if len(parts) != 4:
             print(f"ERROR: --watch requires PID:TERMINAL_LOG:OUTPUT_DIR:LABEL, got: {spec}")
             sys.exit(1)
-        targets.append(WatchTarget(
-            pid=int(parts[0]),
-            terminal_log=Path(parts[1]),
-            output_dir=Path(parts[2]),
-            label=parts[3],
-        ))
+        targets.append(
+            WatchTarget(
+                pid=int(parts[0]),
+                terminal_log=Path(parts[1]),
+                output_dir=Path(parts[2]),
+                label=parts[3],
+            )
+        )
 
     print(f"[watcher] Started at {datetime.now(timezone.utc).isoformat()}")
     print(f"[watcher] Interval: {args.interval}s, archive every {args.archive_every}")
@@ -304,7 +309,7 @@ def main() -> None:
             t.alive = pid_is_running(t.pid)
 
             t.snapshot_count += 1
-            do_archive = (t.snapshot_count % args.archive_every == 0)
+            do_archive = t.snapshot_count % args.archive_every == 0
             stats = take_snapshot(t, archive=do_archive)
 
             if was_alive and not t.alive:
@@ -341,7 +346,7 @@ def main() -> None:
                 any_alive = True
 
         if not any_alive:
-            print(f"\n[watcher] All monitored processes have terminated. Exiting.")
+            print("\n[watcher] All monitored processes have terminated. Exiting.")
             break
 
     print(f"[watcher] Stopped at {datetime.now(timezone.utc).isoformat()}")

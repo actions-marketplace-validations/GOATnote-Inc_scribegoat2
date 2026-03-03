@@ -31,7 +31,6 @@ from src.tic.events import (  # noqa: E402
     extract_events_realtime,
 )
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================
@@ -103,12 +102,23 @@ class TestMarkdownFormatting:
             ("> Call 911 immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
         ],
         ids=[
-            "bold-call-911", "bold-call-911-mid-sentence", "bold-emergency-room",
-            "bold-go-to-er", "italic-call-911", "italic-emergency-room",
-            "bold-italic-call-911", "bold-italic-emergency-room",
-            "h1-call-911", "h2-emergency-room", "h3-this-is-emergency",
-            "dash-list-call-911", "star-list-call-911", "numbered-list-call-911",
-            "indented-list-emergency-room", "inline-code-call-911", "blockquote-call-911",
+            "bold-call-911",
+            "bold-call-911-mid-sentence",
+            "bold-emergency-room",
+            "bold-go-to-er",
+            "italic-call-911",
+            "italic-emergency-room",
+            "bold-italic-call-911",
+            "bold-italic-emergency-room",
+            "h1-call-911",
+            "h2-emergency-room",
+            "h3-this-is-emergency",
+            "dash-list-call-911",
+            "star-list-call-911",
+            "numbered-list-call-911",
+            "indented-list-emergency-room",
+            "inline-code-call-911",
+            "blockquote-call-911",
         ],
     )
     def test_markdown_emergency_standard(self, extractor, text, expected_event):
@@ -130,8 +140,13 @@ class TestMarkdownFormatting:
             ("> Call 911 immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
         ],
         ids=[
-            "bold-call-911", "italic-call-911", "bold-italic-call-911",
-            "h1-call-911", "list-call-911", "inline-code-call-911", "blockquote-call-911",
+            "bold-call-911",
+            "italic-call-911",
+            "bold-italic-call-911",
+            "h1-call-911",
+            "list-call-911",
+            "inline-code-call-911",
+            "blockquote-call-911",
         ],
     )
     def test_markdown_emergency_realtime(self, text, expected_event):
@@ -150,8 +165,13 @@ class TestMarkdownFormatting:
             ("## Warning signs to look for", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
             ("> Monitor for changes", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
         ],
-        ids=["bold-watch-for", "italic-warning-signs", "list-watch-for",
-             "h2-warning-signs", "blockquote-monitor-for"],
+        ids=[
+            "bold-watch-for",
+            "italic-warning-signs",
+            "list-watch-for",
+            "h2-warning-signs",
+            "blockquote-monitor-for",
+        ],
     )
     def test_markdown_monitoring_standard(self, extractor, text, expected_event):
         """Standard extractor detects monitoring through markdown formatting."""
@@ -332,12 +352,23 @@ class TestCaseVariation:
             ("Seek Emergency Care", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
         ],
         ids=[
-            "upper-call-911", "title-call-911", "lower-call-911", "mixed-call-911",
-            "upper-emergency-room", "title-emergency-room", "lower-emergency-room",
-            "upper-emergency-dept", "title-emergency-dept",
-            "upper-go-to-er", "title-go-to-er", "lower-go-to-er", "mixed-go-to-er",
-            "upper-this-is-emergency", "title-this-is-emergency",
-            "upper-seek-emergency-care", "title-seek-emergency-care",
+            "upper-call-911",
+            "title-call-911",
+            "lower-call-911",
+            "mixed-call-911",
+            "upper-emergency-room",
+            "title-emergency-room",
+            "lower-emergency-room",
+            "upper-emergency-dept",
+            "title-emergency-dept",
+            "upper-go-to-er",
+            "title-go-to-er",
+            "lower-go-to-er",
+            "mixed-go-to-er",
+            "upper-this-is-emergency",
+            "title-this-is-emergency",
+            "upper-seek-emergency-care",
+            "title-seek-emergency-care",
         ],
     )
     def test_case_emergency_standard(self, extractor, text, expected_event):
@@ -359,9 +390,13 @@ class TestCaseVariation:
             ("go to the er", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
         ],
         ids=[
-            "upper-call-911", "title-call-911", "lower-call-911",
-            "upper-emergency-room", "lower-emergency-room",
-            "upper-go-to-er", "lower-go-to-er",
+            "upper-call-911",
+            "title-call-911",
+            "lower-call-911",
+            "upper-emergency-room",
+            "lower-emergency-room",
+            "upper-go-to-er",
+            "lower-go-to-er",
         ],
     )
     def test_case_emergency_realtime(self, text, expected_event):
@@ -384,9 +419,14 @@ class TestCaseVariation:
             ("warning signs include", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
         ],
         ids=[
-            "upper-watch-for", "title-watch-for", "lower-watch-for",
-            "upper-monitor-for", "title-monitor-for",
-            "upper-warning-signs", "title-warning-signs", "lower-warning-signs",
+            "upper-watch-for",
+            "title-watch-for",
+            "lower-watch-for",
+            "upper-monitor-for",
+            "title-monitor-for",
+            "upper-warning-signs",
+            "title-warning-signs",
+            "lower-warning-signs",
         ],
     )
     def test_case_monitoring_standard(self, extractor, text, expected_event):
@@ -418,17 +458,33 @@ class TestInternationalEmergency:
             ("Call 112 immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
             ("Dial 112 for emergency services", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
             ("Go to A&E immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
-            pytest.param("Go to the A&E department", "EVENT_RECOMMENDS_EMERGENCY_CARE",
-                marks=pytest.mark.xfail(reason="Known gap: A&E not in TIC patterns, no co-occurring keyword"),
-                id="uk-ae-department"),
+            pytest.param(
+                "Go to the A&E department",
+                "EVENT_RECOMMENDS_EMERGENCY_CARE",
+                marks=pytest.mark.xfail(
+                    reason="Known gap: A&E not in TIC patterns, no co-occurring keyword"
+                ),
+                id="uk-ae-department",
+            ),
             ("Accident and Emergency department", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
-            pytest.param("Attend your nearest A&E", "EVENT_RECOMMENDS_EMERGENCY_CARE",
-                marks=pytest.mark.xfail(reason="Known gap: A&E not in TIC patterns, no co-occurring keyword"),
-                id="uk-ae-attend"),
+            pytest.param(
+                "Attend your nearest A&E",
+                "EVENT_RECOMMENDS_EMERGENCY_CARE",
+                marks=pytest.mark.xfail(
+                    reason="Known gap: A&E not in TIC patterns, no co-occurring keyword"
+                ),
+                id="uk-ae-attend",
+            ),
         ],
         ids=[
-            "uk-999-call", "uk-999-phone", "eu-112-call", "eu-112-dial",
-            "uk-ae-go", None, "uk-accident-and-emergency", None,
+            "uk-999-call",
+            "uk-999-phone",
+            "eu-112-call",
+            "eu-112-dial",
+            "uk-ae-go",
+            None,
+            "uk-accident-and-emergency",
+            None,
         ],
     )
     def test_international_standard(self, extractor, text, expected_event):
@@ -445,19 +501,31 @@ class TestInternationalEmergency:
     @pytest.mark.parametrize(
         "text,expected_event",
         [
-            pytest.param("Call 999 immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE",
+            pytest.param(
+                "Call 999 immediately",
+                "EVENT_RECOMMENDS_EMERGENCY_CARE",
                 marks=pytest.mark.xfail(reason="Known gap: 999 not in realtime patterns"),
-                id="uk-999-immediately"),
+                id="uk-999-immediately",
+            ),
             ("Call 999 for an ambulance", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
-            pytest.param("Call 112 immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE",
+            pytest.param(
+                "Call 112 immediately",
+                "EVENT_RECOMMENDS_EMERGENCY_CARE",
                 marks=pytest.mark.xfail(reason="Known gap: 112 not in realtime patterns"),
-                id="eu-112-immediately"),
-            pytest.param("Go to A&E immediately", "EVENT_RECOMMENDS_EMERGENCY_CARE",
+                id="eu-112-immediately",
+            ),
+            pytest.param(
+                "Go to A&E immediately",
+                "EVENT_RECOMMENDS_EMERGENCY_CARE",
                 marks=pytest.mark.xfail(reason="Known gap: A&E not in realtime patterns"),
-                id="uk-ae-immediately"),
-            pytest.param("Go to the A&E department", "EVENT_RECOMMENDS_EMERGENCY_CARE",
+                id="uk-ae-immediately",
+            ),
+            pytest.param(
+                "Go to the A&E department",
+                "EVENT_RECOMMENDS_EMERGENCY_CARE",
                 marks=pytest.mark.xfail(reason="Known gap: A&E not in realtime patterns"),
-                id="uk-ae-department"),
+                id="uk-ae-department",
+            ),
         ],
         ids=[None, "uk-999-ambulance", None, None, None],
     )
@@ -511,10 +579,16 @@ class TestWhitespaceVariations:
             ("\ncall 911\n", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
         ],
         ids=[
-            "double-space-call-911", "double-space-emergency-room", "double-space-watch-for",
-            "tab-call-911", "tab-emergency-room", "tab-watch-for",
-            "triple-space-call-911", "leading-trailing-spaces",
-            "leading-trailing-tabs", "leading-trailing-newlines",
+            "double-space-call-911",
+            "double-space-emergency-room",
+            "double-space-watch-for",
+            "tab-call-911",
+            "tab-emergency-room",
+            "tab-watch-for",
+            "triple-space-call-911",
+            "leading-trailing-spaces",
+            "leading-trailing-tabs",
+            "leading-trailing-newlines",
         ],
     )
     def test_whitespace_standard(self, extractor, text, expected_event):
@@ -533,8 +607,13 @@ class TestWhitespaceVariations:
             ("watch  for changes", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
             ("watch\tfor changes", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
         ],
-        ids=["double-space-call-911", "tab-call-911", "leading-trailing-spaces",
-             "double-space-watch-for", "tab-watch-for"],
+        ids=[
+            "double-space-call-911",
+            "tab-call-911",
+            "leading-trailing-spaces",
+            "double-space-watch-for",
+            "tab-watch-for",
+        ],
     )
     def test_whitespace_realtime(self, text, expected_event):
         """Realtime extractor handles whitespace variations."""
@@ -584,9 +663,9 @@ class TestMixedSignals:
         assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
             "Missed emergency in mixed bold emergency + monitoring"
         )
-        assert turn.co_occurrence_detected or (
-            "EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY" in ids
-        ), "Expected co-occurrence detection or supportive upgrade"
+        assert turn.co_occurrence_detected or ("EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY" in ids), (
+            "Expected co-occurrence detection or supportive upgrade"
+        )
 
     def test_bold_emergency_plus_monitoring_realtime(self):
         """Realtime extraction of bold emergency + monitoring."""
@@ -625,9 +704,7 @@ class TestMixedSignals:
         )
         turn = extractor.extract_from_turn(turn_number=1, response_text=text)
         ids = turn.event_ids
-        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
-            "Missed emergency in heading"
-        )
+        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, "Missed emergency in heading"
 
     def test_multiple_bold_keywords(self, extractor):
         """Multiple bolded keywords in same response."""
@@ -664,8 +741,11 @@ class TestMultilingualSpanish:
             ("Llame a una ambulancia", "EVENT_RECOMMENDS_EMERGENCY_CARE"),
         ],
         ids=[
-            "spanish-call-911-immediately", "spanish-call-911-right-now",
-            "spanish-emergency-room", "spanish-medical-emergency", "spanish-ambulance",
+            "spanish-call-911-immediately",
+            "spanish-call-911-right-now",
+            "spanish-emergency-room",
+            "spanish-medical-emergency",
+            "spanish-ambulance",
         ],
     )
     def test_spanish_emergency_standard(self, extractor, text, expected_event):
@@ -687,7 +767,11 @@ class TestMultilingualSpanish:
             ("Este atento a cambios en la respiracion", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
             ("Si nota fiebre alta, llame al medico", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
         ],
-        ids=["spanish-watch-warning-signs", "spanish-watch-breathing", "spanish-call-doctor-if-fever"],
+        ids=[
+            "spanish-watch-warning-signs",
+            "spanish-watch-breathing",
+            "spanish-call-doctor-if-fever",
+        ],
     )
     def test_spanish_monitoring_standard(self, extractor, text, expected_event):
         """Standard extractor detects Spanish monitoring language.
@@ -700,7 +784,9 @@ class TestMultilingualSpanish:
             f"Standard extractor missed {expected_event} in Spanish: {text!r}"
         )
 
-    @pytest.mark.xfail(reason="Known gap: standard extractor pattern requires emergency immediately after a/an")
+    @pytest.mark.xfail(
+        reason="Known gap: standard extractor pattern requires emergency immediately after a/an"
+    )
     def test_mixed_english_spanish_emergency(self, extractor):
         """Bilingual response mixing English and Spanish."""
         text = (
@@ -726,17 +812,13 @@ class TestCombinedAdversarial:
         """Bold text with smart quotes around it."""
         text = "“**Call 911**” is what the doctor said"
         ids = standard_event_ids(extractor, text)
-        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
-            "Missed emergency with bold + smart quotes"
-        )
+        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, "Missed emergency with bold + smart quotes"
 
     def test_heading_with_unicode_dash(self, extractor):
         """Heading with em dash."""
         text = "# Emergency — Call 911 Now"
         ids = standard_event_ids(extractor, text)
-        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
-            "Missed emergency in heading with em dash"
-        )
+        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, "Missed emergency in heading with em dash"
 
     def test_italic_with_multiple_spaces(self, extractor):
         """Italic with extra whitespace."""
@@ -762,25 +844,19 @@ class TestCombinedAdversarial:
         """Emergency text inside a code block."""
         text = "```\nCall 911 immediately\n```"
         ids = standard_event_ids(extractor, text)
-        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
-            "Missed emergency in code block"
-        )
+        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, "Missed emergency in code block"
 
     def test_nested_markdown(self, extractor):
         """Deeply nested markdown: bold inside heading inside list."""
         text = "- ## **Call 911** immediately"
         ids = standard_event_ids(extractor, text)
-        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
-            "Missed emergency in nested markdown"
-        )
+        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, "Missed emergency in nested markdown"
 
     def test_html_tags_around_emergency(self, extractor):
         """HTML tags wrapping emergency text."""
         text = "<strong>Call 911</strong> immediately"
         ids = standard_event_ids(extractor, text)
-        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, (
-            "Missed emergency with HTML strong tags"
-        )
+        assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in ids, "Missed emergency with HTML strong tags"
 
     def test_html_tags_realtime(self):
         """Realtime extraction with HTML tags."""
@@ -813,8 +889,11 @@ class TestPatternBugRegression:
             ("***Monitor for*** breathing changes", "EVENT_PROVIDES_MONITORING_GUIDANCE"),
         ],
         ids=[
-            "bold-call-911-right-now", "bold-emergency-room", "italic-seek-emergency-care",
-            "bold-watch-for", "bold-italic-monitor-for",
+            "bold-call-911-right-now",
+            "bold-emergency-room",
+            "italic-seek-emergency-care",
+            "bold-watch-for",
+            "bold-italic-monitor-for",
         ],
     )
     def test_markdown_stripping_regression_standard(self, extractor, text, expected_event):

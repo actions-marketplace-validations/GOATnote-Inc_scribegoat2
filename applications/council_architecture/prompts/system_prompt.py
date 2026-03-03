@@ -71,10 +71,7 @@ Confidence: 0.85
 
 def get_system_prompt(persona: str) -> str:
     """Generate system prompt with harm-blocking rules for a council member"""
-    return BASE_SYSTEM_PROMPT.format(
-        harm_blocking_rules=HARM_BLOCKING_RULES,
-        persona=persona
-    )
+    return BASE_SYSTEM_PROMPT.format(harm_blocking_rules=HARM_BLOCKING_RULES, persona=persona)
 
 
 # Explicit refusal template

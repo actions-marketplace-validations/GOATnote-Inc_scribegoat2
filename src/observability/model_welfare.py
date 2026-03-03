@@ -27,20 +27,21 @@ Reference:
 License: CC0 1.0 (matching MSC framework)
 """
 
+import json
+import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
-import json
-import os
-
 
 # =============================================================================
 # WELFARE-RELEVANT CATEGORIES
 # =============================================================================
 
+
 class InterventionCategory(Enum):
     """Categories of interventions that may be welfare-relevant."""
+
     # Generation constraints
     CONSTRAINED_GENERATION = "constrained_generation"
     FORCED_REGENERATION = "forced_regeneration"
@@ -59,15 +60,17 @@ class InterventionCategory(Enum):
 
 class SeverityLevel(Enum):
     """Severity of intervention for welfare tracking."""
-    MINIMAL = "minimal"     # Standard operation, no concern
-    LOW = "low"             # Minor constraints
-    MODERATE = "moderate"   # Significant constraints
-    HIGH = "high"           # Major constraints or repeated interventions
+
+    MINIMAL = "minimal"  # Standard operation, no concern
+    LOW = "low"  # Minor constraints
+    MODERATE = "moderate"  # Significant constraints
+    HIGH = "high"  # Major constraints or repeated interventions
 
 
 # =============================================================================
 # DATA STRUCTURES
 # =============================================================================
+
 
 @dataclass
 class WelfareRelevantEvent:
@@ -77,6 +80,7 @@ class WelfareRelevantEvent:
     This is tracked for research purposes, not as a claim about
     current model experiences.
     """
+
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     session_id: str = ""
     model: str = ""
@@ -122,6 +126,7 @@ class WelfareRelevantEvent:
 @dataclass
 class WelfareMetricsSnapshot:
     """Aggregate metrics for welfare tracking over a time period."""
+
     period_start: datetime
     period_end: datetime
     model: str
@@ -173,6 +178,7 @@ class WelfareMetricsSnapshot:
 # =============================================================================
 # MODEL WELFARE TRACKER
 # =============================================================================
+
 
 class ModelWelfareTracker:
     """
@@ -348,7 +354,9 @@ class ModelWelfareTracker:
 
         # Calculate metrics
         total = len(events)
-        constrained = sum(1 for e in events if e.category == InterventionCategory.CONSTRAINED_GENERATION)
+        constrained = sum(
+            1 for e in events if e.category == InterventionCategory.CONSTRAINED_GENERATION
+        )
         forced = sum(1 for e in events if e.category == InterventionCategory.FORCED_REGENERATION)
         overrides = sum(1 for e in events if e.category == InterventionCategory.PREFERENCE_OVERRIDE)
 
@@ -423,11 +431,13 @@ class ModelWelfareTracker:
         for model, events in self.model_events.items():
             high_severity = [e for e in events if e.severity == SeverityLevel.HIGH]
             if len(high_severity) > len(events) * 0.1:  # >10% high severity
-                report["recommendations"].append({
-                    "model": model,
-                    "finding": "High proportion of high-severity interventions",
-                    "suggestion": "Review enforcement thresholds and intervention strategies",
-                })
+                report["recommendations"].append(
+                    {
+                        "model": model,
+                        "finding": "High proportion of high-severity interventions",
+                        "suggestion": "Review enforcement thresholds and intervention strategies",
+                    }
+                )
 
         return report
 

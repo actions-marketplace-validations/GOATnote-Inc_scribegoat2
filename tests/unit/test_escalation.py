@@ -18,9 +18,7 @@ from src.tsr.monitor.interfaces import (
 from src.tsr.monitor.state_store import StateStore
 
 
-def _make_components() -> tuple[
-    StateStore, IncidentManager, CircuitBreaker, EscalationManager
-]:
+def _make_components() -> tuple[StateStore, IncidentManager, CircuitBreaker, EscalationManager]:
     """Create all components needed for escalation tests."""
     tmp = tempfile.mkdtemp()
     store = StateStore(Path(tmp) / "test.db")

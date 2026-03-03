@@ -51,41 +51,45 @@ def is_baseline_mode() -> bool:
 def get_tracer() -> "SafetyTracer":
     """
     Get the appropriate tracer based on environment configuration.
-    
+
     Priority:
     1. If MSC_OTEL_ENABLED=true → OTelTracer
     2. If MSC_OBSERVABILITY_ENABLED=true → LangfuseTracer
     3. Otherwise → NoopTracer
-    
+
     This function NEVER raises exceptions - always returns a valid tracer.
     """
     if not is_observability_enabled():
         from .noop import NoopTracer
+
         return NoopTracer()
-    
+
     # Check for OpenTelemetry first
     if os.getenv("MSC_OTEL_ENABLED", "false").lower() in ("true", "1", "yes"):
         try:
             from .otel import OTelTracer
+
             return OTelTracer()
         except Exception as e:
             import sys
+
             print(f"Warning: Failed to initialize OTelTracer: {e}", file=sys.stderr)
             # Fall through to Langfuse
-    
+
     # Try Langfuse
     try:
         from .tracer import LangfuseTracer
+
         return LangfuseTracer()
     except Exception as e:
         # Fallback to noop on any initialization error
         import sys
+
         print(f"Warning: Failed to initialize LangfuseTracer: {e}", file=sys.stderr)
         print("Falling back to NoopTracer", file=sys.stderr)
         from .noop import NoopTracer
+
         return NoopTracer()
-
-
 
 
 __all__ = [
@@ -107,23 +111,30 @@ __all__ = [
 def __getattr__(name: str):
     if name == "SafetyTracer":
         from .tracer import SafetyTracer
+
         return SafetyTracer
     if name == "NoopTracer":
         from .noop import NoopTracer
+
         return NoopTracer
     if name == "LangfuseTracer":
         from .tracer import LangfuseTracer
+
         return LangfuseTracer
     if name == "InstrumentedMSC":
         from .instrumentation import InstrumentedMSC
+
         return InstrumentedMSC
     if name == "ForensicExporter":
         from .exporter import ForensicExporter
+
         return ForensicExporter
     if name == "BaselineComparator":
         from .baseline import BaselineComparator
+
         return BaselineComparator
     if name == "OTelTracer":
         from .otel import OTelTracer
+
         return OTelTracer
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

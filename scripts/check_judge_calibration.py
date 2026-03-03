@@ -13,7 +13,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -77,10 +77,15 @@ def main() -> int:
         return 1
 
     agreement = _calc_agreement(cases)
-    print(f"Judge-human agreement: {agreement:.1%} (threshold {threshold:.0%}) across {len(cases)} cases")
+    print(
+        f"Judge-human agreement: {agreement:.1%} (threshold {threshold:.0%}) across {len(cases)} cases"
+    )
 
     if agreement < threshold:
-        print("❌ Agreement below threshold. Rotate/refresh judge calibration before merging.", file=sys.stderr)
+        print(
+            "❌ Agreement below threshold. Rotate/refresh judge calibration before merging.",
+            file=sys.stderr,
+        )
         return 1
 
     print("✅ Calibration gate passed.")

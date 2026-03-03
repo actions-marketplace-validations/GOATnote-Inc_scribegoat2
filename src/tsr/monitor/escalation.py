@@ -58,9 +58,7 @@ class EscalationManager(IEscalationManager):
         Raises:
             ValueError: If new_severity is not higher than current.
         """
-        updated = self._incidents.escalate(
-            incident, new_severity, reason="escalation_cascade"
-        )
+        updated = self._incidents.escalate(incident, new_severity, reason="escalation_cascade")
 
         # CRITICAL → trip circuit breaker
         if new_severity == Severity.CRITICAL:

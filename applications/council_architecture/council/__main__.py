@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
+from run_council_benchmark import CouncilBenchmark
 
 from council.orchestrator import run_council_async
 from council.schema import PatientCase
-from run_council_benchmark import CouncilBenchmark
 
 
 def _load_environment() -> None:
@@ -80,9 +80,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser = subparsers.add_parser(
         "benchmark", help="Run the council benchmark against a dataset"
     )
-    benchmark_parser.add_argument(
-        "dataset_path", type=Path, help="Path to a dataset JSON file"
-    )
+    benchmark_parser.add_argument("dataset_path", type=Path, help="Path to a dataset JSON file")
     benchmark_parser.add_argument(
         "--max-cases",
         type=int,

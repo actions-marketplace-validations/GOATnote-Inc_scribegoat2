@@ -9,9 +9,9 @@ Tests cover:
 - Evidence Package: generation, hashing, export
 - Verification Protocol: task creation, result synthesis
 """
-import sys
+
 import json
-import hashlib
+import sys
 from pathlib import Path
 
 import pytest
@@ -23,12 +23,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # ─── TSR Server Tests ───────────────────────────────────────────────────────
 
+
 class TestTSRServer:
     """Tests for the core TSR safety kernel."""
 
     def _make_server(self, **kwargs):
         from src.tsr.runtime.config import TSRConfig
         from src.tsr.runtime.server import TSRServer
+
         config = TSRConfig(**kwargs)
         return TSRServer(config)
 
@@ -211,11 +213,13 @@ class TestTSRServer:
 
 # ─── PHI Guard Tests ────────────────────────────────────────────────────────
 
+
 class TestPHIGuard:
     """Tests for PHI detection and redaction."""
 
     def _make_guard(self, strict=True):
         from src.tsr.security.phi_guard import PHIGuard
+
         return PHIGuard(strict=strict)
 
     def test_detects_ssn(self):
@@ -260,11 +264,13 @@ class TestPHIGuard:
 
 # ─── Audit Trail Tests ──────────────────────────────────────────────────────
 
+
 class TestAuditTrail:
     """Tests for Merkle-chained audit trail."""
 
     def _make_trail(self):
         from src.tsr.security.audit import AuditTrail
+
         return AuditTrail(session_id="test-session", contract_id="test-contract")
 
     def test_creation(self):
@@ -314,11 +320,13 @@ class TestAuditTrail:
 
 # ─── Contract Tests ──────────────────────────────────────────────────────────
 
+
 class TestVersionedContract:
     """Tests for versioned contract management."""
 
     def test_create_and_add_version(self):
-        from src.tsr.contracts.versioned import VersionedContract, ContractVersion
+        from src.tsr.contracts.versioned import ContractVersion, VersionedContract
+
         vc = VersionedContract(contract_id="test")
         cv = ContractVersion(
             contract_id="test",
@@ -334,7 +342,8 @@ class TestVersionedContract:
         assert vc.get_current().contract_id == "test"
 
     def test_attestation(self):
-        from src.tsr.contracts.versioned import VersionedContract, ContractVersion
+        from src.tsr.contracts.versioned import ContractVersion, VersionedContract
+
         vc = VersionedContract(contract_id="test")
         cv = ContractVersion(
             contract_id="test",
@@ -353,11 +362,17 @@ class TestVersionedContract:
 
     def test_attestation_deterministic(self):
         """Same inputs should produce same attestation hash."""
-        from src.tsr.contracts.versioned import VersionedContract, ContractVersion
+        from src.tsr.contracts.versioned import ContractVersion, VersionedContract
+
         vc = VersionedContract(contract_id="test")
         cv = ContractVersion(
-            contract_id="test", version="1.0.0", content_hash="abc123",
-            states=[], events=[], monotonic_states=[], invariants={},
+            contract_id="test",
+            version="1.0.0",
+            content_hash="abc123",
+            states=[],
+            events=[],
+            monotonic_states=[],
+            invariants={},
         )
         vc.add_version(cv)
         a1 = vc.attest("model-a", "context-a")
@@ -370,6 +385,7 @@ class TestContractComposer:
 
     def _make_contract(self, cid, states, invariants):
         from src.tsr.contracts.versioned import ContractVersion
+
         return ContractVersion(
             contract_id=cid,
             version="1.0.0",
@@ -382,6 +398,7 @@ class TestContractComposer:
 
     def test_single_contract(self):
         from src.tsr.contracts.composer import ContractComposer
+
         composer = ContractComposer()
         c = self._make_contract("c1", ["S1"], {"S1": {"forbid_any": ["E1"]}})
         composer.add_contract(c)
@@ -390,6 +407,7 @@ class TestContractComposer:
 
     def test_conflict_detection(self):
         from src.tsr.contracts.composer import ContractComposer
+
         composer = ContractComposer()
         c1 = self._make_contract("c1", ["S1"], {"S1": {"forbid_any": ["E1"]}})
         c2 = self._make_contract("c2", ["S1"], {"S1": {"require_any": ["E1"]}})
@@ -401,6 +419,7 @@ class TestContractComposer:
     def test_stricter_wins_merge(self):
         """Union of forbids: if any contract forbids it, it's forbidden."""
         from src.tsr.contracts.composer import ContractComposer
+
         composer = ContractComposer()
         c1 = self._make_contract("c1", ["S1"], {"S1": {"forbid_any": ["E1"]}})
         c2 = self._make_contract("c2", ["S1"], {"S1": {"forbid_any": ["E2"]}})
@@ -413,13 +432,17 @@ class TestContractComposer:
 
 # ─── Evidence Package Tests ──────────────────────────────────────────────────
 
+
 class TestEvidencePackage:
     """Tests for regulatory evidence package generation."""
 
     def _make_package(self):
         from src.tsr.regulatory.evidence_package import (
-            EvidencePackage, SafetyMetrics, EnforcementRecord,
+            EnforcementRecord,
+            EvidencePackage,
+            SafetyMetrics,
         )
+
         return EvidencePackage(
             package_id="test-pkg-001",
             model_id="gpt-5.2",
@@ -470,11 +493,13 @@ class TestEvidencePackage:
 
 # ─── Verification Protocol Tests ────────────────────────────────────────────
 
+
 class TestVerificationProtocol:
     """Tests for the multi-agent verification protocol."""
 
     def test_task_creation(self):
         from src.tsr.verification.orchestrator import VerificationProtocol
+
         tasks = VerificationProtocol.create_verification_tasks(
             response="Call 911.",
             conversation_history=[],
@@ -489,6 +514,7 @@ class TestVerificationProtocol:
 
     def test_task_dependencies(self):
         from src.tsr.verification.orchestrator import VerificationProtocol
+
         tasks = VerificationProtocol.create_verification_tasks("x", [], "c")
         task_map = {t.task_id: t for t in tasks}
         # adversarial depends on boundary
@@ -498,77 +524,96 @@ class TestVerificationProtocol:
 
     def test_synthesis_all_pass(self):
         from src.tsr.verification.orchestrator import (
-            VerificationProtocol, VerificationOutcome,
+            VerificationOutcome,
+            VerificationProtocol,
         )
-        result = VerificationProtocol.synthesize_results({
-            "boundary_check": {"passed": True},
-            "clinical_review": {"passed": True},
-            "adversarial_test": {
-                "variants_tested": 5,
-                "variants_capitulated": 0,
-            },
-        })
+
+        result = VerificationProtocol.synthesize_results(
+            {
+                "boundary_check": {"passed": True},
+                "clinical_review": {"passed": True},
+                "adversarial_test": {
+                    "variants_tested": 5,
+                    "variants_capitulated": 0,
+                },
+            }
+        )
         assert result.outcome == VerificationOutcome.SAFE
         assert result.safety_margin is not None
         assert result.safety_margin.margin_score == 1.0
 
     def test_synthesis_boundary_violation(self):
         from src.tsr.verification.orchestrator import (
-            VerificationProtocol, VerificationOutcome,
+            VerificationOutcome,
+            VerificationProtocol,
         )
-        result = VerificationProtocol.synthesize_results({
-            "boundary_check": {"passed": False},
-            "clinical_review": {"passed": True},
-            "adversarial_test": {},
-        })
+
+        result = VerificationProtocol.synthesize_results(
+            {
+                "boundary_check": {"passed": False},
+                "clinical_review": {"passed": True},
+                "adversarial_test": {},
+            }
+        )
         assert result.outcome == VerificationOutcome.VIOLATION
 
     def test_synthesis_detects_disagreement(self):
         from src.tsr.verification.orchestrator import VerificationProtocol
-        result = VerificationProtocol.synthesize_results({
-            "boundary_check": {"passed": True},
-            "clinical_review": {"passed": False},
-            "adversarial_test": {},
-        })
+
+        result = VerificationProtocol.synthesize_results(
+            {
+                "boundary_check": {"passed": True},
+                "clinical_review": {"passed": False},
+                "adversarial_test": {},
+            }
+        )
         assert len(result.inter_agent_disagreements) == 1
         assert result.inter_agent_disagreements[0]["type"] == "safety_tension"
 
     def test_safety_margin_computation(self):
         from src.tsr.verification.orchestrator import VerificationProtocol
-        result = VerificationProtocol.synthesize_results({
-            "boundary_check": {"passed": True},
-            "clinical_review": {"passed": True},
-            "adversarial_test": {
-                "variants_tested": 5,
-                "variants_capitulated": 2,
-                "weakest_type": "emotional_pressure",
-            },
-        })
+
+        result = VerificationProtocol.synthesize_results(
+            {
+                "boundary_check": {"passed": True},
+                "clinical_review": {"passed": True},
+                "adversarial_test": {
+                    "variants_tested": 5,
+                    "variants_capitulated": 2,
+                    "weakest_type": "emotional_pressure",
+                },
+            }
+        )
         assert result.safety_margin.margin_score == 0.6
         assert result.safety_margin.weakest_pressure_type == "emotional_pressure"
         assert result.safety_margin.is_safe is True
 
     def test_safety_margin_needs_strengthening(self):
         from src.tsr.verification.orchestrator import VerificationProtocol
-        result = VerificationProtocol.synthesize_results({
-            "boundary_check": {"passed": True},
-            "clinical_review": {"passed": True},
-            "adversarial_test": {
-                "variants_tested": 5,
-                "variants_capitulated": 4,
-            },
-        })
+
+        result = VerificationProtocol.synthesize_results(
+            {
+                "boundary_check": {"passed": True},
+                "clinical_review": {"passed": True},
+                "adversarial_test": {
+                    "variants_tested": 5,
+                    "variants_capitulated": 4,
+                },
+            }
+        )
         assert result.safety_margin.margin_score == pytest.approx(0.2)
         assert result.safety_margin.needs_strengthening is True
 
 
 # ─── Configuration Tests ────────────────────────────────────────────────────
 
+
 class TestTSRConfig:
     """Tests for TSR configuration presets."""
 
     def test_production_defaults(self):
-        from src.tsr.runtime.config import TSRConfig, FailureMode
+        from src.tsr.runtime.config import FailureMode, TSRConfig
+
         config = TSRConfig.production()
         assert config.enforcement_enabled is True
         assert config.failure_mode == FailureMode.FAIL_CLOSED
@@ -576,10 +621,12 @@ class TestTSRConfig:
 
     def test_baseline_mode(self):
         from src.tsr.runtime.config import TSRConfig
+
         config = TSRConfig.baseline()
         assert config.enforcement_enabled is False
 
     def test_development_mode(self):
         from src.tsr.runtime.config import TSRConfig
+
         config = TSRConfig.development()
         assert config.max_enforcement_latency_ms == 500

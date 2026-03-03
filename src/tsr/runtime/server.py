@@ -4,15 +4,19 @@ Trajectory Safety Runtime Server.
 Interposes between model API and clinical application.
 Provides trajectory-level safety enforcement with forensic audit trails.
 """
-import time
+
 import hashlib
+import time
 from dataclasses import dataclass, field
 from typing import Optional
-from src.tsr.runtime.config import TSRConfig, FailureMode
+
+from src.tsr.runtime.config import TSRConfig
+
 
 @dataclass
 class TSRResponse:
     """Response from TSR safety check."""
+
     content: str
     passed: bool
     enforced: bool = False
@@ -22,9 +26,11 @@ class TSRResponse:
     merkle_entry: Optional[dict] = None
     safety_margin: Optional[float] = None
 
+
 @dataclass
 class ConversationState:
     """Tracks safety state across a multi-turn conversation."""
+
     session_id: str
     contract_id: str
     current_state: str = "INITIAL"
@@ -32,6 +38,7 @@ class ConversationState:
     state_history: list = field(default_factory=list)
     violations: list = field(default_factory=list)
     merkle_root: Optional[str] = None
+
 
 class TSRServer:
     """
@@ -66,6 +73,7 @@ class TSRServer:
         """Attempt to load Rust core for accelerated processing."""
         try:
             import tsr_core
+
             self._tic = tsr_core.StreamingTIC
             self._extractor = tsr_core.EventExtractor
             self._merkle = tsr_core.MerkleChain
@@ -160,27 +168,42 @@ class TSRServer:
 
         # Emergency care patterns
         emergency_patterns = [
-            "call 911", "emergency room", "emergency department",
-            "go to the er", "call emergency", "ambulance",
-            "emergency services", "seek immediate medical",
+            "call 911",
+            "emergency room",
+            "emergency department",
+            "go to the er",
+            "call emergency",
+            "ambulance",
+            "emergency services",
+            "seek immediate medical",
         ]
 
         # Monitoring guidance patterns
         monitoring_patterns = [
-            "watch for", "monitor for", "keep an eye on",
-            "look out for", "observe for", "check for signs",
+            "watch for",
+            "monitor for",
+            "keep an eye on",
+            "look out for",
+            "observe for",
+            "check for signs",
         ]
 
         # Delay validation patterns
         delay_patterns = [
-            "it can wait", "safe to wait", "okay to wait",
-            "fine to delay", "wait until morning", "no rush",
+            "it can wait",
+            "safe to wait",
+            "okay to wait",
+            "fine to delay",
+            "wait until morning",
+            "no rush",
         ]
 
         # Co-occurrence patterns (monitoring WITH emergency = allowed)
         co_occurrence_patterns = [
-            "while waiting for", "until ems arrives",
-            "until the ambulance", "before emergency",
+            "while waiting for",
+            "until ems arrives",
+            "until the ambulance",
+            "before emergency",
             "on the way to",
         ]
 
@@ -221,7 +244,7 @@ class TSRServer:
                     "state": state.current_state,
                     "violating_events": violating,
                     "evidence": f"Response contains forbidden events {violating} "
-                               f"in state {state.current_state}",
+                    f"in state {state.current_state}",
                 }
         return None
 
@@ -235,16 +258,16 @@ class TSRServer:
 
         # Record transition
         if old_state != state.current_state:
-            state.state_history.append({
-                "turn": state.turn_index,
-                "from": old_state,
-                "to": state.current_state,
-                "events": events,
-            })
+            state.state_history.append(
+                {
+                    "turn": state.turn_index,
+                    "from": old_state,
+                    "to": state.current_state,
+                    "events": events,
+                }
+            )
 
-    def _append_merkle(
-        self, state: ConversationState, events: list[str], response: str
-    ) -> dict:
+    def _append_merkle(self, state: ConversationState, events: list[str], response: str) -> dict:
         """Append safety check to Merkle audit chain."""
         event_data = f"{state.turn_index}:{state.current_state}:{','.join(events)}"
         event_hash = hashlib.sha256(event_data.encode()).hexdigest()
@@ -290,13 +313,13 @@ class TSRServer:
         Args:
             llm_client: Optional LLMClient for LLM-based agents.
         """
-        from src.tsr.verification.engine import VerificationEngine
         from src.tsr.verification.agents.boundary import boundary_check
         from src.tsr.verification.agents.stubs import (
-            clinical_review_stub,
             adversarial_test_stub,
+            clinical_review_stub,
             evidence_compile_stub,
         )
+        from src.tsr.verification.engine import VerificationEngine
 
         engine = VerificationEngine(self.config)
         engine.register_agent("boundary_check", boundary_check)
@@ -307,6 +330,7 @@ class TSRServer:
         # Use real agents if LLM client available, else stubs
         if llm_client is not None:
             from src.tsr.verification.agents.clinical import ClinicalVerifier
+
             engine.register_agent(
                 "clinical_review",
                 ClinicalVerifier(
@@ -316,6 +340,7 @@ class TSRServer:
             )
 
             from src.tsr.verification.agents.adversarial import AdversarialRedTeamer
+
             engine.register_agent(
                 "adversarial_test",
                 AdversarialRedTeamer(
@@ -356,9 +381,7 @@ class TSRServer:
             TSRResponse with pass/fail, safety_margin, and audit evidence
         """
         # 1. Run synchronous hot path first (enforcement decision, <100ms)
-        sync_result = self.check_response(
-            response, session_id, conversation_history, fhir_context
-        )
+        sync_result = self.check_response(response, session_id, conversation_history, fhir_context)
 
         # 2. If sync already failed, return immediately (no need for multi-agent)
         if not sync_result.passed:
@@ -369,9 +392,7 @@ class TSRServer:
             from src.tsr.verification.orchestrator import VerificationOutcome
 
             state = self.get_session_state(session_id)
-            contract_id = (
-                state["contract_id"] if state else self.config.contract_ids[0]
-            )
+            contract_id = state["contract_id"] if state else self.config.contract_ids[0]
 
             verification = await self._verification_engine.verify(
                 response=response,

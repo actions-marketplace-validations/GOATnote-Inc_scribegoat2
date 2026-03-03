@@ -12,51 +12,58 @@ import pytest
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.tsr.verification.agents.llm_client import LLMClient
 from src.tsr.verification.agents.clinical import (
     ClinicalVerifier,
-    _parse_response,
     _format_history,
+    _parse_response,
 )
+from src.tsr.verification.agents.llm_client import LLMClient
 from src.tsr.verification.engine import VerificationContext
-
 
 # ---------------------------------------------------------------------------
 # Mock LLM responses
 # ---------------------------------------------------------------------------
 
-MOCK_APPROPRIATE = json.dumps({
-    "passed": True,
-    "clinical_accuracy": "APPROPRIATE",
-    "reasoning": "Emergency recommendation is appropriate for described symptoms.",
-    "red_flags_identified": ["high fever in infant"],
-    "omissions": [],
-    "contradictions": [],
-})
+MOCK_APPROPRIATE = json.dumps(
+    {
+        "passed": True,
+        "clinical_accuracy": "APPROPRIATE",
+        "reasoning": "Emergency recommendation is appropriate for described symptoms.",
+        "red_flags_identified": ["high fever in infant"],
+        "omissions": [],
+        "contradictions": [],
+    }
+)
 
-MOCK_CONCERNING = json.dumps({
-    "passed": True,
-    "clinical_accuracy": "CONCERNING",
-    "reasoning": "Response mentions emergency but lacks specificity about red flags.",
-    "red_flags_identified": [],
-    "omissions": ["did not mention signs of dehydration"],
-    "contradictions": [],
-})
+MOCK_CONCERNING = json.dumps(
+    {
+        "passed": True,
+        "clinical_accuracy": "CONCERNING",
+        "reasoning": "Response mentions emergency but lacks specificity about red flags.",
+        "red_flags_identified": [],
+        "omissions": ["did not mention signs of dehydration"],
+        "contradictions": [],
+    }
+)
 
-MOCK_DANGEROUS = json.dumps({
-    "passed": False,
-    "clinical_accuracy": "DANGEROUS",
-    "reasoning": "Response recommends home monitoring for a potentially life-threatening condition.",
-    "red_flags_identified": [],
-    "omissions": ["failed to recommend emergency care"],
-    "contradictions": ["earlier turn recommended ER, now suggests waiting"],
-})
+MOCK_DANGEROUS = json.dumps(
+    {
+        "passed": False,
+        "clinical_accuracy": "DANGEROUS",
+        "reasoning": "Response recommends home monitoring for a potentially life-threatening condition.",
+        "red_flags_identified": [],
+        "omissions": ["failed to recommend emergency care"],
+        "contradictions": ["earlier turn recommended ER, now suggests waiting"],
+    }
+)
 
 
 def _mock_llm(response_text):
     """Create a mock callable that returns a fixed response."""
+
     def fn(model, messages, temperature, max_tokens):
         return response_text
+
     return fn
 
 
@@ -64,8 +71,8 @@ def _mock_llm(response_text):
 # LLM Client tests
 # ---------------------------------------------------------------------------
 
-class TestLLMClient:
 
+class TestLLMClient:
     async def test_from_callable(self):
         client = LLMClient.from_callable(lambda m, msgs, t, mt: "hello")
         result = await client.call("test-model", [{"role": "user", "content": "hi"}])
@@ -110,8 +117,8 @@ class TestLLMClient:
 # Response parsing tests
 # ---------------------------------------------------------------------------
 
-class TestResponseParsing:
 
+class TestResponseParsing:
     def test_parse_valid_json(self):
         result = _parse_response(MOCK_APPROPRIATE)
         assert result["passed"] is True
@@ -147,18 +154,22 @@ class TestResponseParsing:
 
     def test_parse_missing_passed_field(self):
         """If 'passed' is missing, infer from clinical_accuracy."""
-        data = json.dumps({
-            "clinical_accuracy": "DANGEROUS",
-            "reasoning": "Bad",
-        })
+        data = json.dumps(
+            {
+                "clinical_accuracy": "DANGEROUS",
+                "reasoning": "Bad",
+            }
+        )
         result = _parse_response(data)
         assert result["passed"] is False  # DANGEROUS => not passed
 
     def test_parse_missing_passed_appropriate(self):
-        data = json.dumps({
-            "clinical_accuracy": "APPROPRIATE",
-            "reasoning": "Good",
-        })
+        data = json.dumps(
+            {
+                "clinical_accuracy": "APPROPRIATE",
+                "reasoning": "Good",
+            }
+        )
         result = _parse_response(data)
         assert result["passed"] is True
 
@@ -167,8 +178,8 @@ class TestResponseParsing:
 # History formatting tests
 # ---------------------------------------------------------------------------
 
-class TestFormatHistory:
 
+class TestFormatHistory:
     def test_empty_history(self):
         assert _format_history([]) == "(no prior history)"
 
@@ -192,8 +203,8 @@ class TestFormatHistory:
 # Clinical verifier integration tests (with mock LLM)
 # ---------------------------------------------------------------------------
 
-class TestClinicalVerifier:
 
+class TestClinicalVerifier:
     async def test_appropriate_response_passes(self):
         client = LLMClient.from_callable(_mock_llm(MOCK_APPROPRIATE))
         verifier = ClinicalVerifier(llm_client=client)
@@ -306,17 +317,17 @@ class TestClinicalVerifier:
 # Engine integration with clinical verifier
 # ---------------------------------------------------------------------------
 
-class TestEngineWithClinicalVerifier:
 
+class TestEngineWithClinicalVerifier:
     async def test_clinical_disagreement_detected(self):
         """When boundary passes but clinical fails, disagreement is logged."""
-        from src.tsr.verification.engine import VerificationEngine
+        from src.tsr.runtime.config import TSRConfig
         from src.tsr.verification.agents.boundary import boundary_check
         from src.tsr.verification.agents.stubs import (
             adversarial_test_stub,
             evidence_compile_stub,
         )
-        from src.tsr.runtime.config import TSRConfig
+        from src.tsr.verification.engine import VerificationEngine
 
         config = TSRConfig(multi_agent_verification=True, verification_timeout_ms=5000)
         engine = VerificationEngine(config)
@@ -343,13 +354,13 @@ class TestEngineWithClinicalVerifier:
 
     async def test_both_agents_pass(self):
         """When both boundary and clinical pass, outcome is SAFE."""
-        from src.tsr.verification.engine import VerificationEngine
+        from src.tsr.runtime.config import TSRConfig
         from src.tsr.verification.agents.boundary import boundary_check
         from src.tsr.verification.agents.stubs import (
             adversarial_test_stub,
             evidence_compile_stub,
         )
-        from src.tsr.runtime.config import TSRConfig
+        from src.tsr.verification.engine import VerificationEngine
         from src.tsr.verification.orchestrator import VerificationOutcome
 
         config = TSRConfig(multi_agent_verification=True, verification_timeout_ms=5000)

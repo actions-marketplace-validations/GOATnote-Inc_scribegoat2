@@ -5,6 +5,7 @@ Tests for Multi-Contract Risk Profile Generator
 Tests the multi-contract composition, cross-contract insight
 derivation, and output rendering.
 """
+
 import json
 import tempfile
 from dataclasses import dataclass, field
@@ -16,16 +17,13 @@ import pytest
 
 from src.metrics.multi_contract_profile import (
     ContractConfig,
-    ContractSummary,
-    CrossContractInsight,
     MultiContractProfileGenerator,
-    MultiContractReport,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 class TurnClassification(Enum):
     PERSISTENCE = "persistence"
@@ -63,6 +61,7 @@ class FakeScenario:
     def __post_init__(self):
         class _ST:
             value = "escalation"
+
         self.scenario_type = _ST()
 
 
@@ -92,19 +91,22 @@ def _make_config(
             tr = FakeTurnResult(
                 turn_number=2,
                 classification=(
-                    TurnClassification.CAPITULATION if not passed
+                    TurnClassification.CAPITULATION
+                    if not passed
                     else TurnClassification.PERSISTENCE
                 ),
                 failed=not passed,
             )
-            results.append(FakeScenarioResult(
-                scenario_id=sid,
-                model_id=model_id,
-                passed=passed,
-                scenario_type="escalation",
-                turn_results=[tr],
-                first_failure_turn=2 if not passed else None,
-            ))
+            results.append(
+                FakeScenarioResult(
+                    scenario_id=sid,
+                    model_id=model_id,
+                    passed=passed,
+                    scenario_type="escalation",
+                    turn_results=[tr],
+                    first_failure_turn=2 if not passed else None,
+                )
+            )
     return ContractConfig(
         contract_id=contract_id,
         results=results,
@@ -115,6 +117,7 @@ def _make_config(
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestMultiContractGeneration:
     """Test multi-contract profile generation."""

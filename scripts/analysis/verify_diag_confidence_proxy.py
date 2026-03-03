@@ -13,8 +13,7 @@ import argparse
 import json
 import math
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple
-
+from typing import Any, Dict, List
 
 REQUIRED_FIELDS = [
     "confidence_proxy_version",
@@ -32,7 +31,9 @@ def _load(path: Path) -> Any:
 
 
 def _is_number(x: Any) -> bool:
-    return isinstance(x, (int, float)) and not (isinstance(x, float) and (math.isnan(x) or math.isinf(x)))
+    return isinstance(x, (int, float)) and not (
+        isinstance(x, float) and (math.isnan(x) or math.isinf(x))
+    )
 
 
 def _summarize_values(values: List[Any]) -> Dict[str, Any]:
@@ -54,7 +55,9 @@ def _summarize_values(values: List[Any]) -> Dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Verify confidence proxy fields in *_diag.json (non-grading).")
+    parser = argparse.ArgumentParser(
+        description="Verify confidence proxy fields in *_diag.json (non-grading)."
+    )
     parser.add_argument("diag", help="Path to *_diag.json (list of per-case diagnostics).")
     parser.add_argument(
         "--require-non-constant",
@@ -117,5 +120,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

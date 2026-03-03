@@ -14,8 +14,8 @@ from datetime import datetime
 from src.tsr.monitor.interfaces import (
     BreakerState,
     ICircuitBreaker,
-    IStateStore,
     Incident,
+    IStateStore,
 )
 
 logger = logging.getLogger(__name__)

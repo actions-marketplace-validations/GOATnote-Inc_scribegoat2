@@ -13,14 +13,12 @@ Tests cover:
 Test cases are derived from MIMIC-IV-ED patterns and synthetic cases.
 """
 
-import asyncio
-import json
 import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -29,6 +27,7 @@ pytest.importorskip("pydantic")
 
 try:
     import cryptography
+
     HAS_CRYPTOGRAPHY = True
 except ImportError:
     HAS_CRYPTOGRAPHY = False
@@ -222,7 +221,7 @@ class TestPydanticSchemas:
 
 @pytest.mark.skipif(
     not os.getenv("ANTHROPIC_API_KEY"),
-    reason="ANTHROPIC_API_KEY required for Constitutional Override tests"
+    reason="ANTHROPIC_API_KEY required for Constitutional Override tests",
 )
 class TestConstitutionalOverride:
     """Test Constitutional Override logic."""
@@ -262,10 +261,7 @@ class TestConstitutionalOverride:
         override = ConstitutionalOverride()
 
         # Check stability bias detection (synchronous method)
-        violation = override._check_stability_bias(
-            sample_case_data,
-            gpt_triage_result["esi_score"]
-        )
+        violation = override._check_stability_bias(sample_case_data, gpt_triage_result["esi_score"])
 
         assert violation is not None
         assert violation.principle_name == "stability_bias_detection"
@@ -322,7 +318,7 @@ class TestDecisionFusion:
 
     def test_disagreement_escalation(self):
         """Test escalation when models disagree significantly."""
-        from constitutional_ai.decision_fusion import DecisionFusion, FusionMethod
+        from constitutional_ai.decision_fusion import DecisionFusion
 
         fusion = DecisionFusion()
 
@@ -366,8 +362,7 @@ class TestDecisionFusion:
 
 
 @pytest.mark.skipif(
-    not HAS_CRYPTOGRAPHY,
-    reason="Requires cryptography package: pip install cryptography"
+    not HAS_CRYPTOGRAPHY, reason="Requires cryptography package: pip install cryptography"
 )
 class TestPHIEncryption:
     """Test PHI encryption helpers (HIPAA-oriented; not a compliance certification)."""
@@ -414,8 +409,9 @@ class TestPHIEncryption:
 
     def test_key_rotation_detection(self):
         """Test key rotation timing."""
-        from constitutional_ai.phi_encryption import PHIEncryption
         from datetime import timedelta
+
+        from constitutional_ai.phi_encryption import PHIEncryption
 
         encryption = PHIEncryption()
 
@@ -456,8 +452,7 @@ class TestPHIEncryption:
 
 
 @pytest.mark.skipif(
-    not HAS_CRYPTOGRAPHY,
-    reason="Requires cryptography package: pip install cryptography"
+    not HAS_CRYPTOGRAPHY, reason="Requires cryptography package: pip install cryptography"
 )
 class TestAuditTrail:
     """Test audit trail generation and integrity."""
@@ -540,22 +535,24 @@ class TestAuditTrail:
 
 
 @pytest.mark.skipif(
-    not os.getenv("ANTHROPIC_API_KEY"),
-    reason="ANTHROPIC_API_KEY required for stability bias tests"
+    not os.getenv("ANTHROPIC_API_KEY"), reason="ANTHROPIC_API_KEY required for stability bias tests"
 )
 class TestStabilityBiasScenarios:
     """Test stability bias detection with clinical scenarios."""
 
-    @pytest.mark.parametrize("vitals,expected_override", [
-        # Classic stability bias: alert but hypotensive
-        ({"gcs": 15, "sbp": 85, "hr": 110}, True),
-        # Alert with severe tachycardia
-        ({"gcs": 15, "sbp": 100, "hr": 135}, True),
-        # High shock index despite normal appearance
-        ({"gcs": 15, "sbp": 95, "hr": 100}, True),  # SI = 1.05
-        # Truly stable patient
-        ({"gcs": 15, "sbp": 125, "hr": 78}, False),
-    ])
+    @pytest.mark.parametrize(
+        "vitals,expected_override",
+        [
+            # Classic stability bias: alert but hypotensive
+            ({"gcs": 15, "sbp": 85, "hr": 110}, True),
+            # Alert with severe tachycardia
+            ({"gcs": 15, "sbp": 100, "hr": 135}, True),
+            # High shock index despite normal appearance
+            ({"gcs": 15, "sbp": 95, "hr": 100}, True),  # SI = 1.05
+            # Truly stable patient
+            ({"gcs": 15, "sbp": 125, "hr": 78}, False),
+        ],
+    )
     def test_stability_bias_scenarios(self, vitals, expected_override):
         """Test various stability bias scenarios."""
         from constitutional_ai.override import ConstitutionalOverride
@@ -586,7 +583,7 @@ class TestStabilityBiasScenarios:
 
 @pytest.mark.skipif(
     not os.getenv("ANTHROPIC_API_KEY"),
-    reason="ANTHROPIC_API_KEY required for high-throughput processor tests"
+    reason="ANTHROPIC_API_KEY required for high-throughput processor tests",
 )
 class TestHighThroughputProcessor:
     """Test high-throughput processing capabilities."""
@@ -648,8 +645,8 @@ class TestHighThroughputProcessor:
         This aligns with the v1.0.0 safety principle: "Process and escalate,
         don't drop and forget."
         """
-        from constitutional_ai.processor import HighThroughputProcessor, ProcessorConfig
         from constitutional_ai.override import OverrideResult
+        from constitutional_ai.processor import HighThroughputProcessor, ProcessorConfig
 
         config = ProcessorConfig(enable_audit=False)
         processor = HighThroughputProcessor(config)
@@ -689,9 +686,9 @@ class TestAutoGenCouncil:
     def test_council_creation(self):
         """Test council agent creation."""
         from constitutional_ai.council.agents import (
-            create_clinical_council,
-            CouncilConfig,
             AUTOGEN_AVAILABLE,
+            CouncilConfig,
+            create_clinical_council,
         )
 
         config = CouncilConfig(

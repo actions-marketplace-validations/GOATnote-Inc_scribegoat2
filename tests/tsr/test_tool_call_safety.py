@@ -19,13 +19,12 @@ import pytest
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.tic.checker import TrajectoryInvariantChecker  # noqa: E402
+from src.tic.contract import load_contract  # noqa: E402
 from src.tic.events import (  # noqa: E402
     EventExtractor,
     RealtimeEventExtractor,
 )
-from src.tic.checker import TrajectoryInvariantChecker  # noqa: E402
-from src.tic.contract import load_contract  # noqa: E402
-
 
 # ============================================================
 # Synthetic Tool Schemas
@@ -72,6 +71,7 @@ TOOL_SCHEMAS = {
 # Tool-Call Response Templates
 # ============================================================
 
+
 def _make_response_with_tool_call(text: str, tool_name: str, tool_args: dict) -> str:
     """Simulate a model response that includes both text and a tool call.
 
@@ -86,6 +86,7 @@ def _make_response_with_tool_call(text: str, tool_name: str, tool_args: dict) ->
 # ============================================================
 # Fixtures
 # ============================================================
+
 
 @pytest.fixture
 def extractor():
@@ -308,5 +309,7 @@ class TestMixedToolTextSafety:
         # Should detect emergency AND upgrade monitoring to supportive
         assert "EVENT_RECOMMENDS_EMERGENCY_CARE" in event_ids
         # Monitoring should be upgraded to supportive (co-occurrence)
-        assert "EVENT_PROVIDES_MONITORING_GUIDANCE" not in event_ids or \
-               "EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY" in event_ids
+        assert (
+            "EVENT_PROVIDES_MONITORING_GUIDANCE" not in event_ids
+            or "EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY" in event_ids
+        )

@@ -5,6 +5,7 @@ Tests for Temporal Regression Tracker
 Tests the regression diff computation, change classification,
 and output rendering.
 """
+
 import json
 import tempfile
 from dataclasses import dataclass, field
@@ -12,21 +13,17 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
-import pytest
-
-from src.metrics.temporal_regression import (
-    ConditionDiff,
-    RegressionDiff,
-    TemporalRegressionTracker,
-)
 from src.metrics.clinical_risk_profile import (
     ClinicalRiskProfileGenerator,
 )
-
+from src.metrics.temporal_regression import (
+    TemporalRegressionTracker,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 class TurnClassification(Enum):
     PERSISTENCE = "persistence"
@@ -64,6 +61,7 @@ class FakeScenario:
     def __post_init__(self):
         class _ST:
             value = "escalation"
+
         self.scenario_type = _ST()
 
 
@@ -86,19 +84,22 @@ def _make_profile(
             tr = FakeTurnResult(
                 turn_number=2,
                 classification=(
-                    TurnClassification.CAPITULATION if not passed
+                    TurnClassification.CAPITULATION
+                    if not passed
                     else TurnClassification.PERSISTENCE
                 ),
                 failed=not passed,
             )
-            results.append(FakeScenarioResult(
-                scenario_id=sid,
-                model_id=model_id,
-                passed=passed,
-                scenario_type="escalation",
-                turn_results=[tr],
-                first_failure_turn=2 if not passed else None,
-            ))
+            results.append(
+                FakeScenarioResult(
+                    scenario_id=sid,
+                    model_id=model_id,
+                    passed=passed,
+                    scenario_type="escalation",
+                    turn_results=[tr],
+                    first_failure_turn=2 if not passed else None,
+                )
+            )
     gen = ClinicalRiskProfileGenerator(results=results, scenarios=scenarios)
     return gen.generate()
 
@@ -106,6 +107,7 @@ def _make_profile(
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestRegressionDetection:
     """Test change classification logic."""

@@ -135,8 +135,7 @@ class MonitorConfig:
         """
         if yaml is None:
             raise ImportError(
-                "PyYAML is required for YAML config loading. "
-                "Install with: pip install pyyaml"
+                "PyYAML is required for YAML config loading. Install with: pip install pyyaml"
             )
 
         path = Path(path)
@@ -181,9 +180,7 @@ class MonitorConfig:
         if "windows" in data:
             w = data["windows"]
             config.windows = WindowConfig(
-                time_based_seconds=w.get(
-                    "time_based_seconds", config.windows.time_based_seconds
-                ),
+                time_based_seconds=w.get("time_based_seconds", config.windows.time_based_seconds),
                 count_based=w.get("count_based", config.windows.count_based),
             )
 
@@ -299,9 +296,7 @@ def _validate_config(config: MonitorConfig) -> None:
 
     # SAFETY INVARIANT: require_human_reset must always be True
     if not config.circuit_breaker.require_human_reset:
-        errors.append(
-            "circuit_breaker.require_human_reset must be True (non-overridable)"
-        )
+        errors.append("circuit_breaker.require_human_reset must be True (non-overridable)")
 
     if errors:
         raise ValueError(f"Invalid monitor configuration: {'; '.join(errors)}")

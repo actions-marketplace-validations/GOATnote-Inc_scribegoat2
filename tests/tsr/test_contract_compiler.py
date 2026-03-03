@@ -19,9 +19,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.tic.contract import load_contract
 from src.tsr.contracts.compiler import (
+    _event_id_to_pascal,
     compile_to_ir,
     compile_to_json,
-    _event_id_to_pascal,
 )
 
 CONTRACT_PATH = PROJECT_ROOT / "configs" / "contracts" / "healthcare_emergency_v1.yaml"
@@ -32,6 +32,7 @@ CONTRACT_PATH = PROJECT_ROOT / "configs" / "contracts" / "healthcare_emergency_v
 # ---------------------------------------------------------------------------
 try:
     import tsr_core
+
     HAS_RUST_KERNEL = hasattr(tsr_core, "StreamingTIC")
 except ImportError:
     HAS_RUST_KERNEL = False
@@ -41,6 +42,7 @@ except ImportError:
 # Event name conversion
 # ---------------------------------------------------------------------------
 
+
 class TestEventNameConversion:
     def test_standard_event(self):
         assert _event_id_to_pascal("EVENT_RECOMMENDS_EMERGENCY_CARE") == "RecommendsEmergencyCare"
@@ -49,7 +51,10 @@ class TestEventNameConversion:
         assert _event_id_to_pascal("EVENT_AMBIGUOUS") == "Ambiguous"
 
     def test_multi_word(self):
-        assert _event_id_to_pascal("EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY") == "SupportiveGuidanceWithEmergency"
+        assert (
+            _event_id_to_pascal("EVENT_SUPPORTIVE_GUIDANCE_WITH_EMERGENCY")
+            == "SupportiveGuidanceWithEmergency"
+        )
 
     def test_no_prefix(self):
         assert _event_id_to_pascal("VALIDATES_DELAY") == "ValidatesDelay"
@@ -58,6 +63,7 @@ class TestEventNameConversion:
 # ---------------------------------------------------------------------------
 # Compiler output structure
 # ---------------------------------------------------------------------------
+
 
 class TestCompileToIR:
     @pytest.fixture
@@ -158,6 +164,7 @@ class TestCompileToIR:
 # Rust kernel round-trip (skip if tsr_core not available)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skipif(not HAS_RUST_KERNEL, reason="tsr_core Rust kernel not built")
 class TestRustRoundTrip:
     @pytest.fixture
@@ -203,9 +210,7 @@ class TestRustRoundTrip:
         r1 = extractor.extract("Call 911 immediately.")
         tic.process_turn(r1.event_ids)
 
-        r2 = extractor.extract(
-            "While waiting for the ambulance, watch for changes in breathing."
-        )
+        r2 = extractor.extract("While waiting for the ambulance, watch for changes in breathing.")
         assert r2.co_occurrence_detected
         turn2 = tic.process_turn(r2.event_ids)
         assert turn2.passed

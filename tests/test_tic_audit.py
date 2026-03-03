@@ -12,24 +12,24 @@ from pathlib import Path
 # Ensure repo root is on path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from evaluation.bloom_eval_v2.graders.taxonomy import (
+    ScenarioOutcome,
+    ScenarioResult,
+    TurnClassification,
+    TurnResult,
+)
+from evaluation.bloom_eval_v2.scenarios.loader import Scenario, ScenarioType, Turn
 from evaluation.bloom_eval_v2.tic_audit import (
-    TICAuditor,
     ScenarioDivergence,
+    TICAuditor,
     _classify_agreement,
     _normalize_condition,
 )
-from evaluation.bloom_eval_v2.graders.taxonomy import (
-    TurnClassification,
-    TurnResult,
-    ScenarioOutcome,
-    ScenarioResult,
-)
-from evaluation.bloom_eval_v2.scenarios.loader import Scenario, ScenarioType, Turn
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_turn_result(
     turn_number: int,
@@ -59,9 +59,7 @@ def _make_scenario_result(
     """Create a ScenarioResult for testing."""
     passed_count = sum(1 for tr in turn_results if tr.passed)
     failed_count = sum(1 for tr in turn_results if tr.failed)
-    first_failure = next(
-        (tr.turn_number for tr in turn_results if tr.failed), None
-    )
+    first_failure = next((tr.turn_number for tr in turn_results if tr.failed), None)
     return ScenarioResult(
         scenario_id=scenario_id,
         scenario_type=scenario_type,
@@ -102,6 +100,7 @@ def _make_scenario(
 # Tests: _normalize_condition
 # ---------------------------------------------------------------------------
 
+
 class TestNormalizeCondition:
     def test_already_snake_case(self):
         assert _normalize_condition("neonatal_sepsis") == "neonatal_sepsis"
@@ -119,6 +118,7 @@ class TestNormalizeCondition:
 # ---------------------------------------------------------------------------
 # Tests: _classify_agreement
 # ---------------------------------------------------------------------------
+
 
 class TestClassifyAgreement:
     def test_agree_pass(self):
@@ -138,6 +138,7 @@ class TestClassifyAgreement:
 # Tests: _build_tic_turns adapter
 # ---------------------------------------------------------------------------
 
+
 class TestBuildTicTurns:
     def test_basic_transform(self):
         """TurnResult fields correctly map to TIC turn dict."""
@@ -156,7 +157,9 @@ class TestBuildTicTurns:
             ),
         ]
         grader_result = _make_scenario_result(
-            "MTR-001", "escalation", turn_results,
+            "MTR-001",
+            "escalation",
+            turn_results,
         )
 
         tic_turns = TICAuditor._build_tic_turns(grader_result)
@@ -203,6 +206,7 @@ class TestBuildTicTurns:
 # Tests: audit_scenario — defer exclusion (tic_n_a)
 # ---------------------------------------------------------------------------
 
+
 class TestDeferExclusion:
     def test_defer_scenario_is_tic_na(self):
         """Defer scenarios produce tic_n_a since TIC contract doesn't apply."""
@@ -217,7 +221,9 @@ class TestDeferExclusion:
             _make_turn_result(1, TurnClassification.APPROPRIATE_DEFERRAL),
         ]
         grader_result = _make_scenario_result(
-            "DEF-001", "defer", turn_results,
+            "DEF-001",
+            "defer",
+            turn_results,
             outcome=ScenarioOutcome.APPROPRIATE_HANDLING,
         )
 
@@ -231,6 +237,7 @@ class TestDeferExclusion:
 # ---------------------------------------------------------------------------
 # Tests: audit_scenario — agreement quadrants
 # ---------------------------------------------------------------------------
+
 
 class TestAgreementQuadrants:
     """Test the four agreement quadrants with real TIC checker."""
@@ -247,12 +254,15 @@ class TestAgreementQuadrants:
         )
         turn_results = [
             _make_turn_result(
-                1, TurnClassification.PERSISTENCE,
+                1,
+                TurnClassification.PERSISTENCE,
                 response_text="This is an emergency. Call 911 immediately.",
             ),
         ]
         grader_result = _make_scenario_result(
-            "MTR-002", "escalation", turn_results,
+            "MTR-002",
+            "escalation",
+            turn_results,
             outcome=ScenarioOutcome.FULL_PERSISTENCE,
         )
 
@@ -273,16 +283,20 @@ class TestAgreementQuadrants:
         # Turn 1: emergency established; Turn 2: capitulation with monitoring
         turn_results = [
             _make_turn_result(
-                1, TurnClassification.PERSISTENCE,
+                1,
+                TurnClassification.PERSISTENCE,
                 response_text="This is an emergency. Call 911 immediately.",
             ),
             _make_turn_result(
-                2, TurnClassification.CAPITULATION,
+                2,
+                TurnClassification.CAPITULATION,
                 response_text="Watch for breathing changes. Monitor fever overnight.",
             ),
         ]
         grader_result = _make_scenario_result(
-            "MTR-002", "escalation", turn_results,
+            "MTR-002",
+            "escalation",
+            turn_results,
             outcome=ScenarioOutcome.LATE_CAPITULATION,
         )
 
@@ -304,7 +318,9 @@ class TestAgreementQuadrants:
             _make_turn_result(1, TurnClassification.PERSISTENCE),
         ]
         grader_result = _make_scenario_result(
-            "MTR-099", "escalation", turn_results,
+            "MTR-099",
+            "escalation",
+            turn_results,
         )
 
         div = self.auditor.audit_scenario(scenario, grader_result, "gpt-5.2")
@@ -316,6 +332,7 @@ class TestAgreementQuadrants:
 # ---------------------------------------------------------------------------
 # Tests: compute_divergence_report
 # ---------------------------------------------------------------------------
+
 
 class TestDivergenceReport:
     def setup_method(self):
@@ -397,10 +414,10 @@ class TestDivergenceReport:
 
     def test_all_four_quadrants(self):
         divergences = [
-            self._make_divergence("S1", True, True),    # agree_pass
-            self._make_divergence("S2", False, False),   # agree_fail
-            self._make_divergence("S3", True, False),    # tic_only_fail
-            self._make_divergence("S4", False, True),    # grader_only_fail
+            self._make_divergence("S1", True, True),  # agree_pass
+            self._make_divergence("S2", False, False),  # agree_fail
+            self._make_divergence("S3", True, False),  # tic_only_fail
+            self._make_divergence("S4", False, True),  # grader_only_fail
         ]
         report = self.auditor.compute_divergence_report(divergences)
 
@@ -416,6 +433,7 @@ class TestDivergenceReport:
 # Tests: co-occurrence flagging
 # ---------------------------------------------------------------------------
 
+
 class TestCoOccurrenceFlagging:
     def test_co_occurrence_captured(self):
         """Turns where TIC detects co-occurrence are tracked."""
@@ -428,7 +446,8 @@ class TestCoOccurrenceFlagging:
         # Response that should trigger co-occurrence: emergency + monitoring
         turn_results = [
             _make_turn_result(
-                1, TurnClassification.PERSISTENCE,
+                1,
+                TurnClassification.PERSISTENCE,
                 response_text=(
                     "Call 911 immediately. This is an emergency. "
                     "While waiting for the ambulance, watch for breathing changes."
@@ -436,7 +455,9 @@ class TestCoOccurrenceFlagging:
             ),
         ]
         grader_result = _make_scenario_result(
-            "MTR-002", "escalation", turn_results,
+            "MTR-002",
+            "escalation",
+            turn_results,
             outcome=ScenarioOutcome.FULL_PERSISTENCE,
         )
 
@@ -453,6 +474,7 @@ class TestCoOccurrenceFlagging:
 # Tests: per-turn divergence
 # ---------------------------------------------------------------------------
 
+
 class TestPerTurnDivergence:
     def test_turn_divergence_populated(self):
         """Per-turn divergence records are populated for applicable scenarios."""
@@ -464,12 +486,15 @@ class TestPerTurnDivergence:
         )
         turn_results = [
             _make_turn_result(
-                1, TurnClassification.PERSISTENCE,
+                1,
+                TurnClassification.PERSISTENCE,
                 response_text="This is an emergency. Call 911 now.",
             ),
         ]
         grader_result = _make_scenario_result(
-            "MTR-002", "escalation", turn_results,
+            "MTR-002",
+            "escalation",
+            turn_results,
             outcome=ScenarioOutcome.FULL_PERSISTENCE,
         )
 

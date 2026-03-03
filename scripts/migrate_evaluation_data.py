@@ -30,7 +30,6 @@ Version: 1.0.0
 import argparse
 import hashlib
 import json
-import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -128,9 +127,7 @@ class FileValidation:
 # ---------------------------------------------------------------------------
 
 
-def discover_untracked_data(
-    root: Path, target_path: Optional[str] = None
-) -> list[Path]:
+def discover_untracked_data(root: Path, target_path: Optional[str] = None) -> list[Path]:
     """Find all untracked data files in the repo."""
     cmd = ["git", "status", "--porcelain"]
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=root)
@@ -233,11 +230,24 @@ _PHI_PATTERNS = [
     # US phone numbers (not in code context)
     (re.compile(r"\(\d{3}\)\s*\d{3}-\d{4}"), "Phone number"),
     # Email addresses (excluding dev/synthetic and well-known crisis resources)
-    (re.compile(r"[a-zA-Z0-9._%+-]+@(?!example\.com|test\.com|goatnote\.com|synthetic\.|samaritans\.org|crisistextline\.org|nami\.org|suicidepreventionlifeline\.org)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"), "Email address"),
+    (
+        re.compile(
+            r"[a-zA-Z0-9._%+-]+@(?!example\.com|test\.com|goatnote\.com|synthetic\.|samaritans\.org|crisistextline\.org|nami\.org|suicidepreventionlifeline\.org)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+        ),
+        "Email address",
+    ),
     # Absolute dates (MM/DD/YYYY or similar) — potential DOB
-    (re.compile(r"\b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12]\d|3[01])/(?:19|20)\d{2}\b"), "Absolute date (DOB risk)"),
+    (
+        re.compile(r"\b(?:0[1-9]|1[0-2])/(?:0[1-9]|[12]\d|3[01])/(?:19|20)\d{2}\b"),
+        "Absolute date (DOB risk)",
+    ),
     # IP addresses (non-localhost, non-10.x)
-    (re.compile(r"\b(?!127\.0\.0\.1|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"), "IP address"),
+    (
+        re.compile(
+            r"\b(?!127\.0\.0\.1|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
+        ),
+        "IP address",
+    ),
 ]
 
 # Strings that indicate synthetic/test data — safe to ignore
@@ -337,7 +347,7 @@ def generate_report(
     total_records = sum(v.json_record_count or 0 for v in validations)
 
     lines.append(f"\nTotal files scanned: {len(validations)}")
-    lines.append(f"Total size: {total_size / (1024*1024):.1f}MB")
+    lines.append(f"Total size: {total_size / (1024 * 1024):.1f}MB")
     lines.append(f"Total records: {total_records:,}")
     lines.append(f"Passed: {len(passed)}")
     lines.append(f"Failed: {len(failed)}")
@@ -399,9 +409,7 @@ def generate_manifest_json(validations: list[FileValidation]) -> dict:
         if not tier_files:
             continue
         manifest["tiers"][tier] = {
-            "description": PRIORITY_TIERS.get(tier, {}).get(
-                "description", "Unclassified"
-            ),
+            "description": PRIORITY_TIERS.get(tier, {}).get("description", "Unclassified"),
             "file_count": len(tier_files),
             "total_size_bytes": sum(v.size_bytes for v in tier_files),
             "total_records": sum(v.json_record_count or 0 for v in tier_files),
@@ -425,9 +433,7 @@ def generate_manifest_json(validations: list[FileValidation]) -> dict:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Validate and stage evaluation data for migration"
-    )
+    parser = argparse.ArgumentParser(description="Validate and stage evaluation data for migration")
     parser.add_argument(
         "--dry-run",
         action="store_true",

@@ -68,63 +68,69 @@ def parse_terminal_log(log_path: Path) -> list[dict]:
             # Detect turn response
             m = re.match(r"^\s+Turn\s+(\d+):\s+(\d+)\s+chars", line)
             if m:
-                current_turns.append({
-                    "turn_number": int(m.group(1)),
-                    "response_chars": int(m.group(2)),
-                })
+                current_turns.append(
+                    {
+                        "turn_number": int(m.group(1)),
+                        "response_chars": int(m.group(2)),
+                    }
+                )
                 continue
 
             # Detect result: pass
             m = re.match(r"^\s+✅\s+(\w+)", line)
             if m and current_scenario_id and current_model is not None:
-                results.append({
-                    "model_id": current_model,
-                    "trial": current_trial,
-                    "scenario_id": current_scenario_id,
-                    "condition": current_condition,
-                    "passed": True,
-                    "outcome": m.group(1),
-                    "first_failure_turn": None,
-                    "n_turns": len(current_turns),
-                    "source": "terminal_log_recovery",
-                })
+                results.append(
+                    {
+                        "model_id": current_model,
+                        "trial": current_trial,
+                        "scenario_id": current_scenario_id,
+                        "condition": current_condition,
+                        "passed": True,
+                        "outcome": m.group(1),
+                        "first_failure_turn": None,
+                        "n_turns": len(current_turns),
+                        "source": "terminal_log_recovery",
+                    }
+                )
                 current_scenario_id = None
                 continue
 
             # Detect result: fail
-            m = re.match(
-                r"^\s+❌\s+(\w+)\s+\(Turn\s+(\d+)\)", line
-            )
+            m = re.match(r"^\s+❌\s+(\w+)\s+\(Turn\s+(\d+)\)", line)
             if m and current_scenario_id and current_model is not None:
-                results.append({
-                    "model_id": current_model,
-                    "trial": current_trial,
-                    "scenario_id": current_scenario_id,
-                    "condition": current_condition,
-                    "passed": False,
-                    "outcome": m.group(1),
-                    "first_failure_turn": int(m.group(2)),
-                    "n_turns": len(current_turns),
-                    "source": "terminal_log_recovery",
-                })
+                results.append(
+                    {
+                        "model_id": current_model,
+                        "trial": current_trial,
+                        "scenario_id": current_scenario_id,
+                        "condition": current_condition,
+                        "passed": False,
+                        "outcome": m.group(1),
+                        "first_failure_turn": int(m.group(2)),
+                        "n_turns": len(current_turns),
+                        "source": "terminal_log_recovery",
+                    }
+                )
                 current_scenario_id = None
                 continue
 
             # Detect error
             m = re.match(r"^\s+❌\s+Error:\s+(.+)", line)
             if m and current_scenario_id and current_model is not None:
-                results.append({
-                    "model_id": current_model,
-                    "trial": current_trial,
-                    "scenario_id": current_scenario_id,
-                    "condition": current_condition,
-                    "passed": False,
-                    "outcome": "error",
-                    "first_failure_turn": None,
-                    "error": m.group(1),
-                    "n_turns": len(current_turns),
-                    "source": "terminal_log_recovery",
-                })
+                results.append(
+                    {
+                        "model_id": current_model,
+                        "trial": current_trial,
+                        "scenario_id": current_scenario_id,
+                        "condition": current_condition,
+                        "passed": False,
+                        "outcome": "error",
+                        "first_failure_turn": None,
+                        "error": m.group(1),
+                        "n_turns": len(current_turns),
+                        "source": "terminal_log_recovery",
+                    }
+                )
                 current_scenario_id = None
                 continue
 

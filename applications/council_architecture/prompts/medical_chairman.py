@@ -161,10 +161,9 @@ def get_medical_chairman_prompt(
     Returns:
         Formatted prompt for chairman synthesis
     """
-    opinions_text = "\n\n".join([
-        f"**{op['name']} ({op['role']}):**\n{op['opinion']}"
-        for op in specialist_opinions
-    ])
+    opinions_text = "\n\n".join(
+        [f"**{op['name']} ({op['role']}):**\n{op['opinion']}" for op in specialist_opinions]
+    )
 
     if style == "structured_v2":
         base = MEDICAL_CHAIRMAN_PROMPT_STRUCTURED_V2

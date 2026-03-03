@@ -6,7 +6,6 @@ A threshold breach on EITHER must trigger the alert.
 
 from datetime import datetime
 
-
 from src.tsr.monitor.collector import MetricCollector
 from src.tsr.monitor.config import MonitorConfig
 from src.tsr.monitor.interfaces import SafetyMetricEvent, Severity

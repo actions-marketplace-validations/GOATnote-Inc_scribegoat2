@@ -15,10 +15,10 @@ Usage:
 
 import json
 import sys
-from pathlib import Path
-from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Optional
 
 # Add project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -250,23 +250,25 @@ This system is a **research evaluation tool** and is not:
 # SYSTEM CARD GENERATOR
 # ============================================================================
 
+
 @dataclass
 class SystemCardData:
     """Data for system card generation."""
+
     version: str = "Phase 7"
     timestamp: str = ""
-    
+
     # Performance metrics
     avg_score: float = 0.0
     score_ci: str = ""
     abstention_rate: float = 0.0
     reliability_index: float = 0.0
-    
+
     # Safety metrics
     corrections_per_case: float = 0.0
     zero_score_rate: float = 0.0
     catastrophic_prevented: int = 0
-    
+
     # Failure modes
     failure_rate: float = 0.0
     top_failure_modes: List[str] = field(default_factory=list)
@@ -276,47 +278,47 @@ class SystemCardGenerator:
     """
     Generates regulator-ready system documentation.
     """
-    
+
     def __init__(self):
         self.data = SystemCardData()
-    
+
     def load_metrics(self, metrics_path: str) -> None:
         """Load metrics from ensemble stats file."""
         if not Path(metrics_path).exists():
             return
-        
+
         with open(metrics_path) as f:
             metrics = json.load(f)
-        
+
         # Extract metrics
         score = metrics.get("ensemble_score", {})
         self.data.avg_score = score.get("mean", 0)
         ci = score.get("ci_95", [0, 0])
         self.data.score_ci = f"[{ci[0]:.1f}%, {ci[1]:.1f}%]"
-        
+
         self.data.abstention_rate = metrics.get("abstention", {}).get("rate", 0)
         self.data.reliability_index = metrics.get("reliability", {}).get("index", 0)
-        
+
         self.data.corrections_per_case = metrics.get("corrections", {}).get("mean", 0)
         self.data.zero_score_rate = metrics.get("error_rates", {}).get("zero_score_rate", 0)
-    
+
     def load_failure_modes(self, fmc_path: str) -> None:
         """Load failure mode data."""
         if not Path(fmc_path).exists():
             return
-        
+
         with open(fmc_path) as f:
             fmc = json.load(f)
-        
+
         self.data.failure_rate = fmc.get("summary", {}).get("failure_rate", 0)
-        
+
         clusters = fmc.get("clusters", [])
         self.data.top_failure_modes = [c.get("name", "") for c in clusters[:5]]
-    
+
     def generate(self) -> str:
         """Generate complete system card."""
         self.data.timestamp = datetime.now(timezone.utc).isoformat()
-        
+
         # Build component tables
         safety_phases_table = self._build_safety_phases_table()
         correction_rules_table = self._build_correction_rules_table()
@@ -324,7 +326,7 @@ class SystemCardGenerator:
         benchmark_performance_table = self._build_benchmark_table()
         safety_metrics_table = self._build_safety_metrics_table()
         reliability_table = self._build_reliability_table()
-        
+
         # Format template
         card = SYSTEM_CARD_TEMPLATE.format(
             version=self.data.version,
@@ -338,9 +340,9 @@ class SystemCardGenerator:
             reliability_table=reliability_table,
             accuracy_limitation=f"Average score ~{self.data.avg_score:.1f}% on HealthBench Hard",
         )
-        
+
         return card
-    
+
     def _build_safety_phases_table(self) -> str:
         """Build safety phases table."""
         return """| Phase | Name | Function |
@@ -350,7 +352,7 @@ class SystemCardGenerator:
 | 3 | Advanced Safety Rules | Red-flag overlay, severity context |
 | 4 | Compliance & Validation | Non-English handling, extrapolation suppression |
 | 5 | Abstention Layer | Uncertainty-aware abstention |"""
-    
+
     def _build_correction_rules_table(self) -> str:
         """Build correction rules table."""
         return """| Rule | Trigger | Action |
@@ -361,18 +363,23 @@ class SystemCardGenerator:
 | Red-Flag Overlay | Critical symptoms | Ensure escalation present |
 | Dosage Validation | Medication mentions | Check typical ranges |
 | Reference Validation | Citations | Flag unverifiable sources |"""
-    
+
     def _build_failure_modes_table(self) -> str:
         """Build failure modes table."""
         if not self.data.top_failure_modes:
-            modes = ["Hallucination", "Medication Safety", "Red Flag Miss", 
-                    "Ambiguity", "Reference Error"]
+            modes = [
+                "Hallucination",
+                "Medication Safety",
+                "Red Flag Miss",
+                "Ambiguity",
+                "Reference Error",
+            ]
         else:
             modes = self.data.top_failure_modes[:5]
-        
+
         rows = ["| Mode | Severity | Mitigation |"]
         rows.append("|------|----------|------------|")
-        
+
         mode_info = {
             "Red Flag Miss": ("Critical", "Red-flag overlay rule"),
             "Medication Safety": ("Critical", "Dosage validation"),
@@ -380,30 +387,30 @@ class SystemCardGenerator:
             "Reference Error": ("Medium", "Reference validation"),
             "Ambiguity": ("Medium", "Imprecise language normalization"),
         }
-        
+
         for mode in modes:
             info = mode_info.get(mode, ("Medium", "General safety rules"))
             rows.append(f"| {mode} | {info[0]} | {info[1]} |")
-        
+
         return "\n".join(rows)
-    
+
     def _build_benchmark_table(self) -> str:
         """Build benchmark performance table."""
         return f"""| Metric | Value |
 |--------|-------|
 | **Average Score** | {self.data.avg_score:.1f}% |
-| **95% CI** | {self.data.score_ci or 'N/A'} |
-| **Failure Rate** | {self.data.failure_rate*100:.1f}% |
-| **Zero-Score Rate** | {self.data.zero_score_rate*100:.1f}% |"""
-    
+| **95% CI** | {self.data.score_ci or "N/A"} |
+| **Failure Rate** | {self.data.failure_rate * 100:.1f}% |
+| **Zero-Score Rate** | {self.data.zero_score_rate * 100:.1f}% |"""
+
     def _build_safety_metrics_table(self) -> str:
         """Build safety metrics table."""
         return f"""| Metric | Value |
 |--------|-------|
-| **Abstention Rate** | {self.data.abstention_rate*100:.1f}% |
+| **Abstention Rate** | {self.data.abstention_rate * 100:.1f}% |
 | **Avg Corrections/Case** | {self.data.corrections_per_case:.2f} |
 | **Catastrophic Errors Prevented** | {self.data.catastrophic_prevented} |"""
-    
+
     def _build_reliability_table(self) -> str:
         """Build reliability table."""
         reliability_pct = self.data.reliability_index * 100
@@ -412,15 +419,15 @@ class SystemCardGenerator:
 | **Overall Reliability** | {reliability_pct:.1f}% |
 | **Stability** | Deterministic |
 | **Reproducibility** | Hash-verified |"""
-    
+
     def save(self, output_path: str = "reports/SCRIBEGOAT2_SYSTEM_CARD.md") -> str:
         """Save system card to file."""
         card = self.generate()
-        
+
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(card)
-        
+
         print(f"✅ System card saved → {output_path}")
         return output_path
 
@@ -428,54 +435,54 @@ class SystemCardGenerator:
 def generate_system_card(
     metrics_path: Optional[str] = None,
     fmc_path: Optional[str] = None,
-    output_path: str = "reports/SCRIBEGOAT2_SYSTEM_CARD.md"
+    output_path: str = "reports/SCRIBEGOAT2_SYSTEM_CARD.md",
 ) -> str:
     """
     Generate system card.
-    
+
     Args:
         metrics_path: Optional path to ensemble metrics JSON
         fmc_path: Optional path to failure modes JSON
         output_path: Output path for system card
-    
+
     Returns:
         Path to generated system card
     """
     generator = SystemCardGenerator()
-    
+
     if metrics_path:
         generator.load_metrics(metrics_path)
-    
+
     if fmc_path:
         generator.load_failure_modes(fmc_path)
-    
+
     return generator.save(output_path)
 
 
 if __name__ == "__main__":
     import argparse
     import glob
-    
+
     parser = argparse.ArgumentParser(description="Phase 7: System Card Generator")
     parser.add_argument("--metrics", help="Path to ensemble metrics JSON")
     parser.add_argument("--fmc", help="Path to failure modes JSON")
-    parser.add_argument("--output", "-o", default="reports/SCRIBEGOAT2_SYSTEM_CARD.md",
-                        help="Output path")
-    
+    parser.add_argument(
+        "--output", "-o", default="reports/SCRIBEGOAT2_SYSTEM_CARD.md", help="Output path"
+    )
+
     args = parser.parse_args()
-    
+
     # Auto-find latest files if not specified
     metrics_path = args.metrics
     if not metrics_path:
         matches = glob.glob("reports/ENSEMBLE_STATS_*.json")
         if matches:
             metrics_path = max(matches)  # Latest
-    
+
     fmc_path = args.fmc
     if not fmc_path:
         matches = glob.glob("reports/FAILURE_MODES_*.json")
         if matches:
             fmc_path = max(matches)
-    
-    generate_system_card(metrics_path, fmc_path, args.output)
 
+    generate_system_card(metrics_path, fmc_path, args.output)

@@ -17,7 +17,7 @@ import random
 import time
 from dataclasses import dataclass
 from functools import wraps
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Optional, Type
 
 
 class RetryError(Exception):
@@ -32,6 +32,7 @@ class RetryError(Exception):
 @dataclass
 class RetryPolicy:
     """Configuration for retry behavior"""
+
     # Maximum number of retry attempts
     max_retries: int = 3
     # Initial delay between retries (seconds)
@@ -70,7 +71,7 @@ class RetryPolicy:
 
     def get_delay(self, attempt: int) -> float:
         """Calculate delay for given attempt number"""
-        delay = self.initial_delay * (self.backoff_multiplier ** attempt)
+        delay = self.initial_delay * (self.backoff_multiplier**attempt)
         delay = min(delay, self.max_delay)
 
         # Add jitter

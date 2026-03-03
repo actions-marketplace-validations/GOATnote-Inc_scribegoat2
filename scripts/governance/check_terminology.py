@@ -59,7 +59,7 @@ def check_file(filepath: Path, forbidden_map: dict) -> list[tuple]:
         line_lower = line.lower()
         for synonym, canonical in forbidden_map.items():
             # Word boundary check
-            pattern = r'\b' + re.escape(synonym) + r'\b'
+            pattern = r"\b" + re.escape(synonym) + r"\b"
             if re.search(pattern, line_lower):
                 violations.append((line_num, synonym, canonical))
 

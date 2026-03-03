@@ -5,26 +5,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.fhir.profiles import (
+    validate_sdoh_goal,
+)
 from src.fhir.sdoh import (
-    build_sdoh_screening_observation,
-    build_sdoh_screening_bundle,
+    build_complete_sdoh_bundle,
     build_sdoh_condition,
     build_sdoh_goal,
+    build_sdoh_screening_bundle,
+    build_sdoh_screening_observation,
     build_sdoh_service_request,
-    build_complete_sdoh_bundle,
 )
 from src.fhir.terminology import (
+    get_health_status_code,
+    get_sdoh_category,
     get_sdoh_loinc,
     get_sdoh_snomed,
-    get_sdoh_category,
-    get_health_status_code,
-    SDOH_LOINC_CODES,
-    SDOH_SNOMED_CODES,
-    SDOH_CATEGORY_CODES,
-)
-from src.fhir.profiles import (
-    validate_sdoh_observation,
-    validate_sdoh_goal,
 )
 
 
@@ -364,10 +360,16 @@ class TestSDOHScreeningBundle:
         )
 
         # Get QR id
-        qr = [e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "QuestionnaireResponse"][0]
+        qr = [
+            e["resource"]
+            for e in bundle["entry"]
+            if e["resource"]["resourceType"] == "QuestionnaireResponse"
+        ][0]
         qr_id = qr["id"]
 
         # Check observation derivedFrom
-        obs = [e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "Observation"][0]
+        obs = [
+            e["resource"] for e in bundle["entry"] if e["resource"]["resourceType"] == "Observation"
+        ][0]
         assert "derivedFrom" in obs
         assert f"QuestionnaireResponse/{qr_id}" in str(obs["derivedFrom"])

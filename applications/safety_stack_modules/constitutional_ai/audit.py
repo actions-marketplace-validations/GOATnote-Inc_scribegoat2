@@ -19,7 +19,6 @@ import asyncio
 import hashlib
 import json
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -97,10 +96,11 @@ class AuditLogger:
     def _compute_entry_hash(self, entry: dict) -> str:
         """Compute SHA-256 hash of audit entry."""
         # Exclude hash fields to avoid circular dependency
-        hashable = {k: v for k, v in entry.items()
-                    if k not in ('entry_hash', 'previous_audit_hash')}
+        hashable = {
+            k: v for k, v in entry.items() if k not in ("entry_hash", "previous_audit_hash")
+        }
         serialized = json.dumps(hashable, sort_keys=True, default=str)
-        return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
     def _get_log_file_path(self, timestamp: datetime) -> Path:
         """Get log file path organized by date."""
@@ -146,7 +146,9 @@ class AuditLogger:
             supervisor_model=decision.supervisor_model,
             supervisor_model_version="2025-11-24",
             decision_type=self._determine_decision_type(decision),
-            original_esi=decision.original_esi.value if decision.original_esi else decision.esi_level.value,
+            original_esi=decision.original_esi.value
+            if decision.original_esi
+            else decision.esi_level.value,
             final_esi=decision.esi_level.value,
             override_triggered=decision.override_applied,
             primary_reasoning_trace=decision.reasoning_trace,
@@ -170,8 +172,8 @@ class AuditLogger:
         # verify_chain_integrity can validate without decryption keys)
         if self.enable_hash_chain:
             entry_hash = self._compute_entry_hash(encrypted_entry)
-            encrypted_entry['entry_hash'] = entry_hash
-            encrypted_entry['previous_audit_hash'] = self._last_hash
+            encrypted_entry["entry_hash"] = entry_hash
+            encrypted_entry["previous_audit_hash"] = self._last_hash
 
             # Create chain hash
             chain_hash = create_audit_hash_chain(entry_hash, self._last_hash)
@@ -179,13 +181,13 @@ class AuditLogger:
 
         # Add additional context
         if additional_context:
-            encrypted_entry['_context'] = additional_context
+            encrypted_entry["_context"] = additional_context
 
         # Write to log file
         log_file = self._get_log_file_path(timestamp)
         async with asyncio.Lock():
-            with open(log_file, 'a') as f:
-                f.write(json.dumps(encrypted_entry, default=str) + '\n')
+            with open(log_file, "a") as f:
+                f.write(json.dumps(encrypted_entry, default=str) + "\n")
 
         logger.info(f"Audit entry logged: {audit_id}")
         return audit_id
@@ -209,17 +211,17 @@ class AuditLogger:
         timestamp = datetime.utcnow()
 
         entry = {
-            'audit_id': audit_id,
-            'timestamp': timestamp.isoformat(),
-            'event_type': 'validation_error',
-            'error_type': type(error).__name__,
-            'error_message': str(error),
-            'raw_data_keys': list(raw_data.keys()),  # Don't log PHI
+            "audit_id": audit_id,
+            "timestamp": timestamp.isoformat(),
+            "event_type": "validation_error",
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "raw_data_keys": list(raw_data.keys()),  # Don't log PHI
         }
 
         log_file = self._get_log_file_path(timestamp)
-        with open(log_file, 'a') as f:
-            f.write(json.dumps(entry, default=str) + '\n')
+        with open(log_file, "a") as f:
+            f.write(json.dumps(entry, default=str) + "\n")
 
         return audit_id
 
@@ -229,17 +231,15 @@ class AuditLogger:
         timestamp = datetime.utcnow()
 
         entry = {
-            'audit_id': audit_id,
-            'timestamp': timestamp.isoformat(),
-            'event_type': 'timeout',
-            'case_id_hash': self.encryption.hash_case_id(
-                raw_data.get('case_id', 'unknown')
-            ),
+            "audit_id": audit_id,
+            "timestamp": timestamp.isoformat(),
+            "event_type": "timeout",
+            "case_id_hash": self.encryption.hash_case_id(raw_data.get("case_id", "unknown")),
         }
 
         log_file = self._get_log_file_path(timestamp)
-        with open(log_file, 'a') as f:
-            f.write(json.dumps(entry, default=str) + '\n')
+        with open(log_file, "a") as f:
+            f.write(json.dumps(entry, default=str) + "\n")
 
         return audit_id
 
@@ -255,21 +255,19 @@ class AuditLogger:
         timestamp = datetime.utcnow()
 
         entry = {
-            'audit_id': audit_id,
-            'timestamp': timestamp.isoformat(),
-            'event_type': 'council_deliberation',
-            'case_id_hash': self.encryption.hash_case_id(case_id),
-            'trigger_reason': trigger_reason,
-            'message_count': len(deliberation_messages),
-            'final_esi': final_decision,
-            'messages': self.encryption.encrypt_phi_b64(
-                json.dumps(deliberation_messages)
-            ),
+            "audit_id": audit_id,
+            "timestamp": timestamp.isoformat(),
+            "event_type": "council_deliberation",
+            "case_id_hash": self.encryption.hash_case_id(case_id),
+            "trigger_reason": trigger_reason,
+            "message_count": len(deliberation_messages),
+            "final_esi": final_decision,
+            "messages": self.encryption.encrypt_phi_b64(json.dumps(deliberation_messages)),
         }
 
         log_file = self._get_log_file_path(timestamp)
-        with open(log_file, 'a') as f:
-            f.write(json.dumps(entry, default=str) + '\n')
+        with open(log_file, "a") as f:
+            f.write(json.dumps(entry, default=str) + "\n")
 
         return audit_id
 
@@ -283,18 +281,18 @@ class AuditLogger:
         results = []
 
         for log_file in self.audit_path.rglob("audit_*.jsonl"):
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 for line in f:
                     try:
                         entry = json.loads(line)
-                        if entry.get('case_id') == case_hash:
+                        if entry.get("case_id") == case_hash:
                             # Decrypt PHI fields for authorized access
                             decrypted = self.field_encryptor.decrypt_record(entry)
                             results.append(decrypted)
                     except json.JSONDecodeError:
                         continue
 
-        return sorted(results, key=lambda x: x.get('timestamp', ''))
+        return sorted(results, key=lambda x: x.get("timestamp", ""))
 
     def verify_chain_integrity(self) -> bool:
         """
@@ -305,37 +303,33 @@ class AuditLogger:
         previous_hash = None
 
         for log_file in sorted(self.audit_path.rglob("audit_*.jsonl")):
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 for line in f:
                     try:
                         entry = json.loads(line)
-                        if 'entry_hash' not in entry:
+                        if "entry_hash" not in entry:
                             continue
 
                         # Verify previous hash matches
-                        if entry.get('previous_audit_hash') != previous_hash:
-                            logger.error(
-                                f"Hash chain broken at {entry.get('audit_id')}"
-                            )
+                        if entry.get("previous_audit_hash") != previous_hash:
+                            logger.error(f"Hash chain broken at {entry.get('audit_id')}")
                             return False
 
                         # Verify entry hash
-                        computed = self._compute_entry_hash({
-                            k: v for k, v in entry.items()
-                            if k not in ('entry_hash', 'previous_audit_hash')
-                        })
+                        computed = self._compute_entry_hash(
+                            {
+                                k: v
+                                for k, v in entry.items()
+                                if k not in ("entry_hash", "previous_audit_hash")
+                            }
+                        )
 
-                        if computed != entry['entry_hash']:
-                            logger.error(
-                                f"Entry hash mismatch at {entry.get('audit_id')}"
-                            )
+                        if computed != entry["entry_hash"]:
+                            logger.error(f"Entry hash mismatch at {entry.get('audit_id')}")
                             return False
 
                         # Update chain
-                        previous_hash = create_audit_hash_chain(
-                            entry['entry_hash'],
-                            previous_hash
-                        )
+                        previous_hash = create_audit_hash_chain(entry["entry_hash"], previous_hash)
 
                     except json.JSONDecodeError:
                         continue
@@ -353,64 +347,65 @@ class AuditLogger:
         Returns non-PHI statistics for compliance reporting.
         """
         stats = {
-            'total_decisions': 0,
-            'overrides': 0,
-            'council_escalations': 0,
-            'human_escalations': 0,
-            'validation_errors': 0,
-            'timeouts': 0,
-            'esi_distribution': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
-            'principle_violations': {},
-            'mean_latency_ms': 0,
-            'total_cost_usd': 0,
+            "total_decisions": 0,
+            "overrides": 0,
+            "council_escalations": 0,
+            "human_escalations": 0,
+            "validation_errors": 0,
+            "timeouts": 0,
+            "esi_distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+            "principle_violations": {},
+            "mean_latency_ms": 0,
+            "total_cost_usd": 0,
         }
 
         latencies = []
 
         for log_file in self.audit_path.rglob("audit_*.jsonl"):
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 for line in f:
                     try:
                         entry = json.loads(line)
 
-                        event_type = entry.get('event_type', 'decision')
+                        event_type = entry.get("event_type", "decision")
 
-                        if event_type == 'validation_error':
-                            stats['validation_errors'] += 1
-                        elif event_type == 'timeout':
-                            stats['timeouts'] += 1
-                        elif event_type == 'council_deliberation':
-                            stats['council_escalations'] += 1
+                        if event_type == "validation_error":
+                            stats["validation_errors"] += 1
+                        elif event_type == "timeout":
+                            stats["timeouts"] += 1
+                        elif event_type == "council_deliberation":
+                            stats["council_escalations"] += 1
                         else:
                             # Regular decision
-                            stats['total_decisions'] += 1
+                            stats["total_decisions"] += 1
 
-                            if entry.get('override_triggered'):
-                                stats['overrides'] += 1
+                            if entry.get("override_triggered"):
+                                stats["overrides"] += 1
 
-                            decision_type = entry.get('decision_type')
-                            if decision_type == 'human_escalation':
-                                stats['human_escalations'] += 1
+                            decision_type = entry.get("decision_type")
+                            if decision_type == "human_escalation":
+                                stats["human_escalations"] += 1
 
-                            final_esi = entry.get('final_esi')
+                            final_esi = entry.get("final_esi")
                             if final_esi and 1 <= final_esi <= 5:
-                                stats['esi_distribution'][final_esi] += 1
+                                stats["esi_distribution"][final_esi] += 1
 
-                            for principle in entry.get('violated_principles', []):
-                                stats['principle_violations'][principle] = \
-                                    stats['principle_violations'].get(principle, 0) + 1
+                            for principle in entry.get("violated_principles", []):
+                                stats["principle_violations"][principle] = (
+                                    stats["principle_violations"].get(principle, 0) + 1
+                                )
 
-                            if entry.get('latency_ms'):
-                                latencies.append(entry['latency_ms'])
+                            if entry.get("latency_ms"):
+                                latencies.append(entry["latency_ms"])
 
-                            if entry.get('estimated_cost_usd'):
-                                stats['total_cost_usd'] += entry['estimated_cost_usd']
+                            if entry.get("estimated_cost_usd"):
+                                stats["total_cost_usd"] += entry["estimated_cost_usd"]
 
                     except json.JSONDecodeError:
                         continue
 
         if latencies:
-            stats['mean_latency_ms'] = sum(latencies) / len(latencies)
+            stats["mean_latency_ms"] = sum(latencies) / len(latencies)
 
         return stats
 
@@ -437,17 +432,17 @@ class AccessLogger:
     ) -> None:
         """Log access to protected resources."""
         entry = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'user_id': user_id,
-            'role': role,
-            'action': action,
-            'resource': resource,
-            'case_id_hash': case_id_hash,
-            'success': success,
+            "timestamp": datetime.utcnow().isoformat(),
+            "user_id": user_id,
+            "role": role,
+            "action": action,
+            "resource": resource,
+            "case_id_hash": case_id_hash,
+            "success": success,
         }
 
-        with open(self.access_log, 'a') as f:
-            f.write(json.dumps(entry) + '\n')
+        with open(self.access_log, "a") as f:
+            f.write(json.dumps(entry) + "\n")
 
     def get_access_history(
         self,
@@ -461,13 +456,13 @@ class AccessLogger:
         if not self.access_log.exists():
             return results
 
-        with open(self.access_log, 'r') as f:
+        with open(self.access_log, "r") as f:
             for line in f:
                 try:
                     entry = json.loads(line)
-                    if user_id and entry.get('user_id') != user_id:
+                    if user_id and entry.get("user_id") != user_id:
                         continue
-                    if case_id_hash and entry.get('case_id_hash') != case_id_hash:
+                    if case_id_hash and entry.get("case_id_hash") != case_id_hash:
                         continue
                     results.append(entry)
                 except json.JSONDecodeError:

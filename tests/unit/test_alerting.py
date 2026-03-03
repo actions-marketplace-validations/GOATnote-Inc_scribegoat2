@@ -77,9 +77,7 @@ class TestAlertSender:
     def test_send_with_retry_succeeds_first_try(self) -> None:
         """send_with_retry succeeds on first attempt with log channel."""
         sender = AlertSender()
-        result = sender.send_with_retry(
-            _make_incident(), ["log"], max_retries=3, backoff=[0, 0, 0]
-        )
+        result = sender.send_with_retry(_make_incident(), ["log"], max_retries=3, backoff=[0, 0, 0])
         assert result is True
 
     def test_severity_levels_in_payload(self) -> None:

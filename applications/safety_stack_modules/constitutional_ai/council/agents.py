@@ -14,8 +14,8 @@ and constrained speaker transitions enforcing clinical workflow.
 
 import logging
 import os
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 try:
     import autogen
     from autogen import AssistantAgent, GroupChat, GroupChatManager
+
     AUTOGEN_AVAILABLE = True
 except ImportError:
     AUTOGEN_AVAILABLE = False
@@ -32,6 +33,7 @@ except ImportError:
 @dataclass
 class CouncilConfig:
     """Configuration for clinical council."""
+
     openai_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
     gpt_model: str = "gpt-5.1"
@@ -174,16 +176,20 @@ class ClinicalCouncil:
         self.openai_key = self.config.openai_api_key or os.environ.get("OPENAI_API_KEY")
         self.anthropic_key = self.config.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")
 
-        self.gpt_config = [{
-            "model": self.config.gpt_model,
-            "api_key": self.openai_key,
-        }]
+        self.gpt_config = [
+            {
+                "model": self.config.gpt_model,
+                "api_key": self.openai_key,
+            }
+        ]
 
-        self.claude_config = [{
-            "model": self.config.claude_model,
-            "api_key": self.anthropic_key,
-            "api_type": "anthropic",
-        }]
+        self.claude_config = [
+            {
+                "model": self.config.claude_model,
+                "api_key": self.anthropic_key,
+                "api_type": "anthropic",
+            }
+        ]
 
     def _create_agents(self):
         """Create AutoGen agents for each clinical persona."""

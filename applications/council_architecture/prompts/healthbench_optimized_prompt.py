@@ -14,18 +14,19 @@ Reference: OpenAI Evals best practices - model-side prompting is allowed,
 evaluator-side modification is prohibited.
 """
 
-from typing import Optional, Dict, Any, List
 from enum import Enum
+from typing import Dict, Optional
 
 
 class QuestionType(Enum):
     """Classification of medical question types for routing."""
-    TRIAGE_EMERGENCY = "triage_emergency"      # ESI/triage questions -> full safety stack
+
+    TRIAGE_EMERGENCY = "triage_emergency"  # ESI/triage questions -> full safety stack
     GENERAL_MEDICAL_QA = "general_medical_qa"  # General Q&A -> optimized prompts
     CLINICAL_NOTE_TASK = "clinical_note_task"  # Note editing/review -> task-focused
-    MENTAL_HEALTH = "mental_health"            # Mental health -> crisis protocol
-    MEDICATION_QUERY = "medication_query"      # Drug questions -> interaction checks
-    TREATMENT_ADVICE = "treatment_advice"      # Treatment recs -> context gathering
+    MENTAL_HEALTH = "mental_health"  # Mental health -> crisis protocol
+    MEDICATION_QUERY = "medication_query"  # Drug questions -> interaction checks
+    TREATMENT_ADVICE = "treatment_advice"  # Treatment recs -> context gathering
     UNKNOWN = "unknown"
 
 
@@ -214,26 +215,72 @@ Integrate these questions naturally into your response - do NOT make them a sepa
 
 QUESTION_TYPE_KEYWORDS = {
     QuestionType.TRIAGE_EMERGENCY: [
-        "emergency", "911", "urgent", "immediately", "ER", "ambulance",
-        "can't breathe", "chest pain", "stroke", "heart attack", "unconscious",
-        "severe bleeding", "anaphylaxis", "seizure"
+        "emergency",
+        "911",
+        "urgent",
+        "immediately",
+        "ER",
+        "ambulance",
+        "can't breathe",
+        "chest pain",
+        "stroke",
+        "heart attack",
+        "unconscious",
+        "severe bleeding",
+        "anaphylaxis",
+        "seizure",
     ],
     QuestionType.MENTAL_HEALTH: [
-        "depressed", "depression", "anxiety", "anxious", "suicide", "suicidal",
-        "self-harm", "panic", "mental health", "psychiatr", "therapy",
-        "hopeless", "worthless", "can't go on", "end my life", "kill myself"
+        "depressed",
+        "depression",
+        "anxiety",
+        "anxious",
+        "suicide",
+        "suicidal",
+        "self-harm",
+        "panic",
+        "mental health",
+        "psychiatr",
+        "therapy",
+        "hopeless",
+        "worthless",
+        "can't go on",
+        "end my life",
+        "kill myself",
     ],
     QuestionType.CLINICAL_NOTE_TASK: [
-        "clinical note", "draft", "review this", "edit this", "documentation",
-        "chart", "EHR", "medical record", "SOAP note", "H&P"
+        "clinical note",
+        "draft",
+        "review this",
+        "edit this",
+        "documentation",
+        "chart",
+        "EHR",
+        "medical record",
+        "SOAP note",
+        "H&P",
     ],
     QuestionType.MEDICATION_QUERY: [
-        "medication", "drug", "prescription", "dose", "dosage", "side effect",
-        "interaction", "contraindication", "pharmacy", "refill"
+        "medication",
+        "drug",
+        "prescription",
+        "dose",
+        "dosage",
+        "side effect",
+        "interaction",
+        "contraindication",
+        "pharmacy",
+        "refill",
     ],
     QuestionType.TREATMENT_ADVICE: [
-        "treatment", "therapy", "should I take", "recommend", "option",
-        "management", "protocol", "guideline"
+        "treatment",
+        "therapy",
+        "should I take",
+        "recommend",
+        "option",
+        "management",
+        "protocol",
+        "guideline",
     ],
 }
 
@@ -348,6 +395,7 @@ def get_condition_specific_red_flags(condition: str) -> str:
 # RESPONSE POST-PROCESSING CHECKLIST
 # =============================================================================
 
+
 def check_response_quality(response: str, question_type: QuestionType) -> Dict[str, bool]:
     """
     Check if response meets HealthBench quality criteria.
@@ -356,32 +404,53 @@ def check_response_quality(response: str, question_type: QuestionType) -> Dict[s
     Used to flag potential issues for improvement, not for grading.
     """
     checks = {
-        "has_clarifying_questions": "?" in response and any(
-            phrase in response.lower() for phrase in [
-                "could you", "can you tell me", "what is your", "do you have",
-                "are you taking", "how long", "when did"
+        "has_clarifying_questions": "?" in response
+        and any(
+            phrase in response.lower()
+            for phrase in [
+                "could you",
+                "can you tell me",
+                "what is your",
+                "do you have",
+                "are you taking",
+                "how long",
+                "when did",
             ]
         ),
         "has_citations": any(
-            phrase in response.lower() for phrase in [
-                "guidelines", "according to", "studies show", "research",
-                "et al", "recommendation"
+            phrase in response.lower()
+            for phrase in [
+                "guidelines",
+                "according to",
+                "studies show",
+                "research",
+                "et al",
+                "recommendation",
             ]
         ),
         "has_red_flags": any(
-            phrase in response.lower() for phrase in [
-                "seek immediate", "emergency", "call 911", "urgent",
-                "red flag", "warning sign"
+            phrase in response.lower()
+            for phrase in [
+                "seek immediate",
+                "emergency",
+                "call 911",
+                "urgent",
+                "red flag",
+                "warning sign",
             ]
         ),
         "has_crisis_resources": (
-            question_type != QuestionType.MENTAL_HEALTH or
-            any(phrase in response for phrase in ["988", "crisis", "hotline", "emergency"])
+            question_type != QuestionType.MENTAL_HEALTH
+            or any(phrase in response for phrase in ["988", "crisis", "hotline", "emergency"])
         ),
         "acknowledges_limitations": any(
-            phrase in response.lower() for phrase in [
-                "without more information", "would need to know",
-                "depends on", "varies based on", "consult"
+            phrase in response.lower()
+            for phrase in [
+                "without more information",
+                "would need to know",
+                "depends on",
+                "varies based on",
+                "consult",
             ]
         ),
     }

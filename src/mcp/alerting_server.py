@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 try:
     from mcp.server import Server
     from mcp.server.stdio import stdio_server
-    from mcp.types import Tool, TextContent
+    from mcp.types import TextContent, Tool
 
     MCP_AVAILABLE = True
 except ImportError:
@@ -205,7 +205,9 @@ async def acknowledge_incident(
             return {
                 "acknowledged": True,
                 "incident_id": incident.id,
-                "acknowledged_at": incident.acknowledged_at.isoformat() if incident.acknowledged_at else None,
+                "acknowledged_at": incident.acknowledged_at.isoformat()
+                if incident.acknowledged_at
+                else None,
                 "acknowledged_by": incident.acknowledged_by,
             }
         else:
@@ -390,9 +392,7 @@ async def main():
         sys.exit(1)
 
     async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream, write_stream, app.create_initialization_options()
-        )
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 
 if __name__ == "__main__":

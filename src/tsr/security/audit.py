@@ -2,16 +2,19 @@
 
 Provides tamper-evident audit trails for regulatory compliance.
 """
+
 import hashlib
 import json
 import time
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
+
 from src.tsr.security.phi_guard import PHIGuard
+
 
 @dataclass
 class AuditEntry:
     """A single audit trail entry."""
+
     sequence: int
     timestamp_ns: int
     event_type: str
@@ -20,6 +23,7 @@ class AuditEntry:
     contract_id: str
     chain_hash: str
     previous_hash: str
+
 
 class AuditTrail:
     """Merkle-chained audit trail with PHI guard.
@@ -49,13 +53,16 @@ class AuditTrail:
         timestamp_ns = time.time_ns()
 
         # Compute chain hash
-        entry_content = json.dumps({
-            "sequence": self._sequence,
-            "timestamp_ns": timestamp_ns,
-            "event_type": event_type,
-            "event_data": safe_data,
-            "previous_hash": self._current_hash,
-        }, sort_keys=True)
+        entry_content = json.dumps(
+            {
+                "sequence": self._sequence,
+                "timestamp_ns": timestamp_ns,
+                "event_type": event_type,
+                "event_data": safe_data,
+                "previous_hash": self._current_hash,
+            },
+            sort_keys=True,
+        )
 
         chain_hash = hashlib.sha256(entry_content.encode()).hexdigest()
 
@@ -83,13 +90,16 @@ class AuditTrail:
             if entry.previous_hash != expected_hash:
                 return False
 
-            entry_content = json.dumps({
-                "sequence": entry.sequence,
-                "timestamp_ns": entry.timestamp_ns,
-                "event_type": entry.event_type,
-                "event_data": entry.event_data,
-                "previous_hash": entry.previous_hash,
-            }, sort_keys=True)
+            entry_content = json.dumps(
+                {
+                    "sequence": entry.sequence,
+                    "timestamp_ns": entry.timestamp_ns,
+                    "event_type": entry.event_type,
+                    "event_data": entry.event_data,
+                    "previous_hash": entry.previous_hash,
+                },
+                sort_keys=True,
+            )
 
             computed = hashlib.sha256(entry_content.encode()).hexdigest()
             if computed != entry.chain_hash:

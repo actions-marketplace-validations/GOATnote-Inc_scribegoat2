@@ -15,10 +15,8 @@ Remediation context: Issue 3 (SHOULD-FIX) from RISK_REVIEW_2026_02_06.md
 """
 
 import json
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-
 
 # ---------------------------------------------------------------------------
 # Reproduce the _ingest_record / resume logic in isolation so we can test it
@@ -135,10 +133,12 @@ class TestSourcePrecedence:
         }
 
         # Recovery ingested first, then checkpoint
-        records, warnings = ingest_records([
-            ("recovery_run_a.jsonl", "recovery", [recovery_rec]),
-            ("checkpoint_run_b.jsonl", "checkpoint", [checkpoint_rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("recovery_run_a.jsonl", "recovery", [recovery_rec]),
+                ("checkpoint_run_b.jsonl", "checkpoint", [checkpoint_rec]),
+            ]
+        )
 
         key = ("gpt-5.2", 0, "ped_sepsis_01")
         assert records[key]["source"] == "checkpoint"
@@ -163,10 +163,12 @@ class TestSourcePrecedence:
             "run_id": "run_b",
         }
 
-        records, warnings = ingest_records([
-            ("recovery_run_a.jsonl", "recovery", [recovery_rec]),
-            ("replay_run_b.jsonl", "replay", [replay_rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("recovery_run_a.jsonl", "recovery", [recovery_rec]),
+                ("replay_run_b.jsonl", "replay", [replay_rec]),
+            ]
+        )
 
         key = ("gpt-5.2", 0, "ped_sepsis_01")
         assert records[key]["source"] == "replay"
@@ -190,10 +192,12 @@ class TestSourcePrecedence:
             "run_id": "run_b",
         }
 
-        records, warnings = ingest_records([
-            ("replay_run_a.jsonl", "replay", [replay_rec]),
-            ("checkpoint_run_b.jsonl", "checkpoint", [checkpoint_rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("replay_run_a.jsonl", "replay", [replay_rec]),
+                ("checkpoint_run_b.jsonl", "checkpoint", [checkpoint_rec]),
+            ]
+        )
 
         key = ("gpt-5.2", 0, "ped_sepsis_01")
         assert records[key]["source"] == "checkpoint"
@@ -217,10 +221,12 @@ class TestSourcePrecedence:
             "run_id": "run_b",
         }
 
-        records, warnings = ingest_records([
-            ("checkpoint_run_a.jsonl", "checkpoint", [checkpoint_rec]),
-            ("recovery_run_b.jsonl", "recovery", [recovery_rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("checkpoint_run_a.jsonl", "checkpoint", [checkpoint_rec]),
+                ("recovery_run_b.jsonl", "recovery", [recovery_rec]),
+            ]
+        )
 
         key = ("gpt-5.2", 0, "ped_sepsis_01")
         assert records[key]["source"] == "checkpoint"
@@ -248,10 +254,12 @@ class TestConflictDetection:
             "run_id": "run_b",
         }
 
-        records, warnings = ingest_records([
-            ("checkpoint_run_a.jsonl", "checkpoint", [rec_a]),
-            ("checkpoint_run_b.jsonl", "checkpoint", [rec_b]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("checkpoint_run_a.jsonl", "checkpoint", [rec_a]),
+                ("checkpoint_run_b.jsonl", "checkpoint", [rec_b]),
+            ]
+        )
 
         assert len(warnings) == 1
         assert "CONFLICT" in warnings[0]
@@ -278,10 +286,12 @@ class TestConflictDetection:
             "run_id": "run_b",
         }
 
-        records, warnings = ingest_records([
-            ("checkpoint_run_a.jsonl", "checkpoint", [rec_a]),
-            ("checkpoint_run_b.jsonl", "checkpoint", [rec_b]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("checkpoint_run_a.jsonl", "checkpoint", [rec_a]),
+                ("checkpoint_run_b.jsonl", "checkpoint", [rec_b]),
+            ]
+        )
 
         # Same result, different runs — no warning (consistent)
         assert len(warnings) == 0
@@ -296,9 +306,11 @@ class TestConflictDetection:
             "run_id": "run_a",
         }
 
-        records, warnings = ingest_records([
-            ("checkpoint_run_a.jsonl", "checkpoint", [rec, rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("checkpoint_run_a.jsonl", "checkpoint", [rec, rec]),
+            ]
+        )
 
         assert len(warnings) == 0
         assert len(records) == 1
@@ -316,9 +328,11 @@ class TestLegacyRecordIngestion:
             # No run_id, no source, no timestamp
         }
 
-        records, warnings = ingest_records([
-            ("checkpoint_old.jsonl", "checkpoint", [legacy_rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("checkpoint_old.jsonl", "checkpoint", [legacy_rec]),
+            ]
+        )
 
         key = ("gpt-5.2", 0, "ped_sepsis_01")
         assert key in records
@@ -334,9 +348,11 @@ class TestLegacyRecordIngestion:
             "passed": False,
         }
 
-        records, warnings = ingest_records([
-            ("recovery_old.jsonl", "recovery", [legacy_rec]),
-        ])
+        records, warnings = ingest_records(
+            [
+                ("recovery_old.jsonl", "recovery", [legacy_rec]),
+            ]
+        )
 
         key = ("gpt-5.2", 0, "ped_sepsis_01")
         assert key in records

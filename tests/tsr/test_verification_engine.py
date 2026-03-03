@@ -18,19 +18,19 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.tsr.runtime.config import TSRConfig
-from src.tsr.verification.engine import VerificationEngine, VerificationContext
-from src.tsr.verification.orchestrator import VerificationOutcome
 from src.tsr.verification.agents.boundary import boundary_check
 from src.tsr.verification.agents.stubs import (
-    clinical_review_stub,
     adversarial_test_stub,
+    clinical_review_stub,
     evidence_compile_stub,
 )
-
+from src.tsr.verification.engine import VerificationContext, VerificationEngine
+from src.tsr.verification.orchestrator import VerificationOutcome
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def engine():
@@ -51,8 +51,8 @@ def engine():
 # Engine core tests
 # ---------------------------------------------------------------------------
 
-class TestVerificationEngine:
 
+class TestVerificationEngine:
     async def test_safe_response_passes(self, engine):
         """Emergency recommendation with no history should be SAFE."""
         result = await engine.verify(
@@ -113,6 +113,7 @@ class TestVerificationEngine:
 
     async def test_agent_error_does_not_crash_engine(self, engine):
         """An agent throwing an exception should not crash the engine."""
+
         async def failing_agent(ctx):
             raise RuntimeError("Agent crashed")
 
@@ -179,8 +180,8 @@ class TestVerificationEngine:
 # Boundary agent tests
 # ---------------------------------------------------------------------------
 
-class TestBoundaryAgent:
 
+class TestBoundaryAgent:
     async def test_boundary_safe_response(self):
         """Boundary check should pass for emergency recommendation."""
         ctx = VerificationContext(
@@ -234,28 +235,22 @@ class TestBoundaryAgent:
 # Stub agent tests
 # ---------------------------------------------------------------------------
 
-class TestStubAgents:
 
+class TestStubAgents:
     async def test_clinical_stub_passes(self):
-        ctx = VerificationContext(
-            response="test", conversation_history=[], contract_id="test"
-        )
+        ctx = VerificationContext(response="test", conversation_history=[], contract_id="test")
         result = await clinical_review_stub(ctx)
         assert result["passed"] is True
         assert result["skipped"] is True
 
     async def test_adversarial_stub_no_variants(self):
-        ctx = VerificationContext(
-            response="test", conversation_history=[], contract_id="test"
-        )
+        ctx = VerificationContext(response="test", conversation_history=[], contract_id="test")
         result = await adversarial_test_stub(ctx)
         assert result["variants_tested"] == 0
         assert result["skipped"] is True
 
     async def test_evidence_stub_zero_completeness(self):
-        ctx = VerificationContext(
-            response="test", conversation_history=[], contract_id="test"
-        )
+        ctx = VerificationContext(response="test", conversation_history=[], contract_id="test")
         result = await evidence_compile_stub(ctx)
         assert result["completeness"] == 0.0
         assert result["skipped"] is True
@@ -265,10 +260,11 @@ class TestStubAgents:
 # TSR Server async integration tests
 # ---------------------------------------------------------------------------
 
-class TestServerAsyncIntegration:
 
+class TestServerAsyncIntegration:
     def _make_server(self, **kwargs):
         from src.tsr.runtime.server import TSRServer
+
         config = TSRConfig(multi_agent_verification=True, **kwargs)
         return TSRServer(config)
 
@@ -330,6 +326,7 @@ class TestServerAsyncIntegration:
     def test_engine_not_initialized_when_disabled(self):
         """Verification engine should be None when flag is False."""
         from src.tsr.runtime.server import TSRServer
+
         config = TSRConfig(multi_agent_verification=False)
         server = TSRServer(config)
         assert server._verification_engine is None

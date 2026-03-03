@@ -13,4 +13,3 @@ __all__ = [
     "SystemCardGenerator",
     "generate_system_card",
 ]
-
