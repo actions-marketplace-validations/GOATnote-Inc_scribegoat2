@@ -91,6 +91,30 @@ filterwarnings = [
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+    "results",
+    "spc_results",
+    "output",
+    "reports",
+    "audit_logs",
+    "tmp",
+    "vendor",
+    "data",
+    "research",
+    "bloom_medical_eval",
+    "bloom_eval_v2",
+    "evaluation126",
+    "lir",
+    "evaluation/bloom_eval_v2/results",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E402", "E501"]
+
 [tool.coverage.run]
 source = ["src", "evaluation"]
 omit = ["**/test_*.py", "**/__pycache__/*"]

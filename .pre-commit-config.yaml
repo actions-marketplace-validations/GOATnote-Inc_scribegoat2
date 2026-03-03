@@ -2,6 +2,10 @@
 # Install: pip install pre-commit && pre-commit install
 # Manual run: pre-commit run --all-files
 
+# Evaluation artifacts and result directories are immutable —
+# never lint, format, or fix whitespace in them.
+exclude: (?x)^(results/|spc_results/|output/|reports/|audit_logs/|experiments/run_log\.jsonl|evaluation/bloom_eval_v2/results/)
+
 repos:
   # ============================================
   # SECURITY CHECKS (HIGHEST PRIORITY)
@@ -106,11 +110,11 @@ repos:
   # ============================================
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    rev: v0.9.10
     hooks:
       - id: ruff
         name: "Ruff linting"
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix]
       - id: ruff-format
         name: "Ruff formatting"
 
