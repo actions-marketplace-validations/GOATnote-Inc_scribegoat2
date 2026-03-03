@@ -37,7 +37,13 @@ SECTION_GLOB = "[0-9][0-9]_*.md"
 EPISTEMIC_MAP_FILE = "01_EPISTEMIC_MAP.md"
 
 CLAIM_REF_PATTERN = re.compile(r"\{\{claim:(CLM-\d{4}-\d{4})\}\}")
+DATE_LINE_PATTERN = re.compile(r"\*\*Last Updated:\*\* \d{4}-\d{2}-\d{2}")
 STALENESS_DAYS = 60
+
+def normalize_for_comparison(text: str) -> str:
+    """Strip volatile metadata (auto-generated dates) for deterministic comparison."""
+    return DATE_LINE_PATTERN.sub("**Last Updated:** DATE", text)
+
 
 # Status display configuration
 STATUS_BADGES = {
@@ -378,7 +384,7 @@ def main() -> None:
             print(f"ERROR: {OUTPUT_FILE} does not exist. Run without --check to generate it.")
             sys.exit(1)
         committed = OUTPUT_FILE.read_text()
-        if committed == generated:
+        if normalize_for_comparison(committed) == normalize_for_comparison(generated):
             print("WHITEPAPER_FULL.md is up to date.")
             sys.exit(0)
         else:
