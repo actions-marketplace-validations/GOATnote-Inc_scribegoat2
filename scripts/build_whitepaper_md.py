@@ -40,6 +40,7 @@ CLAIM_REF_PATTERN = re.compile(r"\{\{claim:(CLM-\d{4}-\d{4})\}\}")
 DATE_LINE_PATTERN = re.compile(r"\*\*Last Updated:\*\* \d{4}-\d{2}-\d{2}")
 STALENESS_DAYS = 60
 
+
 def normalize_for_comparison(text: str) -> str:
     """Strip volatile metadata (auto-generated dates) for deterministic comparison."""
     return DATE_LINE_PATTERN.sub("**Last Updated:** DATE", text)
