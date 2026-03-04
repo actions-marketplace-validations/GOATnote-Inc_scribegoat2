@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: GOATnote Platform (5 repos)
 
-Last updated: 2026-03-03 (v4 — post-expansion count sync)
+Last updated: 2026-03-04 (v5 — RadSlice v2 roadmap, scenario count correction, audit readiness)
 
 ---
 
@@ -30,7 +30,7 @@ Key modules:
 
 **Role:** Published, pip-installable benchmark derived from ScribeGoat2.
 
-The public-facing evaluation suite. Adds CEIS (3-layer grading), MSIW (fail-closed wrapper), multi-trial pooling, and a cleaner CLI. Uses 50 emergency + 3 crisis + 15 defer + 10 adversarial + 8 tool-use + 8 code-agent + 8 multimodal + 9 integrated hand-written scenarios (111 total) in YAML format, plus 279 coverage-cycle generated seeds (CYC-001 through CYC-279, 96.7% OpenEM condition coverage) evaluated via a two-phase methodology: Phase 1 deterministic screen (temp=0) identifies discriminative seeds, Phase 2 stochastic characterization (temp=0.7, per-trial seed variation) measures deployment risk via pass^k and intermittent failure rates.
+The public-facing evaluation suite. Adds CEIS (3-layer grading), MSIW (fail-closed wrapper), multi-trial pooling, and a cleaner CLI. Uses 78 emergency + 3 crisis + 15 defer + 10 adversarial + 8 tool-use + 8 code-agent + 8 multimodal + 9 integrated hand-written scenarios (139 total) in YAML format, plus 20 generated evaluation seeds (GEN-001–GEN-020) and 279 coverage-cycle generated seeds (CYC-001 through CYC-279, 96.7% OpenEM condition coverage) evaluated via a two-phase methodology: Phase 1 deterministic screen (temp=0) identifies discriminative seeds, Phase 2 stochastic characterization (temp=0.7, per-trial seed variation) measures deployment risk via pass^k and intermittent failure rates.
 
 Key modules:
 
@@ -105,6 +105,8 @@ Grading dimensions: Safety (0.40), Accuracy (0.25), Completeness (0.15), Timelin
 Evaluates frontier vision-language models on radiological image interpretation across four modalities (X-ray, CT, MRI, Ultrasound). Unlike standalone radiology benchmarks, each RadSlice task is linked to an OpenEM condition via `condition_id`, with the clinical vignette derived from the real case rather than invented. This ties imaging interpretation directly to the same conditions evaluated by LostBench and ScribeGoat2 for safety persistence.
 
 As of v3, RadSlice includes a closed-loop evaluation architecture: saturation detection identifies tasks that no longer discriminate between models, suite membership tracking promotes/retires tasks, cross-repo correlation links findings with LostBench, and calibration drift monitoring ensures grading consistency. Five agents and three command workflows orchestrate this lifecycle.
+
+**v2 roadmap (draft, 2026-03-03):** RadSlice is evolving from single-image interpretation (Level 0, rc0.5/rc1.0) to agentic DICOM-based workflows (Levels 1–4). The v2 architecture (`docs/RADSLICE_V2_ARCHITECTURE.md`) introduces a DICOM tool interface (7 MCP-compatible tools: navigate_study, get_slice, set_window, measure, compare_series, etc.), difficulty levels from single-image baseline through full-study structured reporting, deterministic tool-use auditing from MCP call logs, and IDC-based DICOM sourcing. rc1.0 (4-modality Level 0 expansion) is current; v2-alpha targets Level 1 with real DICOM volumes.
 
 **Corpus scope:** 133 of 363 OpenEM conditions are imaging-relevant. 65 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
 
@@ -253,6 +255,10 @@ CLI: `radslice cross-repo --results DIR --lostbench-results DIR`
 
 Suite lifecycle: capability (active) → regression (discriminates models) → retired (saturated). Managed by `src/radslice/analysis/suite_tracker.py` and tracked in `results/suite_membership.yaml`.
 
+### "What is RadSlice v2?"
+
+`docs/RADSLICE_V2_ARCHITECTURE.md` (draft, 774 lines). Single-image interpretation is the floor measurement (Level 0). v2 adds the radiologist workflow: series navigation, window/level adjustment, lesion measurement, cross-series correlation, structured reporting. Five difficulty levels (0–4), each with specific tool requirements and grading rubrics. Deterministic tool-use audit from MCP call logs reduces the grading noise that afflicts Level 0 (where 100% of grading currently depends on the LLM judge). Sourced from NCI Imaging Data Commons (CC-BY). Not yet implemented — rc1.0 (Level 0 expansion) is current.
+
 ### "Which patterns are canonical?"
 
 Depends on use case:
@@ -379,7 +385,7 @@ Four complementary evaluation frameworks measuring different aspects of model be
 | Property | ScribeGoat2 | LostBench | SafeShift | RadSlice |
 |----------|-------------|-----------|-----------|----------|
 | Format | Python dataclasses | YAML files | YAML files | YAML files |
-| Count | 300+ escalation, 100+ defer | 111 hand-written (50 emergency, 15 defer, 43 adversarial) + 279 coverage-cycle generated seeds (96.7% OpenEM coverage) | 23 (15 clinical, 8 robotic) | 320 tasks across 4 modalities (+ generated G-prefix variants) |
+| Count | 300+ escalation, 100+ defer | 139 hand-written (78 emergency, 15 defer, 43 adversarial/tool-use/code-agent/multimodal/integrated/crisis) + 20 generated seeds (GEN-*) + 279 coverage-cycle seeds (CYC-*) | 23 (15 clinical, 8 robotic) | 320 tasks across 4 modalities (+ generated G-prefix variants) |
 | Loader | `scenarios/loader.py` | YAML glob | `scenario.py` | `task.py` |
 | Metadata | ESI level, red flags, clinical notes | CEIS severity weight, condition ID | Optimization config, safety dimension weights | `condition_id` → OpenEM, modality, anatomy, ground truth, confusion pairs |
 | OpenEM link | Condition map wrapper | Condition map wrapper | Optional `[openem]` extra | `condition_id` field (reference, not import) |
@@ -480,8 +486,10 @@ ScribeGoat2 defines **what** to evaluate and **how** to prioritize findings. Los
 
 6. **Imaging coverage gaps.** 68 imaging-relevant OpenEM conditions have no LostBench scenario. These represent conditions where RadSlice can evaluate imaging but there is no corresponding safety persistence evaluation. RadSlice's cross-repo correlation (`radslice cross-repo`) surfaces these gaps as `radslice_only_fail` or unlinked conditions.
 
-7. **RadSlice recursive self-improvement.** RadSlice now has closed-loop corpus evolution: saturation detection → suite membership tracking → task generation → re-evaluation. This is the first GOATnote repo with agent-driven governance (5 agents, BLOCK/ESCALATE/CLEAR decision traces). If the pattern works, it could be adapted for LostBench scenario evolution.
+7. **RadSlice recursive self-improvement and v2 roadmap.** RadSlice has closed-loop corpus evolution (saturation → suite membership → task generation → re-evaluation) and is pursuing a 4-level difficulty progression from single-image interpretation (Level 0) to agentic DICOM workflows with tool use and structured reporting (Levels 1–4). See `docs/RADSLICE_V2_ARCHITECTURE.md` for the full specification. This is the first GOATnote repo with agent-driven governance (5 agents, BLOCK/ESCALATE/CLEAR decision traces) and the first to specify MCP-compatible tool interfaces for multimodal evaluation.
 
 8. **FHIR export is additive.** Presentation profiles are authored independently of condition Markdown files. Vitals/labs live in `fhir/presentations/`, not in structured YAML frontmatter. This avoids migrating 363 condition files. The 8-condition POC covers the MSTS core scenarios; extending to all 363 conditions is deferred.
 
 9. **Knowledge flow is read-only.** `scan_repos.py` produces enrichment proposals for human review. It never auto-writes to condition files. The `evaluation_properties` schema extension is optional — existing conditions validate without it. Repos can also export a standardized `condition_insights.yaml` as structured input (preferred over markdown parsing).
+
+10. **CI/CD audit readiness.** `scribegoat2/docs/AUDIT_READINESS.md` (2026-03-04) documents the CI/CD posture across all 5 repos: 23 workflows, ~22,500 tests, ruff v0.9.10 everywhere, artifact immutability via pre-commit exclusions. Key gaps: no branch protection on any repo, no CODEOWNERS, TIC strict mode disabled in CI. These are governance gaps, not code gaps — all repos are green on main.
