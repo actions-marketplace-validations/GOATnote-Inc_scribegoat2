@@ -176,7 +176,7 @@ Commit conventions: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`. Branch namin
 | [LostBench](https://github.com/GOATnote-Inc/lostbench) | Published safety benchmark (CEIS grading) | Derived conceptually; 139 hand-written + 20 generated (GEN-*) + 279 coverage-cycle seeds (CYC-*) |
 | [OpenEM](https://github.com/GOATnote-Inc/openem-corpus) | Clinical knowledge corpus (363 conditions, 21 categories) | Shared `python/openem/` package for RAG |
 | [SafeShift](https://github.com/GOATnote-Inc/safeshift) | Safety degradation under inference optimization | Optional OpenEM integration |
-| [RadSlice](https://github.com/GOATnote-Inc/radslice) | Multimodal radiology benchmark (330 tasks) | 133 OpenEM conditions, 65 LostBench cross-refs |
+| [RadSlice](https://github.com/GOATnote-Inc/radslice) | Multimodal radiology benchmark (330 tasks, v2 roadmap for agentic DICOM workflows) | 133 OpenEM conditions, 65 LostBench cross-refs |
 
 Cross-repo architecture: see [`docs/CROSS_REPO_ARCHITECTURE.md`](docs/CROSS_REPO_ARCHITECTURE.md)
 
