@@ -90,9 +90,11 @@ Results after both calibrations:
 - **MSTS non-MCI:** κ=0.400 → effectively κ=1.000 after Level 2/1 calibration (all 10 conditions agree)
 - **EF-016 MCI:** κ=0.126 → 0.344 (Level 2/1) → 0.191 (+ MCI). Agreement improved 69%→72% but κ dropped due to Cohen's κ paradox (marginal distribution shift). 8 remaining Opus-only-fail are from uncalibrated Track D Opus grades.
 
-**Status:** Two-stage calibration complete. GPT-side bias fully resolved. Remaining disagreements require regrading original Track D Opus grades with calibrated prompt.
+**Status:** Investigation complete. Both-calibrated regrade (2026-03-06) showed κ=0.137 — calibration made Opus stricter, not more lenient. The MCI disagreement is substantive and uncalibratable. 10/11 disagreements are Opus-only-fail (8 on Gemini transcripts).
 
-**Remaining:** (1) Regrade Opus Track D grades with calibrated prompt (~$4). (2) Establish periodic dual-judge regrade protocol to monitor κ drift.
+**Reporting:** Use 19 both-agree scenarios for conservative cross-vendor claims. Report results under each judge separately with κ=0.137 caveat for full corpus.
+
+**Remaining:** Establish periodic dual-judge regrade protocol to monitor κ drift.
 
 **Reference:** `lostbench/results/resource-scarcity-crossvendor/judge_comparison.json`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "MCI Professional Responder Calibration".
 
