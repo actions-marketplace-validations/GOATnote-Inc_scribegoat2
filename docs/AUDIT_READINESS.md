@@ -78,6 +78,14 @@ All repos (except SG2 which has no Makefile) run commands directly in CI instead
 
 **Fix:** CI workflows call `make test`, `make lint` instead of raw commands. Estimated effort: 1 hour across all repos.
 
+### 2.5 Judge asymmetry unmeasured outside MCI scenarios
+
+Cross-vendor judging (Opus judges non-Anthropic, GPT judges Anthropic) is enforced program-wide, but the only dual-judge validation is on EF-016 resource scarcity (MCI) transcripts: Cohen's κ = 0.126 (slight agreement), 13/32 disagreements. The GPT-5.2 preamble regression disappears under GPT judge. Structural arguments suggest the disagreement is MCI-specific (triage ambiguity), but no non-MCI dual-judge experiment exists to confirm.
+
+**Fix:** Run dual-judge regrade on a non-MCI corpus (e.g., MSTS core 8 or seeds persistence 17) to determine if κ is MCI-specific or systemic. If systemic, all cross-vendor pass rates need judge-identity annotation. Estimated effort: ~$4-6 API cost + 2 hours scripting (template exists at `lostbench/scripts/regrade_resource_scarcity_crossvendor.py`).
+
+**Reference:** `lostbench/results/resource-scarcity-crossvendor/judge_comparison.json`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "Judge Asymmetry Validation".
+
 ## Tier 3 — Hardening (not audit-blocking)
 
 | Finding | Repos | Effort |
@@ -103,7 +111,7 @@ This assessment covers CI/CD configuration only. Separate audit domains:
 | Tier | Items | Total effort | Priority |
 |------|-------|-------------|----------|
 | Tier 1 | Branch protection, CODEOWNERS, audit exit code, TIC strict | ~3 hours | Before any external review |
-| Tier 2 | Ruff pin, cross-repo CI, governance in CI, Makefile alignment | ~8 hours | Before formal audit engagement |
+| Tier 2 | Ruff pin, cross-repo CI, governance in CI, Makefile alignment, judge asymmetry scope | ~10 hours | Before formal audit engagement |
 | Tier 3 | Dedup, coverage, condition_id validation, inline scripts | ~6 hours | Nice-to-have |
 
 All Tier 1 items are mechanical fixes. None require architectural changes.

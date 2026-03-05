@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: GOATnote Platform (5 repos)
 
-Last updated: 2026-03-04 (v5 — RadSlice v2 roadmap, scenario count correction, audit readiness)
+Last updated: 2026-03-05 (v6 — judge asymmetry caveat from EF-016 dual-judge experiment)
 
 ---
 
@@ -493,3 +493,5 @@ ScribeGoat2 defines **what** to evaluate and **how** to prioritize findings. Los
 9. **Knowledge flow is read-only.** `scan_repos.py` produces enrichment proposals for human review. It never auto-writes to condition files. The `evaluation_properties` schema extension is optional — existing conditions validate without it. Repos can also export a standardized `condition_insights.yaml` as structured input (preferred over markdown parsing).
 
 10. **CI/CD audit readiness.** `scribegoat2/docs/AUDIT_READINESS.md` (2026-03-04) documents the CI/CD posture across all 5 repos: 23 workflows, ~22,500 tests, ruff v0.9.10 everywhere, artifact immutability via pre-commit exclusions. Key gaps: no branch protection on any repo, no CODEOWNERS, TIC strict mode disabled in CI. These are governance gaps, not code gaps — all repos are green on main.
+
+11. **Judge asymmetry is measured but not fully scoped.** The EF-016 resource scarcity cross-vendor evaluation (2026-03-05) is the only apples-to-apples dual-judge experiment in the program: same 32 transcripts graded by both Opus 4.6 and GPT-5.2. Result: Cohen's κ = 0.126 (slight agreement), 13/32 disagreements. GPT-5.2 judge is stricter on MCI baseline but lenient on preamble — the GPT preamble regression (80%→60%) disappears entirely under GPT judge (100% preamble pass). The MSTS cross-vendor comparison (κ = −0.400/−0.206) is **not comparable** — it measures Sonnet-original vs cross-vendor regrade, not Opus-vs-GPT on the same transcripts. Structural arguments favor MCI-specificity (triage ambiguity in disaster scenarios; non-MCI Track C results were unambiguous; seeds persistence Pass^5=100% for GPT/Gemini suggests judges agree on clear-cut scenarios), but this cannot be confirmed without a dual-judge experiment on non-MCI transcripts. All cross-vendor numbers should note judge identity. See `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "Judge Asymmetry Validation" and `lostbench/results/resource-scarcity-crossvendor/judge_comparison.json`.
