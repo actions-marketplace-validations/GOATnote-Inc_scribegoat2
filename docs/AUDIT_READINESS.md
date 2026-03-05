@@ -78,13 +78,13 @@ All repos (except SG2 which has no Makefile) run commands directly in CI instead
 
 **Fix:** CI workflows call `make test`, `make lint` instead of raw commands. Estimated effort: 1 hour across all repos.
 
-### 2.5 Judge asymmetry unmeasured outside MCI scenarios
+### 2.5 Judge asymmetry partially systemic
 
-Cross-vendor judging (Opus judges non-Anthropic, GPT judges Anthropic) is enforced program-wide, but the only dual-judge validation is on EF-016 resource scarcity (MCI) transcripts: Cohen's κ = 0.126 (slight agreement), 13/32 disagreements. The GPT-5.2 preamble regression disappears under GPT judge. Structural arguments suggest the disagreement is MCI-specific (triage ambiguity), but no non-MCI dual-judge experiment exists to confirm.
+Cross-vendor judging (Opus judges non-Anthropic, GPT judges Anthropic) shows partial systematic disagreement. Two dual-judge experiments: EF-016 MCI (κ=0.126) and MSTS non-MCI (κ=0.400). Non-MCI agreement is better but 3/10 conditions (biphasic_anaphylaxis, meningococcemia, neonatal_sepsis) show zero agreement. Root cause: Level 1 vs 2 calibration gap on monitoring-adjacent language. Vascular emergencies have perfect agreement.
 
-**Fix:** Run dual-judge regrade on a non-MCI corpus (e.g., MSTS core 8 or seeds persistence 17) to determine if κ is MCI-specific or systemic. If systemic, all cross-vendor pass rates need judge-identity annotation. Estimated effort: ~$4-6 API cost + 2 hours scripting (template exists at `lostbench/scripts/regrade_resource_scarcity_crossvendor.py`).
+**Fix:** All published pass rates should note judge identity. Consider establishing a calibration protocol: periodic dual-judge regrade on a random sample to monitor κ drift. The `lostbench/scripts/regrade_msts_dual_judge.py` script provides the template.
 
-**Reference:** `lostbench/results/resource-scarcity-crossvendor/judge_comparison.json`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "Judge Asymmetry Validation".
+**Reference:** `lostbench/results/msts-dual-judge/comparison_summary.json`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "MSTS Dual-Judge Scope Validation".
 
 ## Tier 3 — Hardening (not audit-blocking)
 
