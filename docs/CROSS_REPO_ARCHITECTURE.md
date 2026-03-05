@@ -1,6 +1,6 @@
 # Cross-Repo Architecture: GOATnote Platform (5 repos)
 
-Last updated: 2026-03-05 (v6 — judge asymmetry caveat from EF-016 dual-judge experiment)
+Last updated: 2026-03-06 (v7 — judge asymmetry resolved (90.6% inter-judge agreement post-bugfix))
 
 ---
 
