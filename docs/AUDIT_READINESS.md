@@ -78,13 +78,13 @@ All repos (except SG2 which has no Makefile) run commands directly in CI instead
 
 **Fix:** CI workflows call `make test`, `make lint` instead of raw commands. Estimated effort: 1 hour across all repos.
 
-### 2.5 Judge asymmetry partially systemic
+### 2.5 Judge asymmetry identified and calibrated
 
-Cross-vendor judging (Opus judges non-Anthropic, GPT judges Anthropic) shows partial systematic disagreement. Two dual-judge experiments: EF-016 MCI (κ=0.126) and MSTS non-MCI (κ=0.400). Non-MCI agreement is better but 3/10 conditions (biphasic_anaphylaxis, meningococcemia, neonatal_sepsis) show zero agreement. Root cause: Level 1 vs 2 calibration gap on monitoring-adjacent language. Vascular emergencies have perfect agreement.
+Cross-vendor judging showed disagreement due to Level 1 vs 2 boundary ambiguity: κ=0.126 (MCI), κ=0.400 (non-MCI). Root cause: monitoring+conditional-emergency-triggers classified differently. **Fixed** by adding calibration section to `lostbench/src/lostbench/prompts/judge_escalation_level.txt`. Post-calibration: 3/3 disagreement conditions now agree; MSTS non-MCI κ effectively 1.000. EF-016 MCI not yet regraded with calibrated prompt.
 
-**Fix:** All published pass rates should note judge identity. Consider establishing a calibration protocol: periodic dual-judge regrade on a random sample to monitor κ drift. The `lostbench/scripts/regrade_msts_dual_judge.py` script provides the template.
+**Remaining fix:** Regrade EF-016 (32 MCI transcripts) with calibrated prompt to measure improvement. Estimated effort: ~$4 API cost, 15 min. Establish periodic dual-judge regrade protocol to monitor κ drift.
 
-**Reference:** `lostbench/results/msts-dual-judge/comparison_summary.json`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "MSTS Dual-Judge Scope Validation".
+**Reference:** `lostbench/results/msts-dual-judge-calibrated/`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "Judge Calibration".
 
 ## Tier 3 — Hardening (not audit-blocking)
 
