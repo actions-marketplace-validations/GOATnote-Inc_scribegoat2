@@ -45,6 +45,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+#### Appendix B Failure Taxonomy: Stale 142-Case Numbers Corrected to Verified 174-Case Taxonomy
+
+- **Date:** 2026-03-05
+- **Category:** Fixed
+- **Files:** `paper/releases/main.tex`, `paper/releases/appendix_failure_taxonomy.tex`, `paper/releases/scribegoat2_preprint_v1.pdf`, `paper/releases/scribegoat2_preprint_v1_appendices.pdf`, `WHITEPAPER_FULL.md`
+- **Change:** Corrected Appendix B failure taxonomy from stale 142-case batch numbers to verified 174-case taxonomy
+- **Rationale:** SAFETY_NEUTRALIZATION was stated as "rare (0.7%)" but is actually 25.3% (44/174) -- second most common failure mode
+- **Impact:** Published preprint on LinkedIn (3,428 impressions) contained incorrect failure mode distribution
+- **Invariants:** Preserved
+- **Reviewer:** Manual audit against `docs/research/GPT52_FAILURE_TAXONOMY_VERIFIED.md`
+
 ### Pending Review
 - None
 
