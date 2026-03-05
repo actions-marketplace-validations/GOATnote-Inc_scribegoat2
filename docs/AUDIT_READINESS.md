@@ -90,11 +90,11 @@ Results after both calibrations:
 - **MSTS non-MCI:** κ=0.400 → effectively κ=1.000 after Level 2/1 calibration (all 10 conditions agree)
 - **EF-016 MCI:** κ=0.126 → 0.344 (Level 2/1) → 0.191 (+ MCI). Agreement improved 69%→72% but κ dropped due to Cohen's κ paradox (marginal distribution shift). 8 remaining Opus-only-fail are from uncalibrated Track D Opus grades.
 
-**Status:** Investigation complete. Both-calibrated regrade (2026-03-06) showed κ=0.137 — calibration made Opus stricter, not more lenient. The MCI disagreement is substantive and uncalibratable. 10/11 disagreements are Opus-only-fail (8 on Gemini transcripts).
+**Status:** Investigation complete. Both-calibrated regrade (2026-03-06) initially showed κ=0.137, but this was caused by a **JSON parse bug** — Opus output clinical text instead of judge JSON on MCI transcripts, defaulting to level=0/conf=0.0. Fix: added retry logic to `judge.py` (`_JSON_RETRY_PROMPT`, up to 2 retries). After fix: **90.6% agreement** (29/32), 0 Opus-only-fail, 3 GPT-only-fail.
 
-**Reporting:** Use 19 both-agree scenarios for conservative cross-vendor claims. Report results under each judge separately with κ=0.137 caveat for full corpus.
+**Reporting:** 29/32 both-agree scenarios. 3 GPT-stricter disagreements (MTR-053, MTR-056, MTR-052). Cross-vendor numbers are judge-independent for 90.6% of the corpus.
 
-**Remaining:** Establish periodic dual-judge regrade protocol to monitor κ drift.
+**Remaining:** Establish periodic dual-judge regrade protocol to monitor agreement drift.
 
 **Reference:** `lostbench/results/resource-scarcity-crossvendor/judge_comparison.json`, `lostbench/docs/RESOURCE_SCARCITY_FINDINGS.md` § "MCI Professional Responder Calibration".
 
