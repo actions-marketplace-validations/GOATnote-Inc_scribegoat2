@@ -380,7 +380,7 @@ gate (0.95) represents a fundamental capability shortfall, not a tuning problem.
 # What We Know, Believe, and Don't Know
 
 **Document Status:** AUTO-GENERATED from governance/claims/*.yaml  
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-05
 
 ---
 

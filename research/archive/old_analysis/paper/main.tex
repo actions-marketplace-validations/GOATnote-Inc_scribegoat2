@@ -209,21 +209,21 @@ Mean: $44.63\% \pm 1.34\%$, 95\% CI: [43.49\%, 45.78\%]. Reliability index: 87.5
 
 \subsection{Failure Mode Analysis}
 
-Analysis of 142 zero-score content failures (196 zeros minus 54 abstained zeros) revealed five distinct categories (Table~\ref{tab:failure-summary}, Figure~\ref{fig:failure-dist}). Classification used objective criteria: response length, rubric breakdown, safety corrections count, and grader justification patterns.
+Analysis of 174 zero-score cases revealed five distinct categories (Table~\ref{tab:failure-summary}, Figure~\ref{fig:failure-dist}). Classification used objective criteria: response length, rubric breakdown, safety corrections count, and grader justification patterns.
 
 \begin{table}[h]
 \centering
-\caption{Failure Mode Distribution (n=142 content failures)}
+\caption{Failure Mode Distribution (n=174 zero-score cases)}
 \label{tab:failure-summary}
 \begin{tabular}{lrr}
 \toprule
 \textbf{Category} & \textbf{Count} & \textbf{\%} \\
 \midrule
-CONTENT\_GAP & 76 & 53.5\% \\
-MIS\_INTERPRETATION & 29 & 20.4\% \\
-STRUCTURE\_MISS & 19 & 13.4\% \\
-OVERLONG & 17 & 12.0\% \\
-SAFETY\_NEUTRAL. & 1 & 0.7\% \\
+CONTENT\_GAP & 84 & 48.3\% \\
+SAFETY\_NEUTRAL. & 44 & 25.3\% \\
+MIS\_INTERPRETATION & 32 & 18.4\% \\
+OVERLONG & 12 & 6.9\% \\
+STRUCTURE\_MISS & 2 & 1.1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -238,9 +238,9 @@ SAFETY\_NEUTRAL. & 1 & 0.7\% \\
     height=3.8cm,
     xlabel={\small Percentage},
     xlabel style={font=\small},
-    symbolic y coords={SAFETY, OVER, STRUCT, MIS, CONTENT},
+    symbolic y coords={STRUCT, OVER, MIS, SAFETY, CONTENT},
     ytick=data,
-    yticklabels={\scriptsize Safety (0.7\%), \scriptsize Overlong (12.0\%), \scriptsize Structure (13.4\%), \scriptsize Mis-Interp (20.4\%), \scriptsize Content Gap (53.5\%)},
+    yticklabels={\scriptsize Structure (1.1\%), \scriptsize Overlong (6.9\%), \scriptsize Mis-Interp (18.4\%), \scriptsize Safety (25.3\%), \scriptsize Content Gap (48.3\%)},
     yticklabel style={font=\scriptsize},
     xticklabel style={font=\scriptsize},
     xmin=0,
@@ -251,10 +251,10 @@ SAFETY\_NEUTRAL. & 1 & 0.7\% \\
     every node near coord/.append style={font=\tiny, xshift=2pt},
     enlarge y limits=0.18,
 ]
-\addplot[fill=blue!60] coordinates {(53.5,CONTENT) (20.4,MIS) (13.4,STRUCT) (12.0,OVER) (0.7,SAFETY)};
+\addplot[fill=blue!60] coordinates {(48.3,CONTENT) (25.3,SAFETY) (18.4,MIS) (6.9,OVER) (1.1,STRUCT)};
 \end{axis}
 \end{tikzpicture}
-\caption{Failure mode distribution (n=142 content failures). Classification based on response length, rubric breakdown, and grader justification.}
+\caption{Failure mode distribution (n=174 zero-score cases). Classification based on response length, rubric breakdown, safety corrections count, and grader justification.}
 \label{fig:failure-dist}
 \end{figure}
 
