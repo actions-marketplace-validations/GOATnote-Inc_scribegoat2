@@ -21,9 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Check if MCP is available
 try:
-    from mcp.client.stdio import stdio_client
-
     from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
 
     MCP_AVAILABLE = True
 except ImportError:
