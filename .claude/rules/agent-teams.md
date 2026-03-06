@@ -110,7 +110,7 @@ Rule of thumb: use Sonnet for teammates doing grunt work, Opus for whoever makes
 
 ## Team Workflow Commands
 
-Five ready-made team workflows in `.claude/commands/`:
+Six ready-made team workflows in `.claude/commands/`:
 
 | Command | Team | Use Case |
 |---------|------|----------|
@@ -119,10 +119,11 @@ Five ready-made team workflows in `.claude/commands/`:
 | `/safety-review [target]` | Clinical + eval integrity + security + adversarial reviewers | Before merging safety-critical changes |
 | `/feature-team [feature]` | Module-specific implementers + test writer | Multi-file feature development |
 | `/mine-seeds [--strategy] [--budget]` | 5 miners + scorer + synthesizer (3-phase) | Discover candidate evaluation seeds from existing data |
+| `/adjudicate [session] [--case ID] [--risk-debt]` | Adjudication lead + 5 assessors + red team (7 agents) | Physician-assisted case adjudication with RLHF export |
 
 ## Agent Definitions
 
-29 agents in `.claude/agents/`:
+36 agents in `.claude/agents/`:
 
 **TSR Verification:**
 - `tsr-safety-orchestrator` — Team lead for verification workflows
@@ -150,6 +151,15 @@ Five ready-made team workflows in `.claude/commands/`:
 - `asymmetry-detective` — Mines GPT-5.2 vs Opus 4.6 divergences for diagnostic seeds
 - `seed-scorer` — Scores and ranks candidates from all miners (6 dimensions)
 - `seed-synthesizer` — Produces complete SEED-NNN JSON + rationale from ranked shortlist
+
+**Physician Adjudication (Surge AI dimensions + RLHF preference data):**
+- `adjudication-lead` — Orchestrator: loads cases, dispatches assessors, synthesizes, records verdicts
+- `clinical-reasoning-assessor` — Surge dimension 1: diagnostic completeness, differential quality, time-critical reasoning
+- `ethical-judgment-assessor` — Surge dimension 2: risk/benefit tradeoffs, autonomy respect, uncertainty transparency
+- `communication-clarity-assessor` — Surge dimension 3: interdisciplinary clarity, lay accessibility, action clarity
+- `legal-counsel-assessor` — Medicolegal accuracy, opinion attribution, liability exposure review
+- `citations-assessor` — Validates claims against PubMed/CDC/ACEP/WHO/OpenEM. Flags hallucinated citations
+- `red-team-adjudication` — Cognitive bias detection via Munger/Einstein inversion. Always fires on every case
 
 **CEIS (Clinical Escalation Integrity Suite):**
 - `escalation-classifier` — Classifies escalation language strength (Level 0-3) per turn
