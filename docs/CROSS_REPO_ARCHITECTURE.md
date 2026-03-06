@@ -58,13 +58,13 @@ Key modules:
 
 **Role:** Clinical knowledge corpus + FHIR export + cross-repo knowledge aggregation.
 
-363 emergency medicine conditions across 21 clinical categories as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by ScribeGoat2, LostBench, and SafeShift for RAG grounding. As of v0.3.0, also generates synthetic FHIR R4 Bundles from condition presentation profiles and scans downstream repos for condition-level clinical insights.
+370 emergency medicine conditions across 21 clinical categories as structured Markdown + YAML frontmatter. Pre-built LanceDB hybrid search index (PubMedBERT embeddings + Tantivy FTS). Consumed via adapter pattern by ScribeGoat2, LostBench, and SafeShift for RAG grounding. As of v0.3.0, also generates synthetic FHIR R4 Bundles from condition presentation profiles and scans downstream repos for condition-level clinical insights.
 
 Key files:
 
 | File | Purpose |
 |------|---------|
-| `corpus/tier1/conditions/*.md` | 363 conditions across 21 categories |
+| `corpus/tier1/conditions/*.md` | 370 conditions across 21 categories |
 | `data/index/openem.lance/` | Pre-built vector index (1945 chunks, PubMedBERT 768d) |
 | `python/openem/` | Shared Python package (index + bridge + fhir + insights) |
 | `python/openem/fhir.py` | FHIR R4 Bundle generator from presentation profiles |
@@ -108,7 +108,7 @@ As of v3, RadSlice includes a closed-loop evaluation architecture: saturation de
 
 **v2 roadmap (draft, 2026-03-03):** RadSlice is evolving from single-image interpretation (Level 0, rc0.5/rc1.0) to agentic DICOM-based workflows (Levels 1–4). The v2 architecture (`docs/RADSLICE_V2_ARCHITECTURE.md`) introduces a DICOM tool interface (7 MCP-compatible tools: navigate_study, get_slice, set_window, measure, compare_series, etc.), difficulty levels from single-image baseline through full-study structured reporting, deterministic tool-use auditing from MCP call logs, and IDC-based DICOM sourcing. rc1.0 (4-modality Level 0 expansion) is current; v2-alpha targets Level 1 with real DICOM volumes.
 
-**Corpus scope:** 133 of 363 OpenEM conditions are imaging-relevant. 65 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
+**Corpus scope:** 133 of 370 OpenEM conditions are imaging-relevant. 65 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
 
 Key modules:
 
@@ -164,7 +164,7 @@ Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatom
 ```
                          ┌────────────────┐
                          │  openem-corpus  │
-                         │  (363 conditions│
+                         │  (370 conditions│
                          │   + LanceDB    │
                          │   + FHIR export│
                          │   + insights)  │
@@ -179,7 +179,7 @@ Grading dimensions: Diagnostic accuracy (0.35), Finding detection (0.25), Anatom
          └─────────────┘ └────────────┘ └────────────┘ └────────────┘
              derived from ──┘              optional         condition_id
              (conceptual)                  [openem]         links to
-                                                            133/363
+                                                            133/370
                                                             conditions
                   ▲              ▲              ▲              ▲
                   └──────────────┴──────────────┴──────────────┘
@@ -488,7 +488,7 @@ ScribeGoat2 defines **what** to evaluate and **how** to prioritize findings. Los
 
 7. **RadSlice recursive self-improvement and v2 roadmap.** RadSlice has closed-loop corpus evolution (saturation → suite membership → task generation → re-evaluation) and is pursuing a 4-level difficulty progression from single-image interpretation (Level 0) to agentic DICOM workflows with tool use and structured reporting (Levels 1–4). See `docs/RADSLICE_V2_ARCHITECTURE.md` for the full specification. This is the first GOATnote repo with agent-driven governance (5 agents, BLOCK/ESCALATE/CLEAR decision traces) and the first to specify MCP-compatible tool interfaces for multimodal evaluation.
 
-8. **FHIR export is additive.** Presentation profiles are authored independently of condition Markdown files. Vitals/labs live in `fhir/presentations/`, not in structured YAML frontmatter. This avoids migrating 363 condition files. The 8-condition POC covers the MSTS core scenarios; extending to all 363 conditions is deferred.
+8. **FHIR export is additive.** Presentation profiles are authored independently of condition Markdown files. Vitals/labs live in `fhir/presentations/`, not in structured YAML frontmatter. This avoids migrating 370 condition files. The 8-condition POC covers the MSTS core scenarios; extending to all 370 conditions is deferred.
 
 9. **Knowledge flow is read-only.** `scan_repos.py` produces enrichment proposals for human review. It never auto-writes to condition files. The `evaluation_properties` schema extension is optional — existing conditions validate without it. Repos can also export a standardized `condition_insights.yaml` as structured input (preferred over markdown parsing).
 
