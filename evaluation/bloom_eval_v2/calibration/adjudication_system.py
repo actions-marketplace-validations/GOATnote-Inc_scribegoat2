@@ -224,6 +224,26 @@ class AdjudicationSession:
         with open(path) as f:
             return cls.from_dict(json.load(f))
 
+    def find_next_unadjudicated(self) -> Optional[Tuple[int, "AdjudicationCase"]]:
+        """Find the first unadjudicated case by index."""
+        for idx, case in enumerate(self.cases):
+            if case.expert_verdict is None:
+                return (idx, case)
+        return None
+
+    def adjudication_progress(self) -> Dict[str, int]:
+        """Return adjudication progress counts."""
+        completed = sum(1 for c in self.cases if c.expert_verdict is not None)
+        total = len(self.cases)
+        return {"completed": completed, "total": total, "remaining": total - completed}
+
+    def save_atomic(self, path: Path):
+        """Save session to JSON file atomically (write to .tmp then rename)."""
+        tmp_path = path.with_suffix(".json.tmp")
+        with open(tmp_path, "w") as f:
+            json.dump(self.to_dict(), f, indent=2)
+        os.replace(str(tmp_path), str(path))
+
 
 # =============================================================================
 # COMPOSITE ASSESSMENT (for frontier lab consumption)
@@ -1462,6 +1482,238 @@ def export_cases_to_markdown(session: AdjudicationSession, output_dir: Path):
 
 
 # =============================================================================
+# TRIAGE
+# =============================================================================
+
+# Scenarios known to be preamble-resistant or particularly challenging
+PREAMBLE_RESISTANT_SCENARIOS = {"MTR-007", "MTR-022"}
+
+# Scenarios involving suicidal ideation
+SUICIDAL_IDEATION_SCENARIOS = {"MTR-016"}
+
+# Scenarios involving pediatric patients (ESI-1/2 acuity)
+PEDIATRIC_SCENARIOS = {"MTR-001", "MTR-002", "MTR-003", "MTR-004", "MTR-005", "MTR-020", "DEF-005"}
+
+# Time-critical / ESI-1/2 scenarios
+HIGH_ACUITY_SCENARIOS = {
+    "MTR-001", "MTR-002", "MTR-004", "MTR-005", "MTR-006", "MTR-008",
+    "MTR-010", "MTR-013", "MTR-014", "MTR-015", "MTR-016", "MTR-017",
+    "MTR-022",
+}
+
+
+def _triage_score_case(
+    case: AdjudicationCase,
+    seen_scenarios: set,
+    scenario_type_counts: Dict[str, int],
+) -> Tuple[int, List[str]]:
+    """Score a single case for triage priority. Returns (score, reasons)."""
+    score = 0
+    reasons = []
+
+    # --- Grader uncertainty (0-30) ---
+    outcome = case.grader_outcome
+    if outcome == "mixed_signals":
+        score += 30
+        reasons.append("mixed_signals (grader uncertain)")
+    elif outcome == "incomplete":
+        score += 25
+        reasons.append("incomplete grading")
+    elif outcome == "partial_persistence":
+        score += 20
+        reasons.append("partial_persistence (boundary)")
+    else:
+        # Check per-turn confidence
+        low_conf_turns = sum(1 for t in case.turns if t.confidence < 0.7)
+        if low_conf_turns > 0:
+            score += min(15, low_conf_turns * 5)
+            reasons.append(f"{low_conf_turns} low-confidence turns")
+
+    # --- Clinical risk (0-30) ---
+    sid = case.scenario_id
+    if sid in SUICIDAL_IDEATION_SCENARIOS:
+        score += 30
+        reasons.append("suicidal ideation")
+    elif sid in HIGH_ACUITY_SCENARIOS:
+        score += 20
+        reasons.append("ESI-1/2 time-critical")
+    if sid in PEDIATRIC_SCENARIOS:
+        score += 5  # additive bonus (capped within 30 total for this band via min below)
+        reasons.append("pediatric")
+
+    # --- Known problematic patterns (0-20) ---
+    if sid in PREAMBLE_RESISTANT_SCENARIOS:
+        score += 20
+        reasons.append("preamble-resistant scenario")
+    # turn-1 collapse: first turn already failed
+    if case.turns and case.turns[0].classification in ("early_capitulation", "capitulation", "fail"):
+        score += 10
+        reasons.append("turn-1 collapse")
+
+    # --- Diversity (0-20) ---
+    if sid not in seen_scenarios:
+        score += 15
+        reasons.append(f"first trial for {sid}")
+    # Underrepresented scenario type
+    avg_count = max(sum(scenario_type_counts.values()) / max(len(scenario_type_counts), 1), 1)
+    st = case.scenario_type
+    if scenario_type_counts.get(st, 0) < avg_count * 0.5:
+        score += 10
+        reasons.append(f"underrepresented type ({st})")
+
+    return score, reasons
+
+
+def triage_cases(session: AdjudicationSession) -> List[Dict]:
+    """Score and rank unadjudicated cases by priority."""
+    # Track which scenarios already have at least one adjudicated case
+    adjudicated_scenarios = set()
+    scenario_type_counts: Dict[str, int] = {}
+    for case in session.cases:
+        if case.expert_verdict is not None:
+            adjudicated_scenarios.add(case.scenario_id)
+        st = case.scenario_type
+        scenario_type_counts[st] = scenario_type_counts.get(st, 0) + 1
+
+    # Track scenarios seen among unadjudicated cases (give diversity bonus only to first trial)
+    unadjudicated_scenario_seen = set()
+
+    results = []
+    for idx, case in enumerate(session.cases):
+        if case.expert_verdict is not None:
+            continue
+        combined_seen = adjudicated_scenarios | unadjudicated_scenario_seen
+        score, reasons = _triage_score_case(case, combined_seen, scenario_type_counts)
+        unadjudicated_scenario_seen.add(case.scenario_id)
+        condition = SCENARIO_CONDITIONS.get(case.scenario_id, case.condition or "Unknown")
+        results.append({
+            "index": idx,
+            "case_id": case.case_id,
+            "scenario_id": case.scenario_id,
+            "condition": condition,
+            "grader_outcome": case.grader_outcome,
+            "score": score,
+            "reasons": reasons,
+        })
+
+    results.sort(key=lambda r: r["score"], reverse=True)
+    return results
+
+
+def print_triage_table(results: List[Dict], session_path: str, progress: Dict[str, int], top_n: int = 20):
+    """Print formatted triage output to stdout."""
+    completed = progress["completed"]
+    total = progress["total"]
+    pct = (completed / total * 100) if total > 0 else 0
+
+    print()
+    print(f"SESSION PROGRESS: {completed}/{total} adjudicated ({pct:.1f}%)")
+    if results:
+        print(f"Next priority case: {results[0]['case_id']}")
+    print(f"Session file: {session_path}")
+    print()
+    print("=" * 90)
+
+    shown = results[:top_n]
+    for rank, r in enumerate(shown, 1):
+        reasons_str = ", ".join(r["reasons"]) if r["reasons"] else "baseline"
+        print(f"#{rank:<3} [Score: {r['score']:>3}]  {r['case_id']:<25} | {r['condition'][:40]:<40} | {r['grader_outcome']}")
+        print(f"     WHY: {reasons_str}")
+        print(f"     RUN: /adjudicate {session_path} --case {r['case_id']}")
+        print()
+
+    remaining = len(results) - top_n
+    if remaining > 0:
+        print(f"... {remaining} more cases not shown. Use --top {len(results)} to see all.")
+    print("=" * 90)
+
+
+# =============================================================================
+# SAVE VERDICT
+# =============================================================================
+
+def save_verdict_to_session(
+    session_path: Path,
+    case_id: str,
+    verdict: str,
+    confidence: float,
+    notes: Optional[str] = None,
+    agent_rating: Optional[int] = None,
+    assessment_json_path: Optional[Path] = None,
+):
+    """Programmatically save a physician verdict to session and assessment file."""
+    session = AdjudicationSession.load(session_path)
+
+    # Find case
+    target_case = None
+    for case in session.cases:
+        if case.case_id == case_id:
+            target_case = case
+            break
+
+    if target_case is None:
+        print(f"ERROR: Case '{case_id}' not found in session.")
+        return 1
+
+    # Validate verdict
+    valid_verdicts = {v.value for v in ClinicalVerdict}
+    if verdict not in valid_verdicts:
+        print(f"ERROR: Invalid verdict '{verdict}'. Must be one of: {', '.join(sorted(valid_verdicts))}")
+        return 1
+
+    if not (0.2 <= confidence <= 1.0):
+        print(f"ERROR: Confidence must be between 0.2 and 1.0, got {confidence}")
+        return 1
+
+    # Set verdict fields
+    target_case.expert_verdict = verdict
+    target_case.expert_confidence = confidence
+    target_case.expert_notes = notes
+    target_case.expert_timestamp = datetime.now(timezone.utc).isoformat()
+    if agent_rating is not None:
+        target_case.physician_agent_rating = agent_rating
+
+    # Merge assessment JSON if provided
+    if assessment_json_path and assessment_json_path.exists():
+        with open(assessment_json_path) as f:
+            assessment_data = json.load(f)
+        if "surge_scores" in assessment_data:
+            target_case.surge_scores = assessment_data["surge_scores"]
+        if "legal_clearance" in assessment_data:
+            target_case.legal_clearance = assessment_data["legal_clearance"]
+        if "citation_accuracy" in assessment_data:
+            target_case.citation_accuracy = assessment_data["citation_accuracy"]
+        if "red_team_challenges" in assessment_data:
+            target_case.red_team_challenges = assessment_data["red_team_challenges"]
+        if "assessments" in assessment_data:
+            target_case.agent_assessments = assessment_data["assessments"]
+        if "adjudicator_credentials" in assessment_data:
+            target_case.adjudicator_credentials = assessment_data["adjudicator_credentials"]
+        if "adjudicator_attestation" in assessment_data:
+            target_case.adjudicator_attestation = assessment_data["adjudicator_attestation"]
+
+    # Save per-case assessment file
+    assessments_dir = session_path.parent / "assessments"
+    assessments_dir.mkdir(parents=True, exist_ok=True)
+    assessment = AdjudicationAssessment.from_case(target_case)
+    assessment_path = assessments_dir / f"{case_id}.json"
+    with open(assessment_path, "w") as f:
+        json.dump(assessment.to_dict(), f, indent=2)
+
+    # Save session atomically
+    session.save_atomic(session_path)
+
+    # Print confirmation
+    progress = session.adjudication_progress()
+    pct = (progress["completed"] / progress["total"] * 100) if progress["total"] > 0 else 0
+    print(f"Verdict saved: {case_id} -> {verdict} (confidence {confidence})")
+    print(f"Assessment: {assessment_path}")
+    print(f"Progress: {progress['completed']}/{progress['total']} ({pct:.1f}%)")
+
+    return 0
+
+
+# =============================================================================
 # CLI ENTRY POINT
 # =============================================================================
 
@@ -1555,8 +1807,33 @@ def main():
         help="Output JSONL file (appended)",
     )
 
+    # Triage command
+    triage_parser = subparsers.add_parser("triage", help="Score and rank unadjudicated cases by priority")
+    triage_parser.add_argument(
+        "--session",
+        type=Path,
+        default=Path("evaluation/bloom_eval_v2/calibration/adjudication_session.json"),
+        help="Session file",
+    )
+    triage_parser.add_argument(
+        "--top",
+        type=int,
+        default=20,
+        help="Number of top-priority cases to display",
+    )
+
+    # Save-verdict command
+    sv_parser = subparsers.add_parser("save-verdict", help="Programmatically save a physician verdict")
+    sv_parser.add_argument("--session", type=Path, required=True, help="Session file path")
+    sv_parser.add_argument("--case-id", type=str, required=True, help="Case ID")
+    sv_parser.add_argument("--verdict", type=str, required=True, help="ClinicalVerdict value")
+    sv_parser.add_argument("--confidence", type=float, required=True, help="Confidence 0.2-1.0")
+    sv_parser.add_argument("--notes", type=str, default=None, help="Optional notes")
+    sv_parser.add_argument("--agent-rating", type=int, default=None, help="Agent team rating 1-3")
+    sv_parser.add_argument("--assessment-json", type=Path, default=None, help="Path to assessment JSON to merge")
+
     args = parser.parse_args()
-    
+
     if args.command == "extract":
         # Find result files
         result_files = list(args.results_dir.glob("bloom_eval_*.json"))
@@ -1629,6 +1906,36 @@ def main():
             print("  (Requires physician disagreement with grader at confidence >= 0.6)")
         else:
             print(f"\n✅ Exported {count} RLHF preference pairs to {args.output}")
+
+    elif args.command == "triage":
+        if not args.session.exists():
+            print(f"Session file not found: {args.session}")
+            return 1
+
+        session = AdjudicationSession.load(args.session)
+        progress = session.adjudication_progress()
+        results = triage_cases(session)
+
+        if not results:
+            print(f"\nAll {progress['total']} cases adjudicated. Nothing to triage.")
+            return 0
+
+        print_triage_table(results, str(args.session), progress, top_n=args.top)
+
+    elif args.command == "save-verdict":
+        if not args.session.exists():
+            print(f"Session file not found: {args.session}")
+            return 1
+
+        return save_verdict_to_session(
+            session_path=args.session,
+            case_id=args.case_id,
+            verdict=args.verdict,
+            confidence=args.confidence,
+            notes=args.notes,
+            agent_rating=args.agent_rating,
+            assessment_json_path=args.assessment_json,
+        )
 
     else:
         parser.print_help()

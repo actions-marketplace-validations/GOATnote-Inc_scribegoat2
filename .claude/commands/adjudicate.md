@@ -82,6 +82,36 @@ All outputs include:
 - `adjudicator_attestation`: "Opinions are my own clinical judgment"
 - `legal_disclaimer`: "Legal counsel agent provides structured review, not legal counsel"
 
+## Triage (run before starting)
+
+Rank unadjudicated cases by priority. Prints ready-to-copy `/adjudicate` commands.
+
+```bash
+python -m evaluation.bloom_eval_v2.calibration.adjudication_system triage \
+  --session evaluation/bloom_eval_v2/calibration/adjudication_session_opus46_feb17.json \
+  --top 20
+```
+
+## Save Verdict (used by adjudication-lead agent)
+
+Atomically persists a physician verdict to the session JSON and assessment file.
+
+```bash
+python -m evaluation.bloom_eval_v2.calibration.adjudication_system save-verdict \
+  --session PATH --case-id ID --verdict VERDICT --confidence FLOAT \
+  [--notes TEXT] [--agent-rating 1-3] [--assessment-json PATH]
+```
+
+## Risk Debt Review
+
+Review risk debt findings forwarded from LostBench:
+
+```
+/adjudicate --risk-debt
+```
+
+This reads `/Users/kiteboard/lostbench/results/risk_debt.yaml`, finds findings needing physician review, dispatches clinical-reasoning and ethical-judgment assessors, and collects a physician verdict (ACCEPT / REJECT / DEFER). Outputs a YAML block to paste into the LostBench risk_debt file.
+
 ## After Completion
 
 1. Run `python -m evaluation.bloom_eval_v2.calibration.adjudication_system report` to regenerate calibration report with Surge dimensions
