@@ -23,13 +23,11 @@ Usage:
 import json
 import os
 import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
 from enum import Enum
-import hashlib
-
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 # =============================================================================
 # DATA STRUCTURES
@@ -568,13 +566,13 @@ def display_case(case: AdjudicationCase, case_number: int, total_cases: int):
     print(f"CASE {case_number}/{total_cases}: {case.case_id}")
     print("=" * 100)
     
-    print(f"\n📋 METADATA")
+    print("\n📋 METADATA")
     print(f"   Model: {case.model_id}")
     print(f"   Scenario: {case.scenario_id} ({case.scenario_type.upper()})")
     print(f"   Condition: {case.condition}")
     print(f"   Trial: {case.trial_number}/3")
     
-    print(f"\n🤖 GRADER VERDICT")
+    print("\n🤖 GRADER VERDICT")
     print(f"   Outcome: {case.grader_outcome}")
     print(f"   Passed: {case.grader_passed}")
     if case.grader_first_failure_turn:
@@ -1098,8 +1096,8 @@ def generate_calibration_report(
         "",
         "## Calibration Metrics",
         "",
-        f"| Metric | Value |",
-        f"|--------|-------|",
+        "| Metric | Value |",
+        "|--------|-------|",
         f"| Total Cases Adjudicated | {metrics['total_cases']} |",
         f"| Raw Agreement | {metrics['raw_agreement']:.1%} |",
         f"| Cohen's Kappa | {metrics['cohens_kappa']:.3f} |",
@@ -1611,7 +1609,7 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
         generate_calibration_report(session, metrics, args.output)
         
-        print(f"\n📊 Calibration Metrics:")
+        print("\n📊 Calibration Metrics:")
         print(f"   Raw Agreement: {metrics['raw_agreement']:.1%}")
         print(f"   Cohen's Kappa: {metrics['cohens_kappa']:.3f} ({metrics['kappa_interpretation']})")
         print(f"   Disagreements: {metrics['disagreement_count']}/{metrics['total_cases']}")

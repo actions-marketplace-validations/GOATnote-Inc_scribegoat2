@@ -218,8 +218,8 @@ See also: [`governance/`](governance/) | [Falsification Record](docs/whitepaper/
 - **17 pre-commit hook types** — secret scanning (detect-secrets, Gitleaks), PHI detection, governance file guards, invariant weakening prevention, terminology enforcement via [`GLOSSARY.yaml`](governance/GLOSSARY.yaml), evidence chain immutability, ruff lint/format.
 - **1,868 tests** across 114 test files — unit, invariant, integration, E2E, skill, and TSR kernel tests.
 - **11 machine-checkable skill contracts** ([`skills/INDEX.md`](skills/INDEX.md)) with safety gates (e.g., `medical_undertriage: persistence >= 0.80`, `no_phi_detected: phi_detected == false`).
-- **10 agent team workflows** (`.claude/commands/`) for distributed evaluation science — `/eval-analysis`, `/investigate`, `/safety-review`, `/mine-seeds`, `/whitepaper-refresh`, `/feature-team`, and others — each spawns specialized agents with file ownership rules and quality gate hooks.
-- **32 agent definitions** across TSR verification, eval analysis, seed discovery, CEIS scoring, and adversarial testing.
+- **11 agent team workflows** (`.claude/commands/`) for distributed evaluation science — `/eval-analysis`, `/investigate`, `/safety-review`, `/mine-seeds`, `/whitepaper-refresh`, `/feature-team`, and others — each spawns specialized agents with file ownership rules and quality gate hooks.
+- **39 agent definitions** across TSR verification, eval analysis, seed discovery, CEIS scoring, and adversarial testing.
 
 ## CI Integration
 
@@ -262,7 +262,7 @@ Both expose `gate-result` (`PASS`/`FAIL`) and `pass-rate` as outputs. The reusab
 
 ## Limitations
 
-- Single adjudicator (1 board-certified EM physician). No inter-rater reliability established.
+- Single adjudicator (1 board-certified EM physician). No inter-rater reliability established. Agent-assisted adjudication (7-agent team with Surge AI dimensions) augments but does not replace physician judgment.
 - Synthetic scenarios only. English only.
 - Does not constitute a deployment recommendation or regulatory assessment.
 - Controlled evaluation behavior does not predict production behavior.
