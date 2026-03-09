@@ -25,6 +25,7 @@
 5. **Artifact immutability** — pre-commit excludes + gitignore protect all `results/` directories. Evaluation artifacts never touched by formatting or linting.
 6. **Cross-file clinical consistency** — OpenEM enforces same drug at same dose across all condition files. Automated dose range checking against known safe maxima.
 7. **Doc count CI guard** — `check_doc_counts.py` catches README/corpus drift automatically (added 2026-03-04).
+8. **RadSlice physician adjudication** — 4-tier physician adjudication framework (Tier 1 rubric decision, Tier 2 clinical nuance, Tier 3 re-source, Tier 4 exclusion). 4 Tier 1 reviews completed as of rc1.1 (2026-03-07). RD-001 rubric decision documented. See `radslice/docs/CLINICAL_SAFETY_FINDINGS_RC11.md`.
 
 ## Tier 1 — Gaps an auditor will flag
 

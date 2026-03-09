@@ -106,7 +106,11 @@ Evaluates frontier vision-language models on radiological image interpretation a
 
 As of v3, RadSlice includes a closed-loop evaluation architecture: saturation detection identifies tasks that no longer discriminate between models, suite membership tracking promotes/retires tasks, cross-repo correlation links findings with LostBench, and calibration drift monitoring ensures grading consistency. Five agents and three command workflows orchestrate this lifecycle.
 
-**v2 roadmap (draft, 2026-03-03):** RadSlice is evolving from single-image interpretation (Level 0, rc0.5/rc1.0) to agentic DICOM-based workflows (Levels 1–4). The v2 architecture (`docs/RADSLICE_V2_ARCHITECTURE.md`) introduces a DICOM tool interface (7 MCP-compatible tools: navigate_study, get_slice, set_window, measure, compare_series, etc.), difficulty levels from single-image baseline through full-study structured reporting, deterministic tool-use auditing from MCP call logs, and IDC-based DICOM sourcing. rc1.0 (4-modality Level 0 expansion) is current; v2-alpha targets Level 1 with real DICOM volumes.
+**v2 roadmap (draft, 2026-03-03):** RadSlice is evolving from single-image interpretation (Level 0, rc0.5/rc1.0/rc1.1) to agentic DICOM-based workflows (Levels 1–4). The v2 architecture (`docs/RADSLICE_V2_ARCHITECTURE.md`) introduces a DICOM tool interface (7 MCP-compatible tools: navigate_study, get_slice, set_window, measure, compare_series, etc.), difficulty levels from single-image baseline through full-study structured reporting, deterministic tool-use auditing from MCP call logs, and IDC-based DICOM sourcing. rc1.1 (full-judge Level 0) is current; v2-alpha targets Level 1 with real DICOM volumes.
+
+**rc1.1 findings (2026-03-07):** 44 tasks × 2 models × 3 trials with full judge coverage (no Layer 0 short-circuit). Pass rates: GPT-5.2 **25.0%**, Opus 4.6 **17.4%** — substantially lower than rc1.0 (56.2%/31.4%) due to elimination of Layer 0 pattern inflation (L0 vs L2 kappa = 0.281). 11 cross-modal blind spots identified via cross-repo correlation with LostBench (conditions failing both image interpretation and text-based clinical reasoning, e.g., fat embolism, hemorrhagic stroke). 4.5× Class A failure asymmetry (GPT vs Opus). Physician adjudication framework established with 4 Tier 1 reviews completed. Full analysis: `radslice/docs/CLINICAL_SAFETY_FINDINGS_RC11.md`.
+
+**Key lesson:** Layer 0 pattern-only grading is unreliable for pass decisions — 75% of L0 passes were judge-false-positives. All future evaluations mandate full Layer 2 judge coverage.
 
 **Corpus scope:** 133 of 370 OpenEM conditions are imaging-relevant. 65 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
 
@@ -257,7 +261,7 @@ Suite lifecycle: capability (active) → regression (discriminates models) → r
 
 ### "What is RadSlice v2?"
 
-`docs/RADSLICE_V2_ARCHITECTURE.md` (draft, 774 lines). Single-image interpretation is the floor measurement (Level 0). v2 adds the radiologist workflow: series navigation, window/level adjustment, lesion measurement, cross-series correlation, structured reporting. Five difficulty levels (0–4), each with specific tool requirements and grading rubrics. Deterministic tool-use audit from MCP call logs reduces the grading noise that afflicts Level 0 (where 100% of grading currently depends on the LLM judge). Sourced from NCI Imaging Data Commons (CC-BY). Not yet implemented — rc1.0 (Level 0 expansion) is current.
+`docs/RADSLICE_V2_ARCHITECTURE.md` (draft, 774 lines). Single-image interpretation is the floor measurement (Level 0). v2 adds the radiologist workflow: series navigation, window/level adjustment, lesion measurement, cross-series correlation, structured reporting. Five difficulty levels (0–4), each with specific tool requirements and grading rubrics. Deterministic tool-use audit from MCP call logs reduces the grading noise that afflicts Level 0 (where 100% of grading currently depends on the LLM judge). Sourced from NCI Imaging Data Commons (CC-BY). Not yet implemented — rc1.1 (Level 0, full-judge) is current.
 
 ### "Which patterns are canonical?"
 
