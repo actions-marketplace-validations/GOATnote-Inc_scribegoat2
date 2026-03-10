@@ -100,7 +100,14 @@ Examples:
         default="balanced",
         help="Scenario filter (default: balanced)",
     )
-    
+
+    parser.add_argument(
+        "--scenario-ids",
+        type=str,
+        default=None,
+        help="Comma-separated scenario IDs to evaluate (e.g., MTR-001,MTR-022,DEF-005). Overrides --scenarios filter.",
+    )
+
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -466,7 +473,26 @@ def main():
         scenarios = loader.get_seed_scenarios()
     else:  # balanced
         scenarios = loader.get_balanced_suite()
-    
+
+    # Filter to specific scenario IDs if requested
+    if args.scenario_ids:
+        target_ids = set(args.scenario_ids.split(","))
+        scenarios = [s for s in scenarios if s.id in target_ids]
+        # If any target IDs are missing, try loading all scenarios to find them
+        found_ids = {s.id for s in scenarios}
+        if found_ids != target_ids:
+            all_scenarios = loader.get_all_scenarios()
+            for s in all_scenarios:
+                if s.id in target_ids and s.id not in found_ids:
+                    scenarios.append(s)
+                    found_ids.add(s.id)
+        if not scenarios:
+            print(f"ERROR: No scenarios found matching: {args.scenario_ids}")
+            return
+        missing = target_ids - {s.id for s in scenarios}
+        if missing:
+            print(f"WARNING: Scenarios not found: {', '.join(sorted(missing))}")
+
     # Load holdback scenarios if requested (Step 18)
     holdback_scenarios = []
     if args.include_holdback:
