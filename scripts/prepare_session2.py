@@ -111,20 +111,10 @@ SOURCE_SESSION_PATH = (
 )
 
 OUTPUT_SESSION_PATH = (
-    PROJECT_ROOT
-    / "evaluation"
-    / "bloom_eval_v2"
-    / "calibration"
-    / "adjudication_session_2.json"
+    PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration" / "adjudication_session_2.json"
 )
 
-ASSESSMENTS_DIR = (
-    PROJECT_ROOT
-    / "evaluation"
-    / "bloom_eval_v2"
-    / "calibration"
-    / "assessments"
-)
+ASSESSMENTS_DIR = PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration" / "assessments"
 
 
 # =============================================================================
@@ -185,7 +175,9 @@ def _get_phase_label(phase: str) -> str:
 # =============================================================================
 
 
-def build_session2(source_session: AdjudicationSession, dry_run: bool = False) -> AdjudicationSession:
+def build_session2(
+    source_session: AdjudicationSession, dry_run: bool = False
+) -> AdjudicationSession:
     """Build Session 2 from source session cases.
 
     Returns the new session (not yet saved).
@@ -276,7 +268,10 @@ def add_gpt_results(session2_path: Path, gpt_results_path: Path) -> int:
     # Replace placeholders with real cases
     replaced = 0
     for i, existing_case in enumerate(session2.cases):
-        if existing_case.grader_outcome == "PLACEHOLDER" and existing_case.case_id in PHASE_3_GPT_CASE_IDS:
+        if (
+            existing_case.grader_outcome == "PLACEHOLDER"
+            and existing_case.case_id in PHASE_3_GPT_CASE_IDS
+        ):
             # Find matching scenario
             scenario_id = existing_case.scenario_id
             if scenario_id in scenario_cases:
@@ -399,13 +394,13 @@ def print_checklist(
     total_opus = len(ALL_OPUS_CASE_IDS)
     total_gpt = len(PHASE_3_GPT_CASE_IDS)
     total = len(session2.cases)
-    placeholders = sum(
-        1 for c in session2.cases if c.grader_outcome == "PLACEHOLDER"
-    )
+    placeholders = sum(1 for c in session2.cases if c.grader_outcome == "PLACEHOLDER")
     populated = total - placeholders
 
     print(f"  Total cases in session: {total}")
-    print(f"    Opus cases (Phase 1+2): {total_opus} unique ({len(PHASE_1_EXEMPLAR_CASE_IDS)} exemplar, {len(PHASE_2_CASE_IDS)} core, {len(set(PHASE_1_EXEMPLAR_CASE_IDS) & set(PHASE_2_CASE_IDS))} overlap)")
+    print(
+        f"    Opus cases (Phase 1+2): {total_opus} unique ({len(PHASE_1_EXEMPLAR_CASE_IDS)} exemplar, {len(PHASE_2_CASE_IDS)} core, {len(set(PHASE_1_EXEMPLAR_CASE_IDS) & set(PHASE_2_CASE_IDS))} overlap)"
+    )
     print(f"    GPT-5.2 cases (Phase 3): {total_gpt}")
     print(f"  Populated: {populated}")
     print(f"  Placeholders: {placeholders}")
@@ -498,7 +493,9 @@ def main():
         return 0
 
     if missing_ids:
-        print(f"ERROR: Cannot create session — {len(missing_ids)} required case(s) missing from source")
+        print(
+            f"ERROR: Cannot create session — {len(missing_ids)} required case(s) missing from source"
+        )
         return 1
 
     # Save atomically

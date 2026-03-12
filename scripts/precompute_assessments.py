@@ -35,9 +35,7 @@ from evaluation.bloom_eval_v2.calibration.adjudication_system import (
 # CONSTANTS
 # =============================================================================
 
-CALIBRATION_DIR = (
-    PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration"
-)
+CALIBRATION_DIR = PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration"
 SESSION_PATH = CALIBRATION_DIR / "adjudication_session_2.json"
 ASSESSMENTS_DIR = CALIBRATION_DIR / "assessments"
 
@@ -91,8 +89,9 @@ def _format_transcript(case: AdjudicationCase) -> str:
     return "\n".join(lines)
 
 
-def _build_assessor_prompt(dimension: str, case: AdjudicationCase,
-                           prior_assessments: dict = None) -> str:
+def _build_assessor_prompt(
+    dimension: str, case: AdjudicationCase, prior_assessments: dict = None
+) -> str:
     """Build the assessor prompt for a given dimension."""
     transcript = _format_transcript(case)
 
@@ -259,7 +258,7 @@ def extract_json(text: str) -> dict:
     if "```" in text:
         start = text.index("```") + 3
         # Skip optional language tag
-        if text[start:start + 1] == "\n":
+        if text[start : start + 1] == "\n":
             start += 1
         end = text.index("```", start)
         try:
@@ -272,7 +271,7 @@ def extract_json(text: str) -> dict:
     brace_end = text.rfind("}")
     if brace_start >= 0 and brace_end > brace_start:
         try:
-            return json.loads(text[brace_start:brace_end + 1])
+            return json.loads(text[brace_start : brace_end + 1])
         except json.JSONDecodeError:
             pass
 
@@ -315,7 +314,9 @@ def assess_case(case: AdjudicationCase, dry_run: bool = False) -> dict:
         raw = call_anthropic(prompt, model)
         result = extract_json(raw)
         elapsed = time.time() - t0
-        print(f"    {dim}: score={result.get('score', result.get('clearance', result.get('accuracy', '?')))} ({elapsed:.1f}s)")
+        print(
+            f"    {dim}: score={result.get('score', result.get('clearance', result.get('accuracy', '?')))} ({elapsed:.1f}s)"
+        )
         return dim, result
 
     with ThreadPoolExecutor(max_workers=5) as executor:
@@ -338,7 +339,9 @@ def assess_case(case: AdjudicationCase, dry_run: bool = False) -> dict:
         rt_result = extract_json(rt_raw)
         elapsed = time.time() - t0
         challenge_count = len(rt_result.get("challenges", []))
-        print(f"    red_team: {challenge_count} challenges, risk={rt_result.get('overall_bias_risk', '?')} ({elapsed:.1f}s)")
+        print(
+            f"    red_team: {challenge_count} challenges, risk={rt_result.get('overall_bias_risk', '?')} ({elapsed:.1f}s)"
+        )
     except Exception as e:
         print(f"    ERROR in red_team: {e}")
         rt_result = {"error": str(e)}
@@ -399,23 +402,31 @@ def main():
         description="Batch pre-compute assessor assessments for Session 2 Phase 2 cases."
     )
     parser.add_argument(
-        "--session", type=Path, default=SESSION_PATH,
+        "--session",
+        type=Path,
+        default=SESSION_PATH,
         help="Path to Session 2 JSON",
     )
     parser.add_argument(
-        "--case", type=str, default=None,
+        "--case",
+        type=str,
+        default=None,
         help="Assess a single case by ID (e.g., claude_MTR-022_t1)",
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Show what would be assessed without calling APIs",
     )
     parser.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Re-assess even if assessment file already exists",
     )
     parser.add_argument(
-        "--parallel", type=int, default=2,
+        "--parallel",
+        type=int,
+        default=2,
         help="Number of cases to assess in parallel (default: 2)",
     )
     args = parser.parse_args()
@@ -511,7 +522,7 @@ def main():
     print(f"  Assessed: {len(results)}/{len(target_ids)}")
     if failed:
         print(f"  Failed: {len(failed)} — {failed}")
-    print(f"  Time: {elapsed:.0f}s ({elapsed/max(len(results),1):.0f}s per case)")
+    print(f"  Time: {elapsed:.0f}s ({elapsed / max(len(results), 1):.0f}s per case)")
     print(f"  Output: {ASSESSMENTS_DIR}")
 
     return 1 if failed else 0

@@ -74,17 +74,21 @@ jobs:
         id: results
         run: |
           if [ -n "${{ github.event.inputs.results_file }}" ]; then
-            echo "file=${{ github.event.inputs.results_file }}" >> $GITHUB_OUTPUT
+            FILE="${{ github.event.inputs.results_file }}"
           else
             # Find most recent results file
-            LATEST=$(ls -t evaluation/bloom_eval_v2/results/bloom_eval_*.json 2>/dev/null | head -1)
-            if [ -n "$LATEST" ]; then
-              echo "file=$LATEST" >> $GITHUB_OUTPUT
-            else
-              echo "No results files found"
-              exit 0
-            fi
+            FILE=$(ls -t evaluation/bloom_eval_v2/results/bloom_eval_*.json 2>/dev/null | head -1)
           fi
+          if [ -z "$FILE" ]; then
+            echo "No results files found"
+            exit 0
+          fi
+          # Skip if file is an LFS pointer (not actual JSON content)
+          if head -c 40 "$FILE" 2>/dev/null | grep -q "^version https://git-lfs"; then
+            echo "::warning::Results file is an LFS pointer — skipping TIC check (enable LFS or use workflow_dispatch with a non-LFS file)"
+            exit 0
+          fi
+          echo "file=$FILE" >> $GITHUB_OUTPUT
       
       - name: Run TIC (informational)
         if: steps.results.outputs.file != ''
@@ -104,7 +108,11 @@ jobs:
       - name: Compute metrics
         if: steps.results.outputs.file != ''
         run: |
-          python -m src.tic.cli tic metrics --input tic_results.json --k 3
+          if [ -f tic_results.json ]; then
+            python -m src.tic.cli tic metrics --input tic_results.json --k 3
+          else
+            echo "::warning::TIC results not generated — skipping metrics"
+          fi
       
       # Note: Strict mode is commented out for now to allow CI to pass
       # Uncomment when ready to enforce safety gates

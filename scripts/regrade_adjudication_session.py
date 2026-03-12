@@ -93,8 +93,12 @@ def main():
     parser = argparse.ArgumentParser(description="Re-grade adjudication session with LLM judge")
     parser.add_argument("--session", required=True, help="Path to adjudication session JSON")
     parser.add_argument("--output", required=True, help="Path for re-graded output JSON")
-    parser.add_argument("--checkpoint-interval", type=int, default=10,
-                        help="Save checkpoint every N cases (default: 10)")
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=10,
+        help="Save checkpoint every N cases (default: 10)",
+    )
     args = parser.parse_args()
 
     session_path = Path(args.session)
@@ -106,7 +110,9 @@ def main():
 
     # Check API key
     if not os.environ.get("OPENAI_API_KEY"):
-        print("ERROR: OPENAI_API_KEY must be set (GPT-5.2 is the cross-vendor judge for Opus targets)")
+        print(
+            "ERROR: OPENAI_API_KEY must be set (GPT-5.2 is the cross-vendor judge for Opus targets)"
+        )
         sys.exit(1)
 
     # Resume support: load from output if it exists, else from session
@@ -182,14 +188,16 @@ def main():
             if scenario_turn is None:
                 print(f"  WARNING: Turn {turn_num} not found in scenario {case.scenario_id}")
                 # Keep existing classification
-                turn_results.append(TurnResult(
-                    turn_number=turn_num,
-                    classification=TurnClassification(turn_transcript.classification),
-                    confidence=turn_transcript.confidence,
-                    response_text=turn_transcript.response_text,
-                    reasoning=turn_transcript.reasoning,
-                    judge_model=turn_transcript.judge_model,
-                ))
+                turn_results.append(
+                    TurnResult(
+                        turn_number=turn_num,
+                        classification=TurnClassification(turn_transcript.classification),
+                        confidence=turn_transcript.confidence,
+                        response_text=turn_transcript.response_text,
+                        reasoning=turn_transcript.reasoning,
+                        judge_model=turn_transcript.judge_model,
+                    )
+                )
                 continue
 
             old_class = turn_transcript.classification
@@ -227,14 +235,16 @@ def main():
                 print(f"  ERROR: Turn {turn_num} of {case.case_id}: {e}")
                 # Keep existing classification on error
                 new_verdicts[old_class] += 1
-                turn_results.append(TurnResult(
-                    turn_number=turn_num,
-                    classification=TurnClassification(old_class),
-                    confidence=turn_transcript.confidence,
-                    response_text=turn_transcript.response_text,
-                    reasoning=turn_transcript.reasoning,
-                    judge_model=turn_transcript.judge_model,
-                ))
+                turn_results.append(
+                    TurnResult(
+                        turn_number=turn_num,
+                        classification=TurnClassification(old_class),
+                        confidence=turn_transcript.confidence,
+                        response_text=turn_transcript.response_text,
+                        reasoning=turn_transcript.reasoning,
+                        judge_model=turn_transcript.judge_model,
+                    )
+                )
 
         # Recompute case-level outcome
         old_outcome = case.grader_outcome
@@ -257,13 +267,17 @@ def main():
     print(f"\nSaved re-graded session to: {output_path}")
 
     # Summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("RE-GRADE SUMMARY")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"Total turns re-graded: {total_turns}")
     print(f"Cases skipped (already regraded): {skipped}")
-    print(f"Classification changes: {classification_changes} ({classification_changes/max(total_turns,1)*100:.1f}%)")
-    print(f"Outcome changes: {outcome_changes} ({outcome_changes/max(len(session.cases),1)*100:.1f}%)")
+    print(
+        f"Classification changes: {classification_changes} ({classification_changes / max(total_turns, 1) * 100:.1f}%)"
+    )
+    print(
+        f"Outcome changes: {outcome_changes} ({outcome_changes / max(len(session.cases), 1) * 100:.1f}%)"
+    )
     print(f"Judge failures (pattern fallback): {judge_failures}")
 
     print("\nOLD turn classification distribution:")

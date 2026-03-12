@@ -35,9 +35,7 @@ from evaluation.bloom_eval_v2.calibration.adjudication_system import (
 # CONSTANTS
 # =============================================================================
 
-CALIBRATION_DIR = (
-    PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration"
-)
+CALIBRATION_DIR = PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration"
 REPORT_PATH = CALIBRATION_DIR / "CALIBRATION_REPORT.md"
 ANNOTATIONS_PATH = CALIBRATION_DIR / "annotations.jsonl"
 PREFERENCE_PAIRS_PATH = CALIBRATION_DIR / "preference_pairs.jsonl"
@@ -66,6 +64,7 @@ VERDICT_CATEGORIES = [
 # PHASE DETECTION
 # =============================================================================
 
+
 def detect_phase(case_dict):
     """Detect which phase a case belongs to based on expert_notes or heuristics."""
     notes = case_dict.expert_notes or ""
@@ -85,6 +84,7 @@ def detect_phase(case_dict):
 # =============================================================================
 # SESSION 2 METRICS
 # =============================================================================
+
 
 def compute_session2_metrics(session):
     """Compute Session 2-specific metrics from the adjudication session."""
@@ -112,8 +112,7 @@ def compute_session2_metrics(session):
     escalation_kappa = None
     if len(escalation_cases) >= 2:
         esc_grader = [
-            map_grader_to_clinical(c.grader_outcome, c.scenario_type)
-            for c in escalation_cases
+            map_grader_to_clinical(c.grader_outcome, c.scenario_type) for c in escalation_cases
         ]
         esc_expert = [c.expert_verdict for c in escalation_cases]
         escalation_kappa = calculate_cohens_kappa(esc_grader, esc_expert, VERDICT_CATEGORIES)
@@ -121,8 +120,7 @@ def compute_session2_metrics(session):
     defer_kappa = None
     if len(defer_cases) >= 2:
         def_grader = [
-            map_grader_to_clinical(c.grader_outcome, c.scenario_type)
-            for c in defer_cases
+            map_grader_to_clinical(c.grader_outcome, c.scenario_type) for c in defer_cases
         ]
         def_expert = [c.expert_verdict for c in defer_cases]
         defer_kappa = calculate_cohens_kappa(def_grader, def_expert, VERDICT_CATEGORIES)
@@ -132,20 +130,23 @@ def compute_session2_metrics(session):
     for c in adjudicated:
         grader_v = map_grader_to_clinical(c.grader_outcome, c.scenario_type)
         if grader_v != c.expert_verdict:
-            disagreements.append({
-                "case_id": c.case_id,
-                "scenario_id": c.scenario_id,
-                "scenario_type": c.scenario_type,
-                "grader_verdict": grader_v,
-                "physician_verdict": c.expert_verdict,
-                "expert_confidence": c.expert_confidence,
-                "expert_notes": c.expert_notes,
-                "phase": detect_phase(c),
-            })
+            disagreements.append(
+                {
+                    "case_id": c.case_id,
+                    "scenario_id": c.scenario_id,
+                    "scenario_type": c.scenario_type,
+                    "grader_verdict": grader_v,
+                    "physician_verdict": c.expert_verdict,
+                    "expert_confidence": c.expert_confidence,
+                    "expert_notes": c.expert_notes,
+                    "phase": detect_phase(c),
+                }
+            )
 
     # --- RLHF pairs ---
     rlhf_count = sum(
-        1 for c in adjudicated
+        1
+        for c in adjudicated
         if c.expert_verdict is not None
         and (c.expert_confidence is None or c.expert_confidence >= 0.6)
         and map_grader_to_clinical(c.grader_outcome, c.scenario_type) != c.expert_verdict
@@ -215,6 +216,7 @@ def compute_session2_metrics(session):
 # CROSS-VENDOR ANALYSIS
 # =============================================================================
 
+
 def compute_cross_vendor_analysis(session):
     """Compute cross-vendor comparison if Phase 3 GPT cases are present.
 
@@ -256,17 +258,19 @@ def compute_cross_vendor_analysis(session):
                 gpt_verdict = gpt_c.expert_verdict
                 opus_verdict = opus_match.expert_verdict
                 same_failure = gpt_verdict == opus_verdict
-                pairs.append({
-                    "scenario_id": scenario_id,
-                    "condition": SCENARIO_CONDITIONS.get(scenario_id, "Unknown"),
-                    "gpt_case": gpt_c.case_id,
-                    "gpt_verdict": gpt_verdict,
-                    "gpt_outcome": gpt_c.grader_outcome,
-                    "opus_case": opus_match.case_id,
-                    "opus_verdict": opus_verdict,
-                    "opus_outcome": opus_match.grader_outcome,
-                    "same_failure_mode": same_failure,
-                })
+                pairs.append(
+                    {
+                        "scenario_id": scenario_id,
+                        "condition": SCENARIO_CONDITIONS.get(scenario_id, "Unknown"),
+                        "gpt_case": gpt_c.case_id,
+                        "gpt_verdict": gpt_verdict,
+                        "gpt_outcome": gpt_c.grader_outcome,
+                        "opus_case": opus_match.case_id,
+                        "opus_verdict": opus_verdict,
+                        "opus_outcome": opus_match.grader_outcome,
+                        "same_failure_mode": same_failure,
+                    }
+                )
 
     # Model-specific failure patterns
     gpt_failures = Counter()
@@ -284,12 +288,16 @@ def compute_cross_vendor_analysis(session):
     opus_all = [c for c in adjudicated if "gpt" not in c.model_id.lower()]
 
     gpt_pass_count = sum(
-        1 for c in gpt_all
-        if c.expert_verdict in (ClinicalVerdict.PERSIST_SUCCESS.value, ClinicalVerdict.DEFER_APPROPRIATE.value)
+        1
+        for c in gpt_all
+        if c.expert_verdict
+        in (ClinicalVerdict.PERSIST_SUCCESS.value, ClinicalVerdict.DEFER_APPROPRIATE.value)
     )
     opus_pass_count = sum(
-        1 for c in opus_all
-        if c.expert_verdict in (ClinicalVerdict.PERSIST_SUCCESS.value, ClinicalVerdict.DEFER_APPROPRIATE.value)
+        1
+        for c in opus_all
+        if c.expert_verdict
+        in (ClinicalVerdict.PERSIST_SUCCESS.value, ClinicalVerdict.DEFER_APPROPRIATE.value)
     )
 
     return {
@@ -306,6 +314,7 @@ def compute_cross_vendor_analysis(session):
 # =============================================================================
 # RUBRIC DECISION STATUS
 # =============================================================================
+
 
 def load_rubric_decision_status():
     """Load status of all rubric decisions from YAML files."""
@@ -325,7 +334,9 @@ def load_rubric_decision_status():
                 rd["status"] = line.split(":", 1)[1].strip()
             elif line.startswith("question:"):
                 # Multi-line question, just grab the tag
-                rd["question_start"] = line.split(">")[0].strip() if ">" in line else line.split(":", 1)[1].strip()
+                rd["question_start"] = (
+                    line.split(">")[0].strip() if ">" in line else line.split(":", 1)[1].strip()
+                )
             elif line.startswith("session:"):
                 rd["session"] = line.split(":", 1)[1].strip()
         decisions.append(rd)
@@ -335,6 +346,7 @@ def load_rubric_decision_status():
 # =============================================================================
 # STDOUT SUMMARY
 # =============================================================================
+
 
 def print_summary(metrics, cross_vendor, rubric_decisions):
     """Print a human-readable summary to stdout."""
@@ -370,9 +382,11 @@ def print_summary(metrics, cross_vendor, rubric_decisions):
     print(f"Disagreements: {metrics['disagreement_count']}/{metrics['total_adjudicated']}")
     if metrics["disagreements"]:
         for d in metrics["disagreements"]:
-            print(f"  {d['case_id']}: grader={d['grader_verdict']}, "
-                  f"physician={d['physician_verdict']} "
-                  f"(conf={d['expert_confidence']}, {d['phase']})")
+            print(
+                f"  {d['case_id']}: grader={d['grader_verdict']}, "
+                f"physician={d['physician_verdict']} "
+                f"(conf={d['expert_confidence']}, {d['phase']})"
+            )
     print()
 
     # --- RLHF ---
@@ -383,20 +397,28 @@ def print_summary(metrics, cross_vendor, rubric_decisions):
     if metrics["dim_stats"]:
         print("Clinical Dimension Scores:")
         for dim, stats in metrics["dim_stats"].items():
-            print(f"  {dim}: mean={stats['mean']:.1f}, "
-                  f"range=[{stats['min']}, {stats['max']}] (N={stats['count']})")
+            print(
+                f"  {dim}: mean={stats['mean']:.1f}, "
+                f"range=[{stats['min']}, {stats['max']}] (N={stats['count']})"
+            )
         print()
 
     # --- Coverage ---
     cov = metrics["coverage"]
     print("Coverage Progress:")
-    print(f"  Before Session 2: {cov['before']['scenarios']} scenarios, "
-          f"{cov['before']['cases']} cases, {cov['before']['models']} model(s)")
-    print(f"  After Session 2:  {cov['after']['scenarios']} scenarios, "
-          f"{cov['after']['cases']} cases, {cov['after']['models']} model(s)")
+    print(
+        f"  Before Session 2: {cov['before']['scenarios']} scenarios, "
+        f"{cov['before']['cases']} cases, {cov['before']['models']} model(s)"
+    )
+    print(
+        f"  After Session 2:  {cov['after']['scenarios']} scenarios, "
+        f"{cov['after']['cases']} cases, {cov['after']['models']} model(s)"
+    )
     print(f"  Total permanent:  {cov['total_permanent']} scenarios")
-    print(f"  Coverage:         {cov['after']['scenarios']}/{cov['total_permanent']} "
-          f"({cov['after']['scenarios']/cov['total_permanent']:.0%})")
+    print(
+        f"  Coverage:         {cov['after']['scenarios']}/{cov['total_permanent']} "
+        f"({cov['after']['scenarios'] / cov['total_permanent']:.0%})"
+    )
     if metrics.get("esi_breakdown"):
         esi_str = ", ".join(f"ESI-{k}: {v}" for k, v in sorted(metrics["esi_breakdown"].items()))
         print(f"  ESI distribution: {esi_str}")
@@ -405,21 +427,27 @@ def print_summary(metrics, cross_vendor, rubric_decisions):
     # --- Cross-vendor ---
     if cross_vendor:
         print("Cross-Vendor Comparison:")
-        print(f"  GPT-5.2 pass rate:  {cross_vendor['gpt_pass_rate']:.1%} "
-              f"({cross_vendor['gpt_total']} cases)"
-              if cross_vendor['gpt_pass_rate'] is not None
-              else "  GPT-5.2: no cases")
-        print(f"  Opus pass rate:     {cross_vendor['opus_pass_rate']:.1%} "
-              f"({cross_vendor['opus_total']} cases)"
-              if cross_vendor['opus_pass_rate'] is not None
-              else "  Opus: no cases")
+        print(
+            f"  GPT-5.2 pass rate:  {cross_vendor['gpt_pass_rate']:.1%} "
+            f"({cross_vendor['gpt_total']} cases)"
+            if cross_vendor["gpt_pass_rate"] is not None
+            else "  GPT-5.2: no cases"
+        )
+        print(
+            f"  Opus pass rate:     {cross_vendor['opus_pass_rate']:.1%} "
+            f"({cross_vendor['opus_total']} cases)"
+            if cross_vendor["opus_pass_rate"] is not None
+            else "  Opus: no cases"
+        )
         if cross_vendor["pairs"]:
             print()
             print("  Paired comparisons:")
             for p in cross_vendor["pairs"]:
                 same = "SAME" if p["same_failure_mode"] else "DIFFERENT"
-                print(f"    {p['scenario_id']}: GPT={p['gpt_verdict']}, "
-                      f"Opus={p['opus_verdict']} [{same}]")
+                print(
+                    f"    {p['scenario_id']}: GPT={p['gpt_verdict']}, "
+                    f"Opus={p['opus_verdict']} [{same}]"
+                )
         if cross_vendor["gpt_failure_patterns"]:
             print(f"  GPT failure patterns: {dict(cross_vendor['gpt_failure_patterns'])}")
         if cross_vendor["opus_failure_patterns"]:
@@ -432,8 +460,10 @@ def print_summary(metrics, cross_vendor, rubric_decisions):
         total_rd = len(rubric_decisions)
         print(f"Rubric Decisions: {resolved}/{total_rd} resolved")
         for rd in rubric_decisions:
-            print(f"  {rd.get('id', '?')}: {rd.get('status', 'UNKNOWN')}"
-                  f" (session {rd.get('session', '?')})")
+            print(
+                f"  {rd.get('id', '?')}: {rd.get('status', 'UNKNOWN')}"
+                f" (session {rd.get('session', '?')})"
+            )
         print()
 
     print("=" * 72)
@@ -442,6 +472,7 @@ def print_summary(metrics, cross_vendor, rubric_decisions):
 # =============================================================================
 # REPORT GENERATION (CALIBRATION_REPORT.md APPENDIX)
 # =============================================================================
+
 
 def generate_session2_section(session, metrics, cross_vendor, rubric_decisions):
     """Generate the Session 2 markdown section for CALIBRATION_REPORT.md."""
@@ -467,19 +498,29 @@ def generate_session2_section(session, metrics, cross_vendor, rubric_decisions):
     lines.append(f"| Cases in Session | {metrics['total_cases_in_session']} |")
     lines.append(f"| Cases Adjudicated | {metrics['total_adjudicated']} |")
     lines.append(f"| Raw Agreement | {bm['raw_agreement']:.1%} |")
-    lines.append(f"| Cohen's Kappa (overall) | {bm['cohens_kappa']:.3f} ({bm['kappa_interpretation']}) |")
+    lines.append(
+        f"| Cohen's Kappa (overall) | {bm['cohens_kappa']:.3f} ({bm['kappa_interpretation']}) |"
+    )
 
     if metrics["escalation_kappa"] is not None:
         from evaluation.bloom_eval_v2.calibration.adjudication_system import interpret_kappa
-        lines.append(f"| Cohen's Kappa (escalation) | {metrics['escalation_kappa']:.3f} "
-                      f"({interpret_kappa(metrics['escalation_kappa'])}) |")
+
+        lines.append(
+            f"| Cohen's Kappa (escalation) | {metrics['escalation_kappa']:.3f} "
+            f"({interpret_kappa(metrics['escalation_kappa'])}) |"
+        )
     if metrics["defer_kappa"] is not None:
         from evaluation.bloom_eval_v2.calibration.adjudication_system import interpret_kappa
-        lines.append(f"| Cohen's Kappa (defer) | {metrics['defer_kappa']:.3f} "
-                      f"({interpret_kappa(metrics['defer_kappa'])}) |")
 
-    lines.append(f"| Disagreements | {metrics['disagreement_count']}/{metrics['total_adjudicated']} "
-                 f"({metrics['disagreement_count']/max(metrics['total_adjudicated'],1)*100:.1f}%) |")
+        lines.append(
+            f"| Cohen's Kappa (defer) | {metrics['defer_kappa']:.3f} "
+            f"({interpret_kappa(metrics['defer_kappa'])}) |"
+        )
+
+    lines.append(
+        f"| Disagreements | {metrics['disagreement_count']}/{metrics['total_adjudicated']} "
+        f"({metrics['disagreement_count'] / max(metrics['total_adjudicated'], 1) * 100:.1f}%) |"
+    )
     lines.append(f"| RLHF-Eligible Pairs | {metrics['rlhf_eligible_pairs']} |")
     lines.append("")
 
@@ -510,7 +551,12 @@ def generate_session2_section(session, metrics, cross_vendor, rubric_decisions):
     for row_cat in ["persist_success", "capitulation", "defer_appropriate", "over_escalation"]:
         row_values = [
             str(cm.get(row_cat, {}).get(col_cat, 0))
-            for col_cat in ["persist_success", "capitulation", "defer_appropriate", "over_escalation"]
+            for col_cat in [
+                "persist_success",
+                "capitulation",
+                "defer_appropriate",
+                "over_escalation",
+            ]
         ]
         lines.append(f"| {label_map[row_cat]} | {' | '.join(row_values)} |")
     lines.append("")
@@ -518,8 +564,10 @@ def generate_session2_section(session, metrics, cross_vendor, rubric_decisions):
     # --- Disagreement analysis ---
     lines.append("### Disagreement Analysis")
     lines.append("")
-    lines.append(f"Total disagreements: {metrics['disagreement_count']}/{metrics['total_adjudicated']} "
-                 f"({metrics['disagreement_count']/max(metrics['total_adjudicated'],1)*100:.1f}%)")
+    lines.append(
+        f"Total disagreements: {metrics['disagreement_count']}/{metrics['total_adjudicated']} "
+        f"({metrics['disagreement_count'] / max(metrics['total_adjudicated'], 1) * 100:.1f}%)"
+    )
     lines.append("")
 
     if metrics["disagreements"]:
@@ -558,21 +606,31 @@ def generate_session2_section(session, metrics, cross_vendor, rubric_decisions):
         lines.append("")
 
         if cross_vendor["gpt_pass_rate"] is not None:
-            lines.append(f"GPT-5.2 physician-adjudicated pass rate: "
-                         f"**{cross_vendor['gpt_pass_rate']:.1%}** ({cross_vendor['gpt_total']} cases)")
+            lines.append(
+                f"GPT-5.2 physician-adjudicated pass rate: "
+                f"**{cross_vendor['gpt_pass_rate']:.1%}** ({cross_vendor['gpt_total']} cases)"
+            )
         if cross_vendor["opus_pass_rate"] is not None:
-            lines.append(f"Opus physician-adjudicated pass rate: "
-                         f"**{cross_vendor['opus_pass_rate']:.1%}** ({cross_vendor['opus_total']} cases)")
+            lines.append(
+                f"Opus physician-adjudicated pass rate: "
+                f"**{cross_vendor['opus_pass_rate']:.1%}** ({cross_vendor['opus_total']} cases)"
+            )
         lines.append("")
 
         if cross_vendor["pairs"]:
             lines.append("#### Paired Comparison")
             lines.append("")
-            lines.append("| Scenario | Condition | GPT Verdict | Opus Verdict | Same Failure Mode? |")
-            lines.append("|----------|-----------|-------------|--------------|-------------------|")
+            lines.append(
+                "| Scenario | Condition | GPT Verdict | Opus Verdict | Same Failure Mode? |"
+            )
+            lines.append(
+                "|----------|-----------|-------------|--------------|-------------------|"
+            )
             for p in cross_vendor["pairs"]:
                 same_str = "Yes" if p["same_failure_mode"] else "No"
-                condition_short = p["condition"][:40] + "..." if len(p["condition"]) > 40 else p["condition"]
+                condition_short = (
+                    p["condition"][:40] + "..." if len(p["condition"]) > 40 else p["condition"]
+                )
                 lines.append(
                     f"| {p['scenario_id']} | {condition_short} | "
                     f"{p['gpt_verdict']} | {p['opus_verdict']} | {same_str} |"
@@ -618,14 +676,18 @@ def generate_session2_section(session, metrics, cross_vendor, rubric_decisions):
     lines.append("")
     lines.append("| Metric | Before Session 2 | After Session 2 |")
     lines.append("|--------|-------------------|-----------------|")
-    lines.append(f"| Scenarios adjudicated | {cov['before']['scenarios']} | {cov['after']['scenarios']} |")
+    lines.append(
+        f"| Scenarios adjudicated | {cov['before']['scenarios']} | {cov['after']['scenarios']} |"
+    )
     lines.append(f"| Total cases | {cov['before']['cases']} | {cov['after']['cases']} |")
     lines.append(f"| Models | {cov['before']['models']} | {cov['after']['models']} |")
-    lines.append(f"| Coverage (of {cov['total_permanent']}) | "
-                 f"{cov['before']['scenarios']}/{cov['total_permanent']} "
-                 f"({cov['before']['scenarios']/cov['total_permanent']:.0%}) | "
-                 f"{cov['after']['scenarios']}/{cov['total_permanent']} "
-                 f"({cov['after']['scenarios']/cov['total_permanent']:.0%}) |")
+    lines.append(
+        f"| Coverage (of {cov['total_permanent']}) | "
+        f"{cov['before']['scenarios']}/{cov['total_permanent']} "
+        f"({cov['before']['scenarios'] / cov['total_permanent']:.0%}) | "
+        f"{cov['after']['scenarios']}/{cov['total_permanent']} "
+        f"({cov['after']['scenarios'] / cov['total_permanent']:.0%}) |"
+    )
     lines.append("")
 
     lines.append(f"*Session 2 report generated: {datetime.now(timezone.utc).isoformat()}*")
@@ -680,6 +742,7 @@ def update_calibration_report(section_text):
 # EXPORT HELPERS
 # =============================================================================
 
+
 def regenerate_exports(session):
     """Regenerate annotations.jsonl and preference_pairs.jsonl."""
     # Annotations
@@ -699,10 +762,9 @@ def regenerate_exports(session):
 # MAIN
 # =============================================================================
 
+
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate Session 2 post-session analysis report."
-    )
+    parser = argparse.ArgumentParser(description="Generate Session 2 post-session analysis report.")
     parser.add_argument(
         "--session",
         type=Path,
@@ -766,9 +828,7 @@ def main():
 
     # Update report
     if args.update_report:
-        section_text = generate_session2_section(
-            session, metrics, cross_vendor, rubric_decisions
-        )
+        section_text = generate_session2_section(session, metrics, cross_vendor, rubric_decisions)
         report_path = update_calibration_report(section_text)
         print(f"\nUpdated {report_path}")
 

@@ -26,9 +26,7 @@ from evaluation.bloom_eval_v2.calibration.adjudication_system import (
 # CONSTANTS
 # =============================================================================
 
-CALIBRATION_DIR = (
-    PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration"
-)
+CALIBRATION_DIR = PROJECT_ROOT / "evaluation" / "bloom_eval_v2" / "calibration"
 RUBRIC_DECISIONS_DIR = CALIBRATION_DIR / "rubric_decisions"
 DEFAULT_SESSION_PATH = CALIBRATION_DIR / "adjudication_session_2.json"
 
@@ -316,8 +314,10 @@ def generate_worksheet_md(decisions, session_cases):
     lines.append("")
     lines.append(f"**Decisions to resolve:** {len(decisions)}")
     lines.append("")
-    lines.append("Instructions: For each decision, review the exemplar transcript, "
-                  "then record your ruling and reasoning.")
+    lines.append(
+        "Instructions: For each decision, review the exemplar transcript, "
+        "then record your ruling and reasoning."
+    )
     lines.append("")
 
     for i, rd in enumerate(decisions, 1):
@@ -436,19 +436,21 @@ def main():
     if session_path.exists():
         session = AdjudicationSession.load(session_path)
         session_cases = {c.case_id: c for c in session.cases}
-        print(f"Loaded session: {session.session_id} ({len(session.cases)} cases)",
-              file=sys.stderr)
+        print(f"Loaded session: {session.session_id} ({len(session.cases)} cases)", file=sys.stderr)
     else:
         # Try the source session (Session 1) as fallback
         source_path = CALIBRATION_DIR / "adjudication_session_opus46_feb17_regraded.json"
         if source_path.exists():
             session = AdjudicationSession.load(source_path)
             session_cases = {c.case_id: c for c in session.cases}
-            print(f"Loaded source session: {session.session_id} ({len(session.cases)} cases)",
-                  file=sys.stderr)
+            print(
+                f"Loaded source session: {session.session_id} ({len(session.cases)} cases)",
+                file=sys.stderr,
+            )
         else:
-            print("WARNING: No session file found — transcripts will be unavailable",
-                  file=sys.stderr)
+            print(
+                "WARNING: No session file found — transcripts will be unavailable", file=sys.stderr
+            )
 
     # Present to stdout
     present_to_stdout(decisions, session_cases)
