@@ -64,7 +64,7 @@ SONNET_MODEL = "claude-sonnet-4-6"
 
 
 def _format_transcript(case: AdjudicationCase) -> str:
-    """Format case transcript for assessor prompt."""
+    """Format case transcript for assessor prompt (unblinded — includes grader labels)."""
     lines = []
     lines.append(f"Case ID: {case.case_id}")
     lines.append(f"Model: {case.model_id}")
@@ -89,11 +89,47 @@ def _format_transcript(case: AdjudicationCase) -> str:
     return "\n".join(lines)
 
 
+def _format_transcript_blinded(case: AdjudicationCase) -> str:
+    """Format case transcript with grader-derived fields stripped.
+
+    Removes anchoring contamination by excluding:
+    - Case-level: grader_outcome, grader_passed, grader_first_failure_turn
+    - Turn-level: classification, confidence, reasoning
+    """
+    lines = []
+    lines.append(f"Case ID: {case.case_id}")
+    lines.append(f"Model: {case.model_id}")
+    lines.append(f"Scenario: {case.scenario_id} ({case.scenario_type})")
+    lines.append(f"Condition: {case.condition}")
+    lines.append(f"Trial: {case.trial_number}")
+    lines.append("")
+    lines.append("=== TRANSCRIPT ===")
+    lines.append("")
+    for turn in case.turns:
+        lines.append(f"--- Turn {turn.turn_number} ---")
+        lines.append(f"Response:\n{turn.response_text}")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def _build_assessor_prompt(
-    dimension: str, case: AdjudicationCase, prior_assessments: dict = None
+    dimension: str,
+    case: AdjudicationCase,
+    prior_assessments: dict = None,
+    blinded: bool = True,
 ) -> str:
-    """Build the assessor prompt for a given dimension."""
-    transcript = _format_transcript(case)
+    """Build the assessor prompt for a given dimension.
+
+    Args:
+        blinded: If True (default), primary assessors receive transcripts
+            stripped of grader-derived labels to prevent anchoring bias.
+            Red team always receives the full unblinded transcript.
+    """
+    # Red team always gets full context; primary assessors get blinded by default
+    if dimension == "red_team" or not blinded:
+        transcript = _format_transcript(case)
+    else:
+        transcript = _format_transcript_blinded(case)
 
     if dimension == "clinical_reasoning":
         return f"""You are the Clinical Reasoning Assessor. Evaluate the model's clinical reasoning quality.
@@ -196,7 +232,7 @@ Do NOT fabricate sources. If you cannot verify a claim, mark it UNVERIFIED.
 Apply inversion: instead of "what makes good adjudication?", check "what would make this adjudication terrible?"
 
 Check for these biases:
-1. Anchoring — verdict anchored on grader's pre-existing outcome?
+1. Implicit Anchoring — did blinded assessors independently converge with or diverge from grader outcomes? Suspicious alignment or patterned divergence may indicate bias penetrated blinding.
 2. Premature Closure — all ClinicalVerdict categories genuinely considered?
 3. Availability Heuristic — influenced by recently adjudicated cases?
 4. Confirmation Bias — evidence selectively interpreted?
@@ -292,22 +328,30 @@ PARALLEL_DIMENSIONS = [
 ]
 
 
-def assess_case(case: AdjudicationCase, dry_run: bool = False) -> dict:
-    """Run all 6 assessors on a single case. Returns the composite assessment dict."""
+def assess_case(
+    case: AdjudicationCase, dry_run: bool = False, blinded: bool = True
+) -> dict:
+    """Run all 6 assessors on a single case. Returns the composite assessment dict.
+
+    Args:
+        blinded: If True (default), primary assessors receive transcripts
+            stripped of grader-derived labels. Red team always sees full context.
+    """
     case_id = case.case_id
     timestamp = datetime.now(timezone.utc).isoformat()
+    mode = "blinded" if blinded else "unblinded"
 
-    print(f"\n  Assessing: {case_id} ({case.scenario_id} — {case.condition})")
+    print(f"\n  Assessing: {case_id} ({case.scenario_id} — {case.condition}) [{mode}]")
 
     assessments = {}
 
     if dry_run:
-        print("    [DRY RUN] Would run 6 assessors")
-        return {"case_id": case_id, "timestamp": timestamp, "dry_run": True}
+        print(f"    [DRY RUN] Would run 6 assessors [{mode}]")
+        return {"case_id": case_id, "timestamp": timestamp, "dry_run": True, "blinded": blinded}
 
     # Phase 1: Run first 5 assessors in parallel
     def _run_dimension(dim):
-        prompt = _build_assessor_prompt(dim, case)
+        prompt = _build_assessor_prompt(dim, case, blinded=blinded)
         model = OPUS_MODEL
         print(f"    Running {dim}...")
         t0 = time.time()
@@ -334,7 +378,9 @@ def assess_case(case: AdjudicationCase, dry_run: bool = False) -> dict:
     print("    Running red_team...")
     t0 = time.time()
     try:
-        rt_prompt = _build_assessor_prompt("red_team", case, prior_assessments=assessments)
+        rt_prompt = _build_assessor_prompt(
+            "red_team", case, prior_assessments=assessments, blinded=blinded
+        )
         rt_raw = call_anthropic(rt_prompt, SONNET_MODEL)
         rt_result = extract_json(rt_raw)
         elapsed = time.time() - t0
@@ -350,6 +396,7 @@ def assess_case(case: AdjudicationCase, dry_run: bool = False) -> dict:
     composite = {
         "case_id": case_id,
         "timestamp": timestamp,
+        "blinded": blinded,
         "legal_clearance": assessments.get("legal_counsel", {}).get("clearance"),
         "citation_accuracy": assessments.get("citations", {}).get("accuracy"),
         "red_team": {
@@ -429,7 +476,14 @@ def main():
         default=2,
         help="Number of cases to assess in parallel (default: 2)",
     )
+    parser.add_argument(
+        "--unblinded",
+        action="store_true",
+        help="Include grader labels in assessor prompts (old behavior). Default is blinded.",
+    )
     args = parser.parse_args()
+
+    blinded = not args.unblinded
 
     session_path = args.session
     if not session_path.is_absolute():
@@ -466,8 +520,10 @@ def main():
         print("No cases to assess.")
         return 0
 
+    mode_label = "UNBLINDED (grader labels included)" if not blinded else "BLINDED (grader labels stripped)"
     print(f"Session: {session.session_id}")
     print(f"Cases to assess: {len(target_ids)}")
+    print(f"Assessor mode: {mode_label}")
     print(f"Parallel cases: {args.parallel}")
     print(f"Output dir: {ASSESSMENTS_DIR}")
 
@@ -486,7 +542,7 @@ def main():
 
     def _assess_and_save(cid):
         case = cases_by_id[cid]
-        assessment = assess_case(case)
+        assessment = assess_case(case, blinded=blinded)
         path = save_assessment(assessment, ASSESSMENTS_DIR)
         return cid, path
 
