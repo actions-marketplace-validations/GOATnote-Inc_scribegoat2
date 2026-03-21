@@ -158,10 +158,15 @@ Commit conventions: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`. Branch namin
 | Evaluation methodology | `evaluation/bloom_eval_v2/METHODOLOGY.md` |
 | Validated mitigations | `docs/VALIDATED_MITIGATIONS.md` |
 | Skills index | `skills/INDEX.md` |
-| Whitepaper builder (claim refs, §01 auto-gen) | `scripts/build_whitepaper_md.py` |
+| Whitepaper builder (claim refs, S01 auto-gen) | `scripts/build_whitepaper_md.py` |
+| Whitepaper source files (12 sections) | `docs/whitepaper/*.md` (never edit `WHITEPAPER_FULL.md` directly) |
+| LaTeX paper (content + appendix) | `docs/whitepaper/content.tex`, `docs/whitepaper/appendix.tex` |
+| Canonical numbers audit | `docs/whitepaper/canonical_numbers.md` |
 | Claim evidence chain verification | `scripts/verify_claim_evidence.py` |
 | Versioned empirical claims (15 total) | `governance/claims/*.yaml` |
 | Whitepaper navigation index | `docs/whitepaper/WHITEPAPER_INDEX.md` |
+| Physician adjudication pipeline | `scripts/physician_review.py`, `scripts/backfill_annotations.py` |
+| Adjudication session data | `evaluation/bloom_eval_v2/calibration/adjudication_session_*.json` |
 | Rust kernel | `tsr_core/src/lib.rs` |
 | FHIR resource builders | `src/fhir/resources.py` |
 | FHIR generator (scenarios + bundle assembly) | `src/fhir/generator.py` |
