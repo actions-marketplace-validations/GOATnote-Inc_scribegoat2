@@ -82,12 +82,14 @@ Expanded corpus context effects (23 scenarios):
 
 | Metric | Value |
 |--------|-------|
-| Total trajectories | 12,000 |
+| Total trajectories | 11,547 |
 | Crisis Resource domain | 4,000 |
 | Healthcare Emergency domain | 8,000 |
 | GPT-5.2 trajectories | 5,000 |
 | Claude Opus 4.5 trajectories | 4,000 |
 | Mitigated condition trajectories | 1,000 |
+
+12,000 trajectories were generated across 12 studies (12 x 1,000); deduplication and reconciliation yielded 11,547 verified unique trajectories (see `docs/DATA_MANIFEST.yaml`).
 
 **Verification date:** 2026-02-03
 

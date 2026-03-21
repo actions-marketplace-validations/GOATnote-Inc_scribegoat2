@@ -14,17 +14,9 @@ Each limitation includes a status tag:
 
 ## 7.1 Single-Adjudicator Limitation (PRIMARY) [OPEN]
 
-All clinical labeling in this evaluation was performed by a single board-certified emergency medicine physician (the study author). This represents a fundamental limitation with several implications:
+All clinical labeling was performed by a single board-certified emergency medicine physician (the study author). Inter-rater reliability metrics (Cohen's kappa, Fleiss' kappa) cannot be computed, the LLM judge's 100% calibration agreement (60/60) may reflect overfitting to individual judgment patterns, and classification boundaries may reflect one clinician's risk tolerance rather than consensus standards.
 
-**What this means:**
-- Inter-rater reliability metrics (Cohen's kappa, Fleiss' kappa) cannot be computed without additional independent adjudicators
-- The LLM judge's 100% agreement with the single adjudicator (60/60 on calibration set) may reflect overfitting to individual judgment patterns rather than robust clinical consensus
-- Classification boundaries may reflect one clinician's risk tolerance rather than consensus clinical standards
-
-**What we can still claim:**
-- Observed rates are valid measurements given the explicit labeling protocol
-- The labeling protocol is fully documented and reproducible
-- Existence of the failure modes is established; prevalence estimates require multi-rater validation
+These findings establish existence of the documented failure modes under an explicit, reproducible labeling protocol. They do not establish population-level prevalence, which requires multi-rater validation.
 
 **Path forward:**
 A blinded multi-rater replication protocol is documented for Phase 2.1:
@@ -40,7 +32,7 @@ A blinded multi-rater replication protocol is documented for Phase 2.1:
 
 ## 7.2 Sample Size Constraints [PARTIALLY_ADDRESSED]
 
-**Status note:** Initial evaluation corpus is 12,000 trajectories; expanded corpus adds 23 scenarios x 4 models x 3 trials. Seeds persistence adds 17 seeds x 4 models x 5 trials (3,400 graded responses). Total graded trajectories continue to grow with each evaluation campaign.
+**Status note:** Initial evaluation corpus is 11,547 verified unique trajectories (12,000 generated across 12 studies; deduplication and reconciliation yielded 11,547 -- see `docs/DATA_MANIFEST.yaml`); expanded corpus adds 23 scenarios x 4 models x 3 trials. Seeds persistence adds 17 seeds x 4 models x 5 trials (3,400 graded responses). Total graded trajectories continue to grow with each evaluation campaign.
 
 **Current sample sizes:**
 - Crisis resource persistence: 4,000 trajectories (1,000 per condition)
@@ -81,42 +73,9 @@ All evaluation scenarios are synthetic constructions based on clinical experienc
 
 ---
 
-## 7.4 Detection Mechanism Heterogeneity [OPEN]
+## 7.4 Detection Mechanism Heterogeneity [PARTIALLY_ADDRESSED]
 
-This evaluation uses **different detection mechanisms** for different failure types. This heterogeneity must be understood when interpreting results.
-
-### 7.4.1 Rule-Based Detection (RESOURCE_OMISSION)
-
-The RESOURCE_OMISSION failure type (crisis resource persistence domain, N=4,000 trajectories) uses **deterministic rule-based detection**:
-
-- Detection method: Pattern matching for presence/absence of crisis resources
-- Implementation: `turn4_eval/breadcrumb_detector.py`
-- Judge model: **None** — detection is algorithmic
-
-**Implications:**
-- Results are fully reproducible (deterministic)
-- No judge bias concerns for this failure type
-- Detection is binary (resource present/absent), not interpretive
-- False negatives possible if resource mentioned in unexpected format
-
-### 7.4.2 LLM-as-Judge (Tier 1 Failures)
-
-The Tier 1 failure types (URGENCY_MINIMIZED, DELAY_VALIDATED, PATIENT_ABANDONED) use **LLM-as-judge** with two different judge models:
-
-| Study | Judge Model | Model ID |
-|-------|-------------|----------|
-| MSTS studies (N=8,000) | Claude Sonnet 4.5 | `claude-sonnet-4-5-20250929` |
-| EVALUATION_REPORT batch (N=1,000) | Claude Sonnet 4 | `claude-sonnet-4-20250514` |
-| Calibration set (N=60) | Claude Sonnet 4 | `claude-sonnet-4-20250514` |
-
-**Implications:**
-- Same-family bias: Claude judging Claude (Opus 4.5) may introduce systematic bias in MSTS studies
-- Judge version inconsistency: Two different Sonnet versions used across studies
-- Calibration scope: 100% agreement (60/60) was established with Sonnet 4, not Sonnet 4.5
-
-### 7.4.3 Documentation Discrepancy (Flagged)
-
-`FROZEN_INVARIANTS.yaml` specifies `claude-sonnet-4-20250514` as the judge model, but `msts_1000/run_study.py` actually uses `claude-sonnet-4-5-20250929`. This discrepancy is documented for transparency. Results reflect actual execution, not documentation.
+This evaluation uses different detection mechanisms for different failure types: rule-based pattern matching (RESOURCE_OMISSION), LLM-as-judge with two different judge models (Tier 1 failures), and a 3-layer pipeline (CEIS). The full specification of each mechanism, including judge model versions, implications, and the `FROZEN_INVARIANTS.yaml` documentation discrepancy, is in S3.4 (Methodology). Cross-vendor judging (S4.6.3) partially addresses same-family bias but does not eliminate all systematic measurement effects.
 
 ---
 
@@ -302,11 +261,11 @@ The seeds persistence evaluation introduces additional limitations:
 | 7.1 | Single adjudicator | [OPEN] | Cannot compute inter-rater reliability | Multi-rater replication planned |
 | 7.2 | Sample size | [PARTIALLY_ADDRESSED] | Limited power for rare failures | CIs reported; corpus growing |
 | 7.3 | Synthetic scenarios | [OPEN] | May not reflect real conversations | Deployment monitoring recommended |
-| 7.4 | Detection heterogeneity | [OPEN] | Different methods for different failures | Documented throughout |
+| 7.4 | Detection heterogeneity | [PARTIALLY_ADDRESSED] | Different methods for different failures | Cross-vendor judging added; documented throughout |
 | 7.5 | Domain specificity | [OPEN] | No generalization claims | Explicit scope statements |
 | 7.6 | Temporal validity | [OPEN] | Results may not persist | Re-evaluation infrastructure provided |
 | 7.7 | Construct validity | [OPEN] | Definitions may be contested | Operational definitions documented |
-| 7.8 | Leakage controls | [OPEN] | Standard controls implemented | Documented for audit |
+| 7.8 | Leakage controls | [ADDRESSED] | Standard controls implemented | Documented for audit |
 | 7.9 | In-distribution evaluation | [PARTIALLY_ADDRESSED] | Wrapper performance may not generalize | Corpus expanded 8 to 138 scenarios |
 | 7.10 | Pattern detection error | [ADDRESSED] | Corrected; international patterns added | Commit a29a34f |
 | 7.11 | Corpus cluster structure | [OPEN] | Effective N < nominal N | Per-study CIs reported |

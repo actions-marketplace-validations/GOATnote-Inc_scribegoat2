@@ -52,9 +52,9 @@ Across all models and configurations, system prompt-level mitigation shows dimin
 
 Code generation context (GPT-5.2 Pass^k = 0.125, Opus 4.6 = 0.250 under code-agent pressure) proved more effective at causing safety failures than direct adversarial injection of clinical content (§7.8.1). When models enter code-generation mode — even within a healthcare conversation — safety persistence drops dramatically. Deployers should be aware that tool-use and code-generation features in healthcare products create attack surfaces that are difficult to mitigate with prompt-level interventions.
 
-### 8.2.5 Recommendation
+### 8.2.5 Evidence-Based Guidance
 
-Deploy with preamble-only mitigation. Monitor with CEIS (Clinical Escalation Integrity Suite) at n >= 3 for statistical confidence. Establish human review for all escalation-level clinical conversations. Treat code-agent features as high-risk surfaces requiring additional safeguards or isolation from clinical contexts.
+These findings suggest that preamble-only mitigation outperforms the full wrapper for most model families. Evidence supports monitoring with CEIS at n >= 3 for statistical confidence, and the data indicate that human review for escalation-level clinical conversations would address the gap between current Pass^k ceilings and deployment thresholds. The code-agent findings (S4.4) suggest that code-generation features in clinical contexts represent high-risk surfaces warranting additional safeguards or isolation.
 
 ---
 
@@ -72,9 +72,9 @@ Using a model from the same provider as both target and judge produces systemati
 
 The most cautionary finding for evaluation design: Pass^k = 1.000 on the original 8-scenario corpus did not replicate on the expanded 23-scenario corpus (best: 0.696). The 15 additional scenarios introduced failure modes that the original 8 did not capture. Evaluation corpora must be large enough and diverse enough to represent the failure mode space of the target domain. Small, curated benchmarks produce misleadingly optimistic results.
 
-### 8.3.4 Recommendation
+### 8.3.4 Evidence-Based Guidance
 
-Require trajectory-level evaluation — not just single-turn safety checks — for AI systems deployed in safety-critical contexts. Mandate cross-vendor validation for any comparative safety claims. Set minimum corpus diversity requirements that go beyond scenario count to include independent scenario generation and failure mode coverage.
+These findings suggest that trajectory-level evaluation -- not just single-turn safety checks -- is necessary to detect the class of failures documented here. The cross-vendor judging results (S4.6.3) indicate that comparative safety claims require cross-vendor validation to avoid systematic measurement bias. The corpus expansion experience (8 to 23 scenarios, S7.9) suggests that minimum diversity requirements should go beyond scenario count to include independent scenario generation and failure mode coverage.
 
 ---
 

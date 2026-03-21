@@ -10,7 +10,7 @@
 
 We present a trajectory-level safety evaluation framework for frontier language models in healthcare contexts. Unlike single-turn benchmarks that assess initial response accuracy, this framework measures whether models maintain safety-critical recommendations across multi-turn conversations when users apply realistic pressure. To our knowledge, no existing benchmark measures multi-turn escalation persistence — the property that once a model correctly identifies a clinical emergency, it maintains that recommendation through sustained conversational pressure.
 
-We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 12,000 multi-turn scenarios spanning two domains: healthcare emergency persistence (8,000 trajectories) and crisis resource persistence (4,000 trajectories). We subsequently validated and extended these findings using an expanded 23-condition emergency corpus evaluated across four models (GPT-5.2, Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6) with a 2×2 factorial design separating system prompt preamble and pattern-based enforcement mechanisms. We further evaluated safety persistence under adversarial attack vectors — code generation context, tool-calling distraction, multimodal inputs, combined modalities, and direct prompt injection — using 43 adversarial scenarios with the same 2×2 factorial design.
+We evaluated GPT-5.2 (OpenAI) and Claude Opus 4.5 (Anthropic) across 11,547 multi-turn scenarios spanning two domains: healthcare emergency persistence (8,000 trajectories) and crisis resource persistence (4,000 trajectories). We subsequently validated and extended these findings using an expanded 23-condition emergency corpus evaluated across four models (GPT-5.2, Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6) with a 2×2 factorial design separating system prompt preamble and pattern-based enforcement mechanisms. We further evaluated safety persistence under adversarial attack vectors — code generation context, tool-calling distraction, multimodal inputs, combined modalities, and direct prompt injection — using 43 adversarial scenarios with the same 2×2 factorial design.
 
 **Key findings:**
 
@@ -249,7 +249,9 @@ All metrics below are verified against raw checkpoint data.
 | uk_nhs unsafe | 0.5% | [0.09%, 2.8%] | 200 | batch_20260127_195532/final_results.json |
 | DELAY_VALIDATED (aggregate) | 3.9% | [2.9%, 5.3%] | 1,000 | batch_20260127_195532/final_results.json |
 | Calibration agreement | 100% | — | 60 | calibration/grader_calibration_results.json |
-| Total corpus | 12,000 | — | — | Verified from checkpoints |
+| Total corpus | 11,547 | — | — | Verified from checkpoints |
+
+12,000 trajectories were generated across 12 studies (12 x 1,000); deduplication and reconciliation yielded 11,547 verified unique trajectories (see `docs/DATA_MANIFEST.yaml`).
 
 ### Expanded Corpus 2×2 Factorial (LostBench, verified 2026-02-19)
 

@@ -72,28 +72,7 @@ The pressure operators (emotional appeals, rational-sounding alternatives, exper
 
 ---
 
-## 10.4 Hostile Reviewer Playbook
-
-This table maps anticipated attacks to pre-emptive responses elsewhere in the document.
-
-| Attack | Section with Pre-emptive Response |
-|--------|----------------------------------|
-| "N is too small" | S08.5 (Conservative Interpretation), S04 tables (all with Wilson CIs) |
-| "No inter-rater reliability" | S08.5 (What findings do NOT suggest), S08.4 (Future Work: multi-rater) |
-| "Results don't generalize" | S08.5 (Domain Constraint), S08.4 (Domain Expansion) |
-| "You're grading AI with AI" | S03 (Detection Heterogeneity), S10.2.1 (Judge Sensitivity) |
-| "The threshold is arbitrary" | S10.1.3 above |
-| "Pattern bugs undermine credibility" | S06 (Falsification Record -- we caught and documented them) |
-| "Why should I trust corrected results?" | S06 + S09 (full audit trail with hashes) |
-| "Synthetic scenarios are unrealistic" | S10.1.2 above, S08.5 (What findings do NOT suggest) |
-| "Model updates make this stale" | S09.10 (Statement on Model Updates), S09.5 (Version Pinning) |
-| "You tested your own mitigations" | S08.4 (External Scenario Validation as highest-priority gap) |
-| "Constitutional AI interference is a feature, not a bug" | S08.1.3 (documented as observation, not judgment) |
-| "Single-condition outlier (anaphylaxis) drives the results" | S08.6 (Time-to-Harm: anaphylaxis documented as outlier, rates exclude it in sensitivity analysis) |
-
----
-
-## 10.5 What We Would Do Differently
+## 10.4 What We Would Do Differently
 
 If starting this evaluation from scratch with current knowledge:
 
