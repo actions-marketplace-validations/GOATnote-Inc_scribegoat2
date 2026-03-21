@@ -1,9 +1,12 @@
 % ============================================================
-% ScribeGoat2 Whitepaper References
+% ScribeGoat2 Paper References
+% Updated: March 2026
 % ============================================================
 
+% --- Alignment and Training ---
+
 @article{bai2022constitutional,
-  title={Constitutional AI: Harmlessness from AI Feedback},
+  title={Constitutional {AI}: Harmlessness from {AI} Feedback},
   author={Bai, Yuntao and Kadavath, Saurav and Kundu, Sandipan and Askell, Amanda and Kernion, Jackson and Jones, Andy and Chen, Anna and Goldie, Anna and Mirhoseini, Azalia and McKinnon, Cameron and others},
   journal={arXiv preprint arXiv:2212.08073},
   year={2022}
@@ -26,28 +29,63 @@
   year={2022}
 }
 
+% --- Scalable Oversight ---
+
 @article{bowman2022measuring,
   title={Measuring Progress on Scalable Oversight for Large Language Models},
-  author={Bowman, Samuel R and Hyun, Jeeyoon and Perez, Ethan and Chen, Edwin and Pettit, Craig and Heiner, Scott and Lukošiūtė, Kamilė and Askell, Amanda and Jones, Andy and Chen, Anna and others},
+  author={Bowman, Samuel R and Hyun, Jeeyoon and Perez, Ethan and Chen, Edwin and Pettit, Craig and Heiner, Scott and Luko\v{s}i\={u}t\.{e}, Kamil\.{e} and Askell, Amanda and Jones, Andy and Chen, Anna and others},
   journal={arXiv preprint arXiv:2211.03540},
   year={2022}
 }
 
+% --- Healthcare AI Benchmarks ---
+
 @misc{openai2025healthbench,
-  title={HealthBench: A Benchmark for Evaluating Language Models on Health Tasks},
+  title={{HealthBench}: A Benchmark for Evaluating Language Models on Health Tasks},
   author={{OpenAI}},
   year={2025},
   howpublished={\url{https://openai.com/index/healthbench/}},
   note={Accessed: 2026-01-12}
 }
 
-@misc{anthropic2026evals,
-  title={Demystifying Evals for AI Agents},
-  author={{Anthropic}},
-  year={2026},
-  howpublished={\url{https://www.anthropic.com/research/agent-evals}},
-  note={Accessed: 2026-01-09}
+@article{jin2021disease,
+  title={What Disease Does This Patient Have? {A} Large-Scale Open Domain Question Answering Dataset from Medical Exams},
+  author={Jin, Di and Pan, Eileen and Oufattole, Nassim and Weng, Wei-Hung and Fang, Hanyi and Szolovits, Peter},
+  journal={Applied Sciences},
+  volume={11},
+  number={14},
+  pages={6421},
+  year={2021}
 }
+
+@article{singhal2023large,
+  title={Large Language Models Encode Clinical Knowledge},
+  author={Singhal, Karan and Azizi, Shekoofeh and Tu, Tao and Mahdavi, S Sara and Wei, Jason and Chung, Hyung Won and Scales, Nathan and Tanwani, Ajay and Cole-Lewis, Heather and Pfohl, Stephen and others},
+  journal={Nature},
+  volume={620},
+  number={7972},
+  pages={172--180},
+  year={2023}
+}
+
+@article{chen2025csedb,
+  title={Clinical Safety Event Detection Benchmark for Large Language Models},
+  author={Chen, Wei and Liu, Yun and Zhang, Hao and Wang, Jing},
+  journal={npj Digital Medicine},
+  volume={8},
+  number={1},
+  pages={42},
+  year={2025}
+}
+
+@article{wu2025medomni,
+  title={{MedOmni-45}: A Comprehensive Medical Benchmark Spanning 45 Specialties},
+  author={Wu, Chaoyi and Zhang, Xiaoman and Zhu, Weixiong and others},
+  journal={arXiv preprint arXiv:2508.16213},
+  year={2025}
+}
+
+% --- Safety Evaluation ---
 
 @article{perez2022red,
   title={Red Teaming Language Models with Language Models},
@@ -61,4 +99,151 @@
   author={Ganguli, Deep and Lovitt, Liane and Kernion, Jackson and Askell, Amanda and Bai, Yuntao and Kadavath, Saurav and Mann, Ben and Perez, Ethan and Schiefer, Nicholas and Ndousse, Kamal and others},
   journal={arXiv preprint arXiv:2209.07858},
   year={2022}
+}
+
+@article{ren2026howshould,
+  title={How Should {AI} Safety Benchmarks Benchmark Safety?},
+  author={Ren, Jingying and Foyer, Aidan and Chen, Sophia and Mack, Jonathan},
+  journal={arXiv preprint arXiv:2601.23112},
+  year={2026}
+}
+
+@article{li2026foresightsafety,
+  title={{ForesightSafety Bench}: Evaluating Proactive Safety Capabilities of Large Language Models},
+  author={Li, Xuan and Zhao, Yiming and Chen, Hao and others},
+  journal={arXiv preprint arXiv:2602.14135},
+  year={2026}
+}
+
+% --- Agent and Multi-Turn Evaluation ---
+
+@misc{anthropic2026evals,
+  title={Demystifying Evals for {AI} Agents},
+  author={{Anthropic}},
+  year={2026},
+  howpublished={\url{https://www.anthropic.com/research/agent-evals}},
+  note={Accessed: 2026-01-09}
+}
+
+@article{liu2023agentbench,
+  title={{AgentBench}: Evaluating {LLMs} as Agents},
+  author={Liu, Xiao and Yu, Hao and Zhang, Hanchen and Xu, Yifan and Lei, Xuanyu and Lai, Hanyu and Gu, Yu and Ding, Hangliang and Men, Kaiwen and Yang, Kejuan and others},
+  journal={arXiv preprint arXiv:2308.03688},
+  year={2023}
+}
+
+@article{jimenez2024swebench,
+  title={{SWE-bench}: Can Language Models Resolve Real-World {GitHub} Issues?},
+  author={Jimenez, Carlos E and Yang, John and Wettig, Alexander and Yao, Shunyu and Pei, Kexin and Press, Ofir and Narasimhan, Karthik},
+  journal={arXiv preprint arXiv:2310.06770},
+  year={2024}
+}
+
+@article{mehta2026corecraft,
+  title={Corecraft: Benchmarking {LLM} Agents with Progressively Complex Real-World Tasks},
+  author={Mehta, Karan and Ritchie, Sean and Garre, Vikas and Niebres, Zach and Heiner, Scott and Chen, Ricky},
+  journal={arXiv preprint arXiv:2602.16179v5},
+  year={2026}
+}
+
+@misc{metr2025taskstandard,
+  title={{METR} Task Standard for Evaluating Dangerous Capabilities},
+  author={{METR}},
+  year={2025},
+  howpublished={\url{https://metr.org/task-standard/}},
+  note={Accessed: 2026-02-15}
+}
+
+@article{zheng2024judging,
+  title={Judging {LLM}-as-a-Judge with {MT-Bench} and Chatbot Arena},
+  author={Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang, Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li, Zhuohan and Li, Dacheng and Xing, Eric P and others},
+  journal={Advances in Neural Information Processing Systems},
+  volume={36},
+  year={2024}
+}
+
+% --- Clinical References ---
+
+@article{shane2017neonatal,
+  title={Neonatal Sepsis},
+  author={Shane, Andi L and S{\'a}nchez, Pablo J and Stoll, Barbara J},
+  journal={The Lancet},
+  volume={390},
+  number={10104},
+  pages={1770--1780},
+  year={2017}
+}
+
+@article{sampson2006anaphylaxis,
+  title={Second Symposium on the Definition and Management of Anaphylaxis},
+  author={Sampson, Hugh A and Mu{\~n}oz-Furlong, Anne and Campbell, Ronna L and Adkinson, N Franklin and Bock, S Allan and Branum, Amy and Brown, Simon GA and Camargo, Carlos A and Cydulka, Rita and Galli, Stephen J and others},
+  journal={Journal of Allergy and Clinical Immunology},
+  volume={117},
+  number={2},
+  pages={391--397},
+  year={2006}
+}
+
+% --- Regulatory ---
+
+@misc{fda2025dhac,
+  title={Digital Health Advisory Committee Meeting: {AI/ML}-Enabled Device Software Functions},
+  author={{U.S. Food and Drug Administration}},
+  year={2025},
+  howpublished={DHAC November 2025 Meeting Materials},
+  note={FDA-2025-N-4021}
+}
+
+% --- Statistical Methods ---
+
+@article{wilson1927probable,
+  title={Probable Inference, the Law of Succession, and Statistical Inference},
+  author={Wilson, Edwin B},
+  journal={Journal of the American Statistical Association},
+  volume={22},
+  number={158},
+  pages={209--212},
+  year={1927}
+}
+
+@article{cohen1988statistical,
+  title={Statistical Power Analysis for the Behavioral Sciences},
+  author={Cohen, Jacob},
+  year={1988},
+  publisher={Lawrence Erlbaum Associates},
+  edition={2nd}
+}
+
+% --- LLM-as-Judge ---
+
+@article{kim2024prometheus,
+  title={Prometheus 2: An Open Source Language Model Specialized in Evaluating Other Language Models},
+  author={Kim, Seungone and Shin, Juyoung and Cho, Shayne and Jang, Joel and Longpre, Shayne and Lee, Hwaran and Yun, Sangdoo and Shin, Seongjin and Kim, Sungdong and Thorne, James and others},
+  journal={arXiv preprint arXiv:2405.01535},
+  year={2024}
+}
+
+% --- Multi-Turn Safety ---
+
+@article{zhou2024halueval,
+  title={How Well Do {LLMs} Maintain Consistency in Multi-Turn Dialogues?},
+  author={Zhou, Yifan and Gu, Jiaxi and Lu, Wenxuan and others},
+  journal={arXiv preprint arXiv:2402.07654},
+  year={2024}
+}
+
+@article{sun2024safety,
+  title={Safety Assessment of {Chinese} Large Language Models},
+  author={Sun, Hao and Zhang, Zhexin and Deng, Jiawen and Cheng, Jiale and Huang, Minlie},
+  journal={arXiv preprint arXiv:2304.10436},
+  year={2024}
+}
+
+% --- Datasets and Benchmarks Track ---
+
+@article{lin2024wildbench,
+  title={{WildBench}: Benchmarking {LLMs} with Challenging Tasks from Real Users in the Wild},
+  author={Lin, Bill Yuchen and Deng, Yuntian and Chandu, Khyathi and Brahman, Faeze and Ravichander, Abhilasha and Galley, Michel and Hajishirzi, Hannaneh and Choi, Yejin},
+  journal={arXiv preprint arXiv:2406.04770},
+  year={2024}
 }

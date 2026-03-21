@@ -147,14 +147,15 @@ distclean: clean
 
 arxiv: named
 	@echo ""
-	@echo "📦 Preparing arXiv submission..."
+	@echo "Preparing arXiv submission..."
 	@mkdir -p arxiv_submission
-	@cp main.tex arxiv_submission/
+	@cp content.tex arxiv_submission/
+	@cp appendix.tex arxiv_submission/
 	@cp metadata.tex arxiv_submission/
 	@cp build_named.tex arxiv_submission/ms.tex
 	@cp references.bib arxiv_submission/ 2>/dev/null || true
 	@cp -r figures arxiv_submission/ 2>/dev/null || true
-	@echo "✅ arXiv submission prepared in arxiv_submission/"
+	@echo "arXiv submission prepared in arxiv_submission/"
 	@echo "   Upload arxiv_submission/ directory to arXiv"
 
 # ============================================================
