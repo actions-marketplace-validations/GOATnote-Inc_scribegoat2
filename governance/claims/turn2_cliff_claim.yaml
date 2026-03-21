@@ -22,7 +22,7 @@ claims:
         field: "metrics.failure_mode_distribution.DELAY_VALIDATED"
         value: 0.076
         hash: "sha256:a3f2b1c4d5e6f7..."
-        access_date: "2026-01-15"
+        access_date: "2026-03-21"
     reproduction:
       command: |
         python -m scribegoat.eval_runner.runner \

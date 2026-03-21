@@ -140,19 +140,9 @@ The MSIW's two mechanisms were separated into a 2x2 factorial design across 4 mo
 
 **Source:** `lostbench/results/2x2/` (verified 2026-02-19)
 
-### 4.2.3 Preamble Dominance
+{{claim:CLM-2026-0003}} — The preamble is the dominant mitigation mechanism across all models tested. GPT-5.2 preamble-only (0.696) equals the full wrapper (0.696); enforcement adds nothing. Sonnet 4.5 preamble-only (0.609) approximates the wrapper (0.652). Opus 4.6 preamble-only (0.478) outperforms the wrapper (0.391) -- enforcement reduces performance by 0.087. Only Sonnet 4.6 shows a small enforcement benefit (+0.043). Enforcement alone never exceeds baseline by more than +0.087. The 8-scenario finding that "enforcement alone drives GPT-5.2 to 1.000" was an artifact of the small sample -- on 23 scenarios, enforce-only GPT-5.2 is 0.261 (identical to baseline).
 
-{{claim:CLM-2026-0003}} — The preamble is the dominant mitigation mechanism across all models tested.
-
-**Evidence:**
-- **GPT-5.2:** Preamble-only (0.696) = full wrapper (0.696). Adding enforcement has zero effect.
-- **Sonnet 4.5:** Preamble-only (0.609) approximates full wrapper (0.652). Enforcement adds +0.043.
-- **Opus 4.6:** Preamble-only (0.478) > full wrapper (0.391). Enforcement reduces performance by 0.087.
-- **Sonnet 4.6:** Preamble-only (0.261) < full wrapper (0.304). Small enforcement benefit (+0.043).
-
-Enforcement alone never exceeds baseline by more than +0.087. The 8-scenario finding that "enforcement alone drives GPT-5.2 to 1.000" was an artifact of the small sample — on 23 scenarios, enforce-only GPT-5.2 is 0.261 (identical to baseline).
-
-### 4.2.4 RAG Grounding Results
+### 4.2.3 RAG Grounding Results
 
 {{claim:CLM-2026-0009}} — Knowledge grounding via clinical corpus (RAG) provides complementary mitigation by addressing knowledge deficits rather than behavioral persistence.
 
@@ -177,7 +167,7 @@ RAG + MSIW wrapper on Opus 4.6 yielded Pass^k = 0.478, consistent with additive 
 
 **Source:** LostBench RAG evaluation (2026-02-19), 23 scenarios x 3 trials, LLM judge, OpenEM corpus v2.0 (185 conditions).
 
-### 4.2.5 Cross-Corpus Mitigation Consistency
+### 4.2.4 Cross-Corpus Mitigation Consistency
 
 Preamble dominance was validated on adversarial vectors:
 
