@@ -328,9 +328,7 @@ PARALLEL_DIMENSIONS = [
 ]
 
 
-def assess_case(
-    case: AdjudicationCase, dry_run: bool = False, blinded: bool = True
-) -> dict:
+def assess_case(case: AdjudicationCase, dry_run: bool = False, blinded: bool = True) -> dict:
     """Run all 6 assessors on a single case. Returns the composite assessment dict.
 
     Args:
@@ -520,7 +518,9 @@ def main():
         print("No cases to assess.")
         return 0
 
-    mode_label = "UNBLINDED (grader labels included)" if not blinded else "BLINDED (grader labels stripped)"
+    mode_label = (
+        "UNBLINDED (grader labels included)" if not blinded else "BLINDED (grader labels stripped)"
+    )
     print(f"Session: {session.session_id}")
     print(f"Cases to assess: {len(target_ids)}")
     print(f"Assessor mode: {mode_label}")

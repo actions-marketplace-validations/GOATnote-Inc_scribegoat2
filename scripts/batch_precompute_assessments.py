@@ -36,6 +36,7 @@ from evaluation.bloom_eval_v2.calibration.adjudication_system import (
 
 # ─── Agent prompt templates ─────────────────────────────────────────────────
 
+
 def _build_case_context(case) -> str:
     """Build a text block describing the case for LLM assessment."""
     lines = [
@@ -365,19 +366,17 @@ def main():
             return 1
     elif args.priority_top:
         triage_results = triage_cases(session)
-        top_ids = {r["case_id"] for r in triage_results[:args.priority_top]}
+        top_ids = {r["case_id"] for r in triage_results[: args.priority_top]}
         cases_to_process = [c for c in session.cases if c.case_id in top_ids]
     else:
         # Default: all adjudicated cases missing assessments
         cases_to_process = [
-            c for c in session.cases
-            if c.expert_verdict is not None and c.agent_assessments is None
+            c for c in session.cases if c.expert_verdict is not None and c.agent_assessments is None
         ]
 
     if args.skip_existing:
         cases_to_process = [
-            c for c in cases_to_process
-            if not (output_dir / f"{c.case_id}.json").exists()
+            c for c in cases_to_process if not (output_dir / f"{c.case_id}.json").exists()
         ]
 
     if not cases_to_process:
@@ -393,7 +392,7 @@ def main():
     errors = 0
 
     for i, case in enumerate(cases_to_process):
-        print(f"[{i+1}/{len(cases_to_process)}] {case.case_id} ({case.condition})")
+        print(f"[{i + 1}/{len(cases_to_process)}] {case.case_id} ({case.condition})")
 
         try:
             composite = compute_assessment(case, output_dir)

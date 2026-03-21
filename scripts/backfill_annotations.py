@@ -213,16 +213,22 @@ def main():
         print()
 
         # Check assessment files
-        existing_assessments = list(assessments_dir.glob("*.json")) if assessments_dir.exists() else []
+        existing_assessments = (
+            list(assessments_dir.glob("*.json")) if assessments_dir.exists() else []
+        )
         existing_ids = {p.stem for p in existing_assessments}
         missing_assessments = [c for c in adjudicated if c.case_id not in existing_ids]
-        print(f"Assessment files: {len(existing_assessments)} existing, {len(missing_assessments)} missing")
+        print(
+            f"Assessment files: {len(existing_assessments)} existing, {len(missing_assessments)} missing"
+        )
         for c in missing_assessments:
             print(f"  MISSING: {c.case_id}")
 
         # Check clinical dimension scores
         missing_dims = [c for c in adjudicated if c.clinical_dimension_scores is None]
-        print(f"\nClinical dimension scores: {len(with_dims)} populated, {len(missing_dims)} missing")
+        print(
+            f"\nClinical dimension scores: {len(with_dims)} populated, {len(missing_dims)} missing"
+        )
 
         # Check annotations.jsonl
         ann_path = calibration_dir / "annotations.jsonl"

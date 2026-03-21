@@ -11,7 +11,9 @@ import json
 import sys
 from pathlib import Path
 
-CALIBRATION_DIR = Path(__file__).resolve().parent.parent / "evaluation" / "bloom_eval_v2" / "calibration"
+CALIBRATION_DIR = (
+    Path(__file__).resolve().parent.parent / "evaluation" / "bloom_eval_v2" / "calibration"
+)
 BLINDED_DIR = CALIBRATION_DIR / "assessments"
 UNBLINDED_DIR = CALIBRATION_DIR / "assessments_unblinded"
 
@@ -55,7 +57,9 @@ def main():
                 delta = b_score - u_score
                 deltas.append(delta)
                 marker = " **" if delta != 0 else ""
-                print(f"  {cid:<30} unblinded={u_score}  blinded={b_score}  delta={delta:+d}{marker}")
+                print(
+                    f"  {cid:<30} unblinded={u_score}  blinded={b_score}  delta={delta:+d}{marker}"
+                )
         if deltas:
             avg = sum(deltas) / len(deltas)
             print(f"  Mean delta: {avg:+.2f} (n={len(deltas)})")

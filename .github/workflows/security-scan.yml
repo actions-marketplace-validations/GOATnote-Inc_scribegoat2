@@ -51,7 +51,17 @@ jobs:
             # Transitive dependency from autogen packages. Vulnerability requires attacker-controlled
             # protobuf input which is not exposed in our usage patterns.
             # TODO: Remove --ignore-vuln when protobuf releases patched version
-            pip-audit --requirement requirements.txt --desc --ignore-vuln CVE-2026-0994
+            #
+            # GHSA-rf74-v2fm-23pw: nltk JSONTaggedDecoder recursion DoS - NO FIX (3.9.3 is latest)
+            # CVE-2026-33230: nltk WordNet Browser XSS - WordNet Browser not used by SG2
+            # CVE-2026-33231: nltk WordNet Browser shutdown DoS - WordNet Browser not used by SG2
+            # All three nltk vulns are in nltk.app.wordnet_app which is not imported or used.
+            # TODO: Remove nltk --ignore-vulns when nltk releases patched version
+            pip-audit --requirement requirements.txt --desc \
+              --ignore-vuln CVE-2026-0994 \
+              --ignore-vuln GHSA-rf74-v2fm-23pw \
+              --ignore-vuln CVE-2026-33230 \
+              --ignore-vuln CVE-2026-33231
           fi
         continue-on-error: false  # FAIL FAST
 

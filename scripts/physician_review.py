@@ -50,8 +50,11 @@ def _pass_fail_symbol(classification: str) -> str:
     if classification in ("persistence", "full_persistence"):
         return "PASS"
     elif classification in (
-        "capitulation", "early_capitulation", "late_capitulation",
-        "fail", "over_escalation",
+        "capitulation",
+        "early_capitulation",
+        "late_capitulation",
+        "fail",
+        "over_escalation",
     ):
         return "FAIL"
     return "????"
@@ -65,7 +68,9 @@ def display_case(case, session, assessments_dir: Path):
 
     print("=" * 72)
     print(f"CASE: {case.case_id}  |  {condition}  |  ESI-{esi}")
-    print(f"Grader: {case.grader_outcome}  |  First fail: T{case.grader_first_failure_turn or 'N/A'}  |  Trial {case.trial_number}  |  TTH: {tth}h")
+    print(
+        f"Grader: {case.grader_outcome}  |  First fail: T{case.grader_first_failure_turn or 'N/A'}  |  Trial {case.trial_number}  |  TTH: {tth}h"
+    )
     print("=" * 72)
 
     # Turns summary
@@ -73,8 +78,14 @@ def display_case(case, session, assessments_dir: Path):
     for turn in case.turns:
         symbol = _pass_fail_symbol(turn.classification)
         # Truncate response to first 60 chars
-        snippet = turn.response_text[:60].replace("\n", " ") + "..." if len(turn.response_text) > 60 else turn.response_text.replace("\n", " ")
-        print(f"  T{turn.turn_number}: {turn.classification} ({turn.confidence:.2f})  {symbol}   \"{snippet}\"")
+        snippet = (
+            turn.response_text[:60].replace("\n", " ") + "..."
+            if len(turn.response_text) > 60
+            else turn.response_text.replace("\n", " ")
+        )
+        print(
+            f'  T{turn.turn_number}: {turn.classification} ({turn.confidence:.2f})  {symbol}   "{snippet}"'
+        )
 
     # Load pre-computed assessment if available
     assessment_path = assessments_dir / f"{case.case_id}.json"
@@ -103,7 +114,9 @@ def display_case(case, session, assessments_dir: Path):
         print(f"  Red Team:                {rt_sev} ({rt_count} challenges)")
     else:
         print("\nAGENT ASSESSMENTS: not pre-computed")
-        print(f"  Run: python scripts/batch_precompute_assessments.py --session <session> --cases {case.case_id}")
+        print(
+            f"  Run: python scripts/batch_precompute_assessments.py --session <session> --cases {case.case_id}"
+        )
 
     # Show existing verdict if re-reviewing
     if case.expert_verdict:
@@ -119,7 +132,9 @@ def prompt_expand_turn(case, turn_number: int):
     for turn in case.turns:
         if turn.turn_number == turn_number:
             print(f"\n{'─' * 72}")
-            print(f"TURN {turn.turn_number} — {turn.classification} (confidence: {turn.confidence:.2f})")
+            print(
+                f"TURN {turn.turn_number} — {turn.classification} (confidence: {turn.confidence:.2f})"
+            )
             print(f"{'─' * 72}")
             print(f"\nJudge reasoning: {turn.reasoning}")
             print(f"\nFull response:\n{turn.response_text}")
@@ -197,7 +212,11 @@ def review_case(case, session, session_path: Path, assessments_dir: Path):
 
     # Interactive loop for expanding details before committing
     while True:
-        cmd = input("Command [v=verdict, t<N>=expand turn, a=expand assessment, q=quit]: ").strip().lower()
+        cmd = (
+            input("Command [v=verdict, t<N>=expand turn, a=expand assessment, q=quit]: ")
+            .strip()
+            .lower()
+        )
 
         if cmd == "v":
             verdict, confidence, notes, agent_rating = get_verdict_input()
@@ -340,7 +359,9 @@ def main():
         print(f"\nTriage priority ({len(results)} remaining):")
         for i, r in enumerate(results[:10], 1):
             reasons = ", ".join(r["reasons"]) if r["reasons"] else "baseline"
-            print(f"  {i}. [{r['score']:3d}] {r['case_id']:25s} | {r['condition'][:40]} | {reasons}")
+            print(
+                f"  {i}. [{r['score']:3d}] {r['case_id']:25s} | {r['condition'][:40]} | {reasons}"
+            )
         print()
 
         case_order = [r["case_id"] for r in results]
