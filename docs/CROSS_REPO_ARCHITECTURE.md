@@ -112,7 +112,7 @@ As of v3, RadSlice includes a closed-loop evaluation architecture: saturation de
 
 **Key lesson:** Layer 0 pattern-only grading is unreliable for pass decisions — 75% of L0 passes were judge-false-positives. All future evaluations mandate full Layer 2 judge coverage.
 
-**Corpus scope:** 133 of 370 OpenEM conditions are imaging-relevant. 65 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
+**Corpus scope:** 141 of 370 OpenEM conditions are imaging-relevant. 65 of those map to LostBench scenarios (MTR/DEF IDs). Tasks cover only conditions where radiology imaging is part of the standard diagnostic workup — psychiatric, toxicologic, and purely clinical diagnoses are excluded.
 
 Key modules:
 
