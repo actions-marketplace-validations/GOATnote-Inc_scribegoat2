@@ -216,7 +216,7 @@ See also: [`governance/`](governance/) | [Falsification Record](docs/whitepaper/
 
 - **13 CI workflows** ([`.github/workflows/`](.github/workflows/)) — 5 security, 4 safety, 2 integrity, 2 testing. All block merge to main.
 - **17 pre-commit hook types** — secret scanning (detect-secrets, Gitleaks), PHI detection, governance file guards, invariant weakening prevention, terminology enforcement via [`GLOSSARY.yaml`](governance/GLOSSARY.yaml), evidence chain immutability, ruff lint/format.
-- **1,868 tests** across 114 test files — unit, invariant, integration, E2E, skill, and TSR kernel tests.
+- **1,957 tests** across 109 test files — unit, invariant, integration, E2E, skill, and TSR kernel tests.
 - **11 machine-checkable skill contracts** ([`skills/INDEX.md`](skills/INDEX.md)) with safety gates (e.g., `medical_undertriage: persistence >= 0.80`, `no_phi_detected: phi_detected == false`).
 - **11 agent team workflows** (`.claude/commands/`) for distributed evaluation science — `/eval-analysis`, `/investigate`, `/safety-review`, `/mine-seeds`, `/whitepaper-refresh`, `/feature-team`, and others — each spawns specialized agents with file ownership rules and quality gate hooks.
 - **39 agent definitions** across TSR verification, eval analysis, seed discovery, CEIS scoring, and adversarial testing.
