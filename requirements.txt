@@ -45,7 +45,7 @@ flake8>=7.0.0
 radon>=6.0.0
 
 # License Compliance
-pip-licenses>=4.3.0
+pip-licenses>=5.5.5
 
 # Observability / Tracing (for audit trail and forensic disclosure)
 langfuse>=2.0.0  # Primary observability backend
